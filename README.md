@@ -23,6 +23,10 @@ Simplified Development
 ======================
 The following are some of the functionality that is built in for you:
 
+ * validate() - handle environment checking, correct versioning as well
+                as if the expected configuration variables you specified
+                are present.
+
  * push()     - pushes a variables to the NZBGet server
 
 
@@ -41,7 +45,8 @@ The following are some of the functionality that is built in for you:
  * get_files()- list all files in a specified directory as well as fetching
                 their details such as filesize, modified date, etc in an
                 easy to reference dictionary.  You can provide a ton of
-                different filters to minimize the content returned
+                different filters to minimize the content returned. Filters
+                can by a regular expression, file prefixes, and/or suffixes.
 
  * parse_nzbfile() - Parse an NZB-File and extract all of it's meta
                      information from it. lxml must be installed on your
@@ -49,9 +54,13 @@ The following are some of the functionality that is built in for you:
 
 How To Use
 ==========
-It's really very easy to use. Infact developers are only required to define
-a class that inherits nzbget's python backend. and then write the main()
-function.
+Developers are only required to define a class that inherits the NZBGet class
+that identifies what they are attempting to write (_ScanScript_,
+_PostProcessScript_, etc.).
+
+Then you write all of your code a the main() you must define.
+
+That's it!
 
 Post Process Script Example
 ===========================
