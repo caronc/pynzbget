@@ -1,21 +1,5 @@
-
- A scripting wrapper for NZBGet Post and Pre Processing
-
- Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
-
- This program is free software; you can redistribute it and/or modify it
- under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation; either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Lesser General Public License for more details.
-
-##############################################################################
-
-== Description ==
+Description
+=================
 This provides a python framework to design NZBGet scripts with. The intent
 was to greatly simplify the development and debugging process. It was
 initially designed to work with NZBGet v13 but was made to be compatible
@@ -71,6 +55,7 @@ function.
 
 Post Process Script Example
 ===========================
+```
 #############################################################################
 ### NZBGET POST-PROCESSING SCRIPT                                         ###
 #
@@ -160,11 +145,11 @@ if __name__ == "__main__":
 
     # call run() and exit() using it's returned value
     exit(ppscript.run())
-
+```
 
 Scan Script Example
 ===================
-
+```
 ############################################################################
 Scan Script Usage/Example
 ############################################################################
@@ -258,3 +243,4 @@ if __name__ == "__main__":
 
     # call run() and exit() using it's returned value
     exit(scanscript.run())
+```
