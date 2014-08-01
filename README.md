@@ -6,7 +6,7 @@ initially designed to work with NZBGet v13 but was made to be compatible
 with versions 12 and 11 as well.
 
 * It contains a built in meta tag parser to extract content from NZB-Files.
-   _Note: This can only happen if lxml is installed on your system_
+   _Note: This can only happen if lxml is installed on your system_.
 * It can preform very basic obfuscation support on filenames that can not be
   interpreted.
 * It creates a common SQLite database (optionally) to additionally write
@@ -65,11 +65,11 @@ The following are some of the functionality that is built in for you:
 
 How To Use
 ==========
-#Developers are only required to define a class that inherits the NZBGet class
+* Developers are only required to define a class that inherits the NZBGet class
 that identifies what they are attempting to write (_ScanScript_,
 _PostProcessScript_, etc.).
 
-#Then you write all of your code a the _main()_ you must define.
+* Then you write all of your code a the _main()_ you must define.
 
 Post Process Script Example
 ===========================
