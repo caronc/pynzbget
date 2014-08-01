@@ -5,15 +5,23 @@ was to greatly simplify the development and debugging process. It was
 initially designed to work with NZBGet v13 but was made to be compatible
 with versions 12 and 11 as well.
 
-* It handles all of the exception handling
-* It prepares logging right out of the box for you, there is no setup required
-* All return codes have been simplified to None/True/False (you can still
-  use the old ones if you want)
-* Contains a built in meta tag parser to extract from NZB-Files (only if lxml
-  is installed on your system)
+* It contains a built in meta tag parser to extract content from NZB-Files.
+   _Note: This can only happen if lxml is installed on your system_
+* It can preform very basic obfuscation support on filenames that can not be
+  interpreted.
 * It creates a common SQLite database (optionally) to additionally write
   content passed via the set() function.  This allows another script to later
   call get() and retrieve the data set() by another.
+* It prepares logging right out of the box for you, there is no setup required
+* All return codes have been simplified to None/True/False (you can still
+  use the old ones if you want)
+* It handles all of the exception handling. By this I mean, your code can throw
+  an except and it's traceback will be captured gracefully to logging. Then the
+  framework will look after returning a correct failure error code to NZBGet.
+* It provides some very useful functions that are always being re-written
+  inside of every other NZBGet script such as file scanning.
+* It greatly simplifies the handling of environment variables and interaction
+  to and from NZBGet
 
 The entire framework was based on the information found here:
 * NZBGet: http://nzbget.net
@@ -48,19 +56,20 @@ The following are some of the functionality that is built in for you:
                 different filters to minimize the content returned. Filters
                 can by a regular expression, file prefixes, and/or suffixes.
 
- * parse_nzbfile() - Parse an NZB-File and extract all of it's meta
+ * parse_nzbfile() - Parse an NZB-File and extract all of its meta
                      information from it. lxml must be installed on your
                      system for this to work correctly
 
+ * deobfuscate() - Take a filename and return it in a deobfuscated to the
+                   best of its ability. (_PostProcessScript_ only)
+
 How To Use
 ==========
-Developers are only required to define a class that inherits the NZBGet class
+#Developers are only required to define a class that inherits the NZBGet class
 that identifies what they are attempting to write (_ScanScript_,
 _PostProcessScript_, etc.).
 
-Then you write all of your code a the main() you must define.
-
-That's it!
+#Then you write all of your code a the _main()_ you must define.
 
 Post Process Script Example
 ===========================
@@ -68,8 +77,9 @@ Post Process Script Example
 #############################################################################
 ### NZBGET POST-PROCESSING SCRIPT                                         ###
 #
+# Author: Your Name Goes Here <your@email.address>
+#
 # Describe your Post-Process Script here
-# Author: Chris Caron <lead2gold@gmail.com>
 #
 
 ############################################################################
@@ -166,8 +176,9 @@ Scan Script Usage/Example
 ############################################################################
 ### NZBGET SCAN SCRIPT                                                   ###
 #
+# Author: Your Name Goes Here <your@email.address>
+#
 # Describe your Scan Script here
-# Author: Chris Caron <lead2gold@gmail.com>
 #
 
 ############################################################################
