@@ -72,6 +72,13 @@ from nzbget.PostProcessScript import PostProcessScript
 # Now define your class while inheriting the rest
 class MyPostProcessScript(PostProcessScript):
     def main(self):
+
+        # Version Checking, Environment Variables Present, etc
+        if not self.validate():
+            # No need to document a failure, validate will do that
+            # on the reason it failed anyway
+            return False
+
         # write all of your code here you would have otherwise put in the
         # script
 

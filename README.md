@@ -101,6 +101,11 @@ class MyPostProcessScript(PostProcessScript):
         # write all of your code here you would have otherwise put in the
         # script
 
+        if not self.validate():
+            # No need to document a failure, validate will do that
+            # on the reason it failed anyway
+            return False
+
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBPP_.*)
         # following dictionary (without the NZBOP_ or NZBPP_ prefix):
@@ -199,6 +204,11 @@ class MyScanScript(ScanScript):
     def main(self):
         # write all of your code here you would have otherwise put in the
         # script
+
+        if not self.validate():
+            # No need to document a failure, validate will do that
+            # on the reason it failed anyway
+            return False
 
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBNP_.*)
