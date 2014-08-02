@@ -241,6 +241,14 @@ class PostProcessScript(ScriptBase):
         environment, set the value to 'False' or even a blank string ''
         will acomplish this for you.
         """
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Debug Handling
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        if debug is None:
+            # Fetch DEBUG flag from environment
+            debug = environ.get(
+                    '%sDEBUG' % POSTPROC_ENVIRO_ID, 'no') == 'yes'
+
         # Initialize Base Class
         super(PostProcessScript, self).__init__(logger=logger, debug=debug)
 
