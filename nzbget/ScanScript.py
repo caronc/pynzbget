@@ -132,7 +132,7 @@ class MyScanScript(ScanScript):
 
         # Feel free to use the actual exit codes as well defined by
         # NZBGet on their website.  They have also been defined here
-        # from nzbget import EXIT_CODE
+        # from nzbget.ScriptBase import EXIT_CODE
 
         return True
 
@@ -276,16 +276,14 @@ class ScanScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if not (exists(self.directory) and isdir(self.directory)):
+        if not (self.directory and isdir(self.directory)):
             self.logger.warning('Process directory is missing: %s' % \
                 self.directory)
 
         if not self.filename:
-            raise EnvironmentError(
-                '%sFILENAME variable was not defined' % SCAN_ENVIRO_ID
-            )
+            self.logger.warning('NZB File not defined.')
 
-        if not isfile(self.filename):
+        elif not isfile(self.filename):
             self.logger.warning('NZB File not found: %s' % self.filename)
 
         elif parse_nzbfile:
@@ -318,25 +316,32 @@ class ScanScript(ScriptBase):
         # Enforce system/global variables for script processing
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         self.system['DIRECTORY'] = self.directory
-        environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = self.directory
+        if self.directory is not None:
+            environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = self.directory
 
         self.system['NZBNAME'] = self.nzbname
-        environ['%sNZBNAME' % SCAN_ENVIRO_ID] = self.nzbname
+        if self.nzbname is not None:
+            environ['%sNZBNAME' % SCAN_ENVIRO_ID] = self.nzbname
 
         self.system['FILENAME'] = self.filename
-        environ['%sFILENAME' % SCAN_ENVIRO_ID] = self.filename
+        if self.filename is not None:
+            environ['%sFILENAME' % SCAN_ENVIRO_ID] = self.filename
 
         self.system['CATEGORY'] = self.category
-        environ['%sCATEGORY' % SCAN_ENVIRO_ID] = self.category
+        if self.category is not None:
+            environ['%sCATEGORY' % SCAN_ENVIRO_ID] = self.category
 
         self.system['PRIORITY'] = self.priority
-        environ['%sPRIORITY' % SCAN_ENVIRO_ID] = str(self.priority)
+        if self.priority is not None:
+            environ['%sPRIORITY' % SCAN_ENVIRO_ID] = str(self.priority)
 
         self.system['TOP'] = self.top
-        environ['%sTOP' % SCAN_ENVIRO_ID] = str(int(self.top))
+        if self.top is not None:
+            environ['%sTOP' % SCAN_ENVIRO_ID] = str(int(self.top))
 
         self.system['PAUSED'] = self.paused
-        environ['%sPAUSED' % SCAN_ENVIRO_ID] = str(int(self.paused))
+        if self.paused is not None:
+            environ['%sPAUSED' % SCAN_ENVIRO_ID] = str(int(self.paused))
 
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Create Database for set() and get() operations
@@ -345,7 +350,11 @@ class ScanScript(ScriptBase):
             # database_key is inherited in the parent class
             # future calls of set() and get() will allow access
             # to the database now
-            self.database_key = basename(self.filename)
+            try:
+                self.database_key = basename(self.filename)
+                self.logger.info('Connected to SQLite Database')
+            except AttributeError:
+                pass
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval

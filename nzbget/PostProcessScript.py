@@ -366,27 +366,20 @@ class PostProcessScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if not (exists(self.directory) and isdir(self.directory)):
-            self.logger.error('Process directory is missing: %s' % \
+        if not (self.directory and isdir(self.directory)):
+            self.logger.warning('Directory is missing: %s' % \
                 self.directory)
-            raise EnvironmentError(
-                '%sDIRECTORY variable was not defined' % POSTPROC_ENVIRO_ID
-            )
-
-        try:
-            chdir(self.directory)
-        except OSError:
-            self.logger.error('Process directory is not accessible: %s' % \
-                self.directory)
-            raise EnvironmentError(
-                '%sNZBFILENAME variable was not defined' % POSTPROC_ENVIRO_ID
-            )
+        else:
+            try:
+                chdir(self.directory)
+            except OSError:
+                self.logger.warning('Directory is not accessible: %s' % \
+                    self.directory)
 
         if not self.nzbfilename:
-            raise EnvironmentError(
-                '%sNZBFILENAME variable was not defined' % POSTPROC_ENVIRO_ID
-            )
-        if not isfile(self.nzbfilename):
+            self.logger.warning('NZB File not defined.')
+
+        elif not isfile(self.nzbfilename):
             self.logger.warning('NZB File not found: %s' % self.nzbfilename)
 
         elif parse_nzbfile:
@@ -411,40 +404,49 @@ class PostProcessScript(ScriptBase):
         # Enforce system/global variables for script processing
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         self.system['DIRECTORY'] = self.directory
-        environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = \
-            self.directory
+        if self.directory is not None:
+            environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = \
+                self.directory
 
         self.system['NZBNAME'] = self.nzbname
-        environ['%sNZBNAME' % POSTPROC_ENVIRO_ID] = \
-            self.nzbname
+        if self.nzbname is not None:
+            environ['%sNZBNAME' % POSTPROC_ENVIRO_ID] = \
+                self.nzbname
 
         self.system['NZBFILENAME'] = self.nzbfilename
-        environ['%sNZBFILENAME' % POSTPROC_ENVIRO_ID] = \
-            self.nzbfilename
+        if self.nzbfilename is not None:
+            environ['%sNZBFILENAME' % POSTPROC_ENVIRO_ID] = \
+                self.nzbfilename
 
         self.system['CATEGORY'] = self.category
-        environ['%sCATEGORY' % POSTPROC_ENVIRO_ID] = \
-            self.category
+        if self.category is not None:
+            environ['%sCATEGORY' % POSTPROC_ENVIRO_ID] = \
+                self.category
 
         self.system['TOTALSTATUS'] = self.totalstatus
-        environ['%sTOTALSTATUS' % POSTPROC_ENVIRO_ID] = \
-            self.totalstatus
+        if self.totalstatus is not None:
+            environ['%sTOTALSTATUS' % POSTPROC_ENVIRO_ID] = \
+                self.totalstatus
 
         self.system['STATUS'] = self.status
-        environ['%sSTATUS' % POSTPROC_ENVIRO_ID] = \
-            self.status
+        if self.status is not None:
+            environ['%sSTATUS' % POSTPROC_ENVIRO_ID] = \
+                self.status
 
         self.system['SCRIPTSTATUS'] = self.scriptstatus
-        environ['%sSCRIPTSTATUS' % POSTPROC_ENVIRO_ID] = \
-            self.scriptstatus
+        if self.scriptstatus is not None:
+            environ['%sSCRIPTSTATUS' % POSTPROC_ENVIRO_ID] = \
+                self.scriptstatus
 
         self.system['PARSTATUS'] = self.parstatus
-        environ['%sPARSTATUS' % POSTPROC_ENVIRO_ID] = \
-            str(self.parstatus)
+        if self.parstatus is not None:
+            environ['%sPARSTATUS' % POSTPROC_ENVIRO_ID] = \
+                str(self.parstatus)
 
         self.system['UNPACKSTATUS'] = self.unpackstatus
-        environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID] = \
-            str(self.unpackstatus)
+        if self.unpackstatus is not None:
+            environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID] = \
+                str(self.unpackstatus)
 
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Create Database for set() and get() operations
@@ -453,7 +455,11 @@ class PostProcessScript(ScriptBase):
             # database_key is inherited in the parent class
             # future calls of set() and get() will allow access
             # to the database now
-            self.database_key = basename(self.nzbfilename)
+            try:
+                self.database_key = basename(self.nzbfilename)
+                self.logger.info('Connected to SQLite Database')
+            except AttributeError:
+                pass
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Validatation
