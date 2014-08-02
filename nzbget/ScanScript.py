@@ -132,7 +132,7 @@ class MyScanScript(ScanScript):
 
         # Feel free to use the actual exit codes as well defined by
         # NZBGet on their website.  They have also been defined here
-        # from ScriptBase import EXIT_CODE
+        # from nzbget import EXIT_CODE
 
         return True
 
