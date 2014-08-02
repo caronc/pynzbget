@@ -67,7 +67,7 @@ Post Process Script Usage/Example
 ### NZBGET POST-PROCESSING SCRIPT                                         ###
 #############################################################################
 
-from nzbget.PostProcessScript import PostProcessScript
+from nzbget import PostProcessScript
 
 # Now define your class while inheriting the rest
 class MyPostProcessScript(PostProcessScript):
@@ -132,7 +132,7 @@ class MyPostProcessScript(PostProcessScript):
 
         # Feel free to use the actual exit codes as well defined by
         # NZBGet on their website.  They have also been defined here
-        # from nzbget.ScriptBase import EXIT_CODE
+        # from nzbget import EXIT_CODE
 
         return True
 
