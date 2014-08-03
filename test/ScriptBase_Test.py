@@ -18,6 +18,7 @@ import os
 import sys
 from os.path import dirname
 from os.path import join
+from os import linesep
 sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
 from ScriptBase import ScriptBase
@@ -26,6 +27,7 @@ from ScriptBase import EXIT_CODE
 from ScriptBase import CFG_ENVIRO_ID
 from ScriptBase import SHR_ENVIRO_ID
 from ScriptBase import NZBGET_MSG_PREFIX
+from ScriptBase import SHR_ENVIRO_GUESS_ID
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
@@ -173,3 +175,53 @@ class TestScriptBase(TestBase):
         assert script.parse_bool('OhYeah') == False
         # Adjust Default and get a different result
         assert script.parse_bool('OhYeah', True) == True
+
+    def test_guesses(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+
+        guess_dict = {
+            'type': 'movie',
+            'title':'A Great Title',
+            'year': 1998,
+            'screenSize': '720p',
+            'format': 'HD-DVD',
+            'audioCodec': 'DTS',
+            'videoCodec': 'h264',
+            'releaseGroup': 'GREATTEAM',
+            'BadEntry': 'Ignored',
+        }
+
+        # Keep a handle on the real standard output
+        stdout = sys.stdout
+        sys.stdout = StringIO.StringIO()
+        script.push_guess(guess_dict)
+
+        # extract data
+        sys.stdout.seek(0)
+        output = sys.stdout.read().strip()
+
+        # return stdout back to how it was
+        sys.stdout = stdout
+
+        guess_keys = sorted(guess_dict.keys())
+        guess_keys.remove('BadEntry')
+        cmp_output = ['%s%s%s%s=%s' % (
+            NZBGET_MSG_PREFIX,
+            SHR_ENVIRO_ID,
+            SHR_ENVIRO_GUESS_ID,
+            k.upper(),
+            str(guess_dict[k]),
+        ) for k in sorted(guess_keys) ]
+
+        assert output == linesep.join(cmp_output)
+
+        # Retrieve content
+        results = script.pull_guess()
+
+        # Minus 1 for BadEntry that should not
+        # be part of fetch
+        assert len(results) == len(guess_dict) - 1
+        for k, v in results.items():
+            assert k in guess_dict
+            assert str(guess_dict[k]) == v

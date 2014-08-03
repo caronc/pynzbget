@@ -17,10 +17,9 @@
 """
 This script provides a base for all NZBGet Scripts and provides
 functionality such as:
- * get_files()- list all files in a specified directory as well as fetching
-                their details such as filesize, modified date, etc in an
-                easy to reference dictionary.  You can provide a ton of
-                different filters to minimize the content returned
+ * validate() - handle environment checking, correct versioning as well
+                as if the expected configuration variables you specified
+                are present.
 
  * push()     - pushes a variables to the NZBGet server
 
@@ -28,16 +27,44 @@ functionality such as:
  * set()/get()- Hash table get/set attributes that can be set in one script
                 and then later retrieved from another. get() can also
                 be used to fetch content that was previously pushed using
-                the push() tool
+                the push() tool. You no longer need to work with environment
+                variables. If you enable the SQLite database, set content is
+                put here as well so that it can be retrieved by another
+                script.
 
  * get_api()  - Retreive a simple API/RPC object built from the global
                 variables NZBGet passes into an external program when
                 called.
 
- * parse_nzbfile() - Parse an NZB-File and extract all of it's meta
+ * get_files()- list all files in a specified directory as well as fetching
+                their details such as filesize, modified date, etc in an
+                easy to reference dictionary.  You can provide a ton of
+                different filters to minimize the content returned. Filters
+                can by a regular expression, file prefixes, and/or suffixes.
+
+ * parse_nzbfile() - Parse an NZB-File and extract all of its meta
                      information from it. lxml must be installed on your
                      system for this to work correctly
 
+ * parse_list() - Takes a string (or more) as well as lists of strings as
+                  input. It then cleans it up and produces an easy to
+                  manage list by combining all of the results into 1.
+                  Hence: parse_list('.mkv, .avi') returns:
+                      [ '.mkv', '.avi' ]
+
+ * parse_bool() - Handles all of NZBGet's configuration options such as
+                  'on' and 'off' as well as 'yes' or 'no', or 'True' and
+                  'False'.  It greatly simplifies the checking of these
+                  variables passed in from NZBGet
+
+ * push_guess() - You can push a guessit dictionary (or one of your own
+                  that can help identify your release for other scripts
+                  to use later after yours finishes
+
+ * pull_guess() - Pull a previous guess pushed by another script.
+                  why redo grunt work if it's already done for you?
+                  if no previous guess content was pushed, then an
+                  empty dictionary is returned.
 
 Ideally, you'll write your script using this class as your base wrapper
 requiring you to only define a main() function and call run().
@@ -142,6 +169,11 @@ SHR_ENVIRO_ID = 'NZBR_'
 # DNZB is an environment variable sometimes referenced by other scripts
 SHR_ENVIRO_DNZB_ID = '_DNZB_'
 
+# GUESS is an environment variable sometimes referenced by other scripts
+# it provides the guessed information for other scripts to save them
+# from re-guessing all over again.
+SHR_ENVIRO_GUESS_ID = '_GUESS_'
+
 # NZBGet Internal Message Passing Prefix
 NZBGET_MSG_PREFIX = '[NZB] '
 
@@ -149,6 +181,26 @@ NZBGET_MSG_PREFIX = '[NZB] '
 SYS_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SYS_ENVIRO_ID)
 CFG_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % CFG_ENVIRO_ID)
 SHR_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SHR_ENVIRO_ID)
+
+# Precompile Guess Fetching
+SHR_GUESS_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SHR_ENVIRO_GUESS_ID)
+
+# This is used as a mapping table so when we fetch content later
+# at another time we can map them to the same format commonly
+# used.
+GUESS_KEY_MAP = {
+    'AUDIOCHANNELS': 'audioChannels', 'AUDIOCODEC': 'audioCodec',
+    'AUDIOPROFILE': 'audioProfile', 'BONUSNUMBER':'bonusNumber',
+    'BONUSTITLE': 'bonusTitle', 'CONTAINER':'container', 'DATE': 'date',
+    'EDITION': 'edition', 'EPISODENUMBER': 'episodeNumber',
+    'FILMNUMBER': 'filmNumber', 'FILMSERIES': 'filmSeries',
+    'FORMAT': 'format', 'LANGUAGE': 'language',
+    'RELEASEGROUP': 'releaseGroup',  'SCREENSIZE': 'screenSize',
+    'SEASON': 'season', 'SERIES': 'series', 'SPECIAL': 'special',
+    'SUBTITLELANGUAGE': 'subtitleLanguage', 'TITLE': 'title',
+    'TYPE': 'type', 'VIDEOCODEC': 'videoCodec','VTYPE': 'vtype',
+    'WEBSITE': 'website', 'YEAR': 'year',
+}
 
 # keys should not be complicated... make it so they aren't
 VALID_KEY_RE = re.compile('[^a-zA-Z0-9_.-]')
@@ -311,6 +363,40 @@ class ScriptBase(object):
            str(value),
         ))
         return True
+
+    def push_guess(self, guess):
+        """pushes guess results to NZBGet Server. The function was
+        initially intended to provide a simply way of passing content
+        from guessit(), but it can be used by any dictionary with
+        common elements used to identify releases
+        """
+
+        if not isinstance(guess, dict):
+            # A guess is a 'dict' type, so handle the common elements
+            # if set.
+            return False
+
+        for key in sorted(guess.keys()):
+            if key.upper() in GUESS_KEY_MAP.keys():
+                # Push content to NZB Server
+                self.push('%s%s' % (
+                    SHR_ENVIRO_GUESS_ID,
+                    key.upper(),
+                ), str(guess[key]).strip())
+
+        return True
+
+    def pull_guess(self):
+        """Retrieves guess content in a dictionary
+        """
+        # Fetch/Load Guess Specific Content
+        guess = dict([
+            (GUESS_KEY_MAP[SHR_GUESS_OPTS_RE.match(k).group(1)], v.strip()) \
+            for (k, v) in self.shared.items() \
+                if SHR_GUESS_OPTS_RE.match(k) and \
+                SHR_GUESS_OPTS_RE.match(k).group(1) in GUESS_KEY_MAP])
+
+        return guess
 
     def parse_nzbfile(self, nzbfile, push_dnzb=True):
         """Parse an nzbfile specified and return just the

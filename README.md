@@ -71,6 +71,16 @@ The following are some of the functionality that is built in for you:
                   'False'.  It greatly simplifies the checking of these
                   variables passed in from NZBGet
 
+
+ * push_guess() - You can push a guessit dictionary (or one of your own
+                  that can help identify your release for other scripts
+                  to use later after yours finishes
+
+ * pull_guess() - Pull a previous guess pushed by another script.
+                  why redo grunt work if it's already done for you?
+                  if no previous guess content was pushed, then an
+                  empty dictionary is returned.
+
  * deobfuscate() - Take a filename and return it in a deobfuscated to the
                    best of its ability. (_PostProcessScript_ only)
 
