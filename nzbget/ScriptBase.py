@@ -101,6 +101,10 @@ from stat import ST_MTIME
 from stat import ST_SIZE
 from os import stat
 
+# Some booleans that are read to and from nzbget
+NZBGET_BOOL_TRUE = 'yes'
+NZBGET_BOOL_FALSE = 'no'
+
 class EXIT_CODE(object):
     """List of exit codes for post processing
     """
@@ -111,7 +115,7 @@ class EXIT_CODE(object):
     # Post-process successful
     SUCCESS = 93
     # Post-process failed
-    ERROR = 94
+    FAILURE = 94
     # Process skipped. Use this code when your script determines that it is
     # neither a success or failure. Perhaps your just not processing anything
     # due to how content was parsed.
@@ -121,7 +125,7 @@ EXIT_CODES = (
    EXIT_CODE.PARCHECK_CURRENT,
    EXIT_CODE.PARCHECK_ALL,
    EXIT_CODE.SUCCESS,
-   EXIT_CODE.ERROR,
+   EXIT_CODE.FAILURE,
    EXIT_CODE.NONE,
 )
 
@@ -134,6 +138,9 @@ CFG_ENVIRO_ID = 'NZBPO_'
 # Shared configuration options passed through NZBGet and push(); if these
 # are found in the environment, they are saved to the `config` dictionary
 SHR_ENVIRO_ID = 'NZBR_'
+
+# DNZB is an environment variable sometimes referenced by other scripts
+SHR_ENVIRO_DNZB_ID = '_DNZB_'
 
 # NZBGet Internal Message Passing Prefix
 NZBGET_MSG_PREFIX = '[NZB] '
@@ -197,7 +204,7 @@ class ScriptBase(object):
         if self.debug is None:
             # Configure one
             try:
-                self.debug = bool(int(self.config.get('DEBUG')), False)
+                self.debug = bool(int(self.system.get('DEBUG'), False))
             except:
                 self.debug = False
         else:
@@ -239,6 +246,17 @@ class ScriptBase(object):
                     'created: %s' % self.system['TEMPDIR'],
                 )
 
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Enforce system/global variables for script processing
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        self.system['DEBUG'] = self.debug
+
+        # Set environment variable how NZBGet Would have done so
+        if self.debug:
+            environ['%sDEBUG' % SYS_ENVIRO_ID] = NZBGET_BOOL_TRUE
+        else:
+            environ['%sDEBUG' % SYS_ENVIRO_ID] = NZBGET_BOOL_FALSE
+
     def __del__(self):
         if self.logger_id:
             destroy_logger(self.logger_id)
@@ -278,7 +296,7 @@ class ScriptBase(object):
         key = VALID_KEY_RE.sub('', key).upper()
 
         # Accomodate other environmental variables
-        self.config[key] = value
+        self.shared[key] = value
         if isinstance(value, bool):
             # convert boolean's to int's for consistency
             environ['%s%s' % (SHR_ENVIRO_ID, key)] = str(int(value))
@@ -294,9 +312,13 @@ class ScriptBase(object):
         ))
         return True
 
-    def parse_nzbfile(self, nzbfile):
+    def parse_nzbfile(self, nzbfile, push_dnzb=True):
         """Parse an nzbfile specified and return just the
         meta information within the <head></head> tags
+
+        if push_dnzb is set to true, then the shared environment
+        variables are pushed to the NZBGet server if parsing
+        is successful
         """
         results = {}
         try:
@@ -308,6 +330,14 @@ class ScriptBase(object):
                             # Only store entries with content
                             results[child.attrib['type'].upper()] = \
                                 child.text.strip()
+
+                            if push_dnzb:
+                                # Push content to NZB Server
+                                self.push('%s%s' % (
+                                    SHR_ENVIRO_DNZB_ID,
+                                    child.attrib['type'].upper(),
+                                ), child.text.strip())
+
                 element.clear()
             self.logger.info(
                 'NZBParse - NZB-File parsed %d meta entries' % len(results),
@@ -461,6 +491,7 @@ class ScriptBase(object):
             value = self.shared.get('%s' % key)
             if value is not None:
                 self.logger.debug('get(shared) %s="%s"' % (key, value))
+                return value
 
         self.logger.debug('get(default) %s=%s' % (key, str(default)))
         return default
@@ -480,14 +511,14 @@ class ScriptBase(object):
         if isinstance(keys, list):
             missing = [
                 key for key in keys \
-                        if key not in self.config \
+                        if key not in self.system \
             ]
         if missing:
             self.logger.error('Validation - Directives not set: %s' % \
                   ', '.join(missing))
             is_okay = False
 
-        if not 'SCRIPTDIR' in self.config:
+        if not 'SCRIPTDIR' in self.system:
             self.logger.error(
                 'Validation - (<v11) Directive not set: %s' % 'SCRIPTDIR',
             )
@@ -574,23 +605,11 @@ class ScriptBase(object):
 
         # clean prefix list
         if prefix_filter:
-            _filters = []
-            for f in prefix_filter:
-                _filters += re.split(STRING_DELIMITERS, f)
-
-            # apply as well as make the list unique by converting it
-            # to a set() first. filter() eliminates any empty entries
-            prefix_filter = filter(bool, list(set(_filters)))
+            prefix_filter = self.parse_list(prefix_filter)
 
         # clean up suffix list
         if suffix_filter:
-            _filters = []
-            for f in suffix_filter:
-                _filters += re.split(STRING_DELIMITERS, f)
-
-            # apply as well as make the list unique by converting it
-            # to a set() first. filter() eliminates any empty entries
-            suffix_filter = filter(bool, list(set(_filters)))
+            suffix_filter = self.parse_list(suffix_filter)
 
         # Precompile any defined regex definitions
         if regex_filter:
@@ -692,7 +711,7 @@ class ScriptBase(object):
             exit_code = EXIT_CODE.SUCCESS
 
         elif exit_code is False:
-            exit_code = EXIT_CODE.FALURE
+            exit_code = EXIT_CODE.FAILURE
 
         # Otherwise Be specific and if the code is not a valid one
         # then simply swap it with the ERROR version
@@ -703,6 +722,86 @@ class ScriptBase(object):
             )
             exit_code = EXIT_CODE.ERROR
         return exit_code
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Simplify Parsing
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def parse_list(self, *args):
+        """
+        Take a string list and break it into a delimited
+        list of arguments. This funciton also supports
+        the processing of a list of delmited strings and will
+        always return a unique set of arguments.
+
+        You can append as many items to the argument listing for
+        parsing.
+
+        Hence: parse_list('.mkv, .iso, .avi') becomes:
+            ['.mkv', '.iso', '.avi']
+
+        Hence: parse_list('.mkv, .iso, .avi', ['.avi', '.mp4') becomes:
+            ['.mkv', '.iso', '.avi', '.mp4']
+
+        The parsing is very forgiving and accepts spaces, slashes, comma's
+        semicolons, colons, and pipes as delimiters
+        """
+
+        result = []
+        for arg in args:
+            if isinstance(arg, basestring):
+                result += re.split(STRING_DELIMITERS, arg)
+
+            elif isinstance(arg, list) or isinstance(arg, tuple):
+                for _arg in arg:
+                    if isinstance(arg, basestring):
+                        result += re.split(STRING_DELIMITERS, arg)
+                    # A list inside a list? - use recursion
+                    elif isinstance(_arg, list) or isinstance(_arg, tuple):
+                        result += self.parse_list(_arg)
+                    else:
+                        # Convert whatever it is to a string and work with it
+                        result += self.parse_list(str(_arg))
+            else:
+                # Convert whatever it is to a string and work with it
+                result += self.parse_list(str(arg))
+
+        # apply as well as make the list unique by converting it
+        # to a set() first. filter() eliminates any empty entries
+        return filter(bool, list(set(result)))
+
+    def parse_bool(self, arg, default=False):
+        """
+        NZBGet uses 'yes' and 'no' as well as other strings such
+        as 'on' or 'off' etch to handle boolean operations from
+        it's control interface.
+
+        This method can just simplify checks to these variables.
+
+        If the content could not be parsed, then the default is
+        returned.
+        """
+
+        if isinstance(arg, basestring):
+            # no = no - False
+            # of = short for off - False
+            # 0  = int for False
+            # fa = short for False - False
+            # f  = short for False - False
+            # n  = short for No - False
+            if arg.lower()[0:2] in ('f', 'n', 'no', 'of', '0', 'fa'):
+                return False
+            # ye = yes - True
+            # on = short for off - True
+            # 1  = int for True
+            # tr = short for True - True
+            # t  = short for True - True
+            elif arg.lower()[0:2] in ('t', 'y', 'ye', 'on', '1', 'tr'):
+                return True
+            # otherwise
+            return default
+
+        # Handle other types
+        return bool(arg)
 
     def main(self):
         """Write all of your code here making uses of your functions while

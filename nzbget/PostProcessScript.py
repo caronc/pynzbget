@@ -152,13 +152,13 @@ from os import chdir
 from os import environ
 from os.path import isdir
 from os.path import isfile
-from os.path import exists
 from os.path import join
 from os.path import splitext
 from os.path import basename
 
 # Relative Includes
 from ScriptBase import ScriptBase
+from ScriptBase import NZBGET_BOOL_FALSE
 from Utils import os_path_split as split
 
 class TOTAL_STATUS(object):
@@ -246,8 +246,9 @@ class PostProcessScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         if debug is None:
             # Fetch DEBUG flag from environment
-            debug = environ.get(
-                    '%sDEBUG' % POSTPROC_ENVIRO_ID, 'no') == 'yes'
+            debug = self.parse_bool(
+                environ.get('%sDEBUG' % POSTPROC_ENVIRO_ID, NZBGET_BOOL_FALSE),
+            )
 
         # Initialize Base Class
         super(PostProcessScript, self).__init__(logger=logger, debug=debug)

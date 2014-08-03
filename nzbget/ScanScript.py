@@ -151,11 +151,11 @@ import re
 from os import environ
 from os.path import isdir
 from os.path import isfile
-from os.path import exists
 from os.path import basename
 
 # Relative Includes
 from ScriptBase import ScriptBase
+from ScriptBase import NZBGET_BOOL_FALSE
 
 class PRIORITY(object):
     """Although priority can be any integer value, the web-interface operates
@@ -206,8 +206,9 @@ class ScanScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         if debug is None:
             # Fetch DEBUG flag from environment
-            debug = environ.get(
-                    '%sDEBUG' % SCAN_ENVIRO_ID, 'no') == 'yes'
+            debug = self.parse_bool(
+                environ.get('%sDEBUG' % SCAN_ENVIRO_ID, NZBGET_BOOL_FALSE),
+            )
 
         # Initialize Base Class
         super(ScanScript, self).__init__(logger=logger, debug=debug)

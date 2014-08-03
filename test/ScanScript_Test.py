@@ -22,7 +22,6 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
 from ScriptBase import CFG_ENVIRO_ID
 from ScriptBase import SYS_ENVIRO_ID
-from ScriptBase import SHR_ENVIRO_ID
 from ScriptBase import NZBGET_MSG_PREFIX
 
 from ScanScript import ScanScript

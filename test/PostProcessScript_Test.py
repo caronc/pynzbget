@@ -26,7 +26,7 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
 from ScriptBase import CFG_ENVIRO_ID
 from ScriptBase import SYS_ENVIRO_ID
-from ScriptBase import SHR_ENVIRO_ID
+from ScriptBase import SHR_ENVIRO_DNZB_ID
 from ScriptBase import NZBGET_MSG_PREFIX
 
 from PostProcessScript import PostProcessScript
@@ -159,6 +159,18 @@ class TestPostProcessScript(TestBase):
         assert script.get('UNPACKSTATUS') == UNPACKSTATUS
 
         assert script.config == {}
+        assert script.shared == {
+            '%sMOVIEYEAR' % SHR_ENVIRO_DNZB_ID: '1983',
+            '%sNAME' % SHR_ENVIRO_DNZB_ID: 'A.Great.Movie.1983.DVDRip.x264-AWESOME',
+            '%sPROPERNAME' % SHR_ENVIRO_DNZB_ID: 'A Great Movie',
+            '%sCATEGORY' % SHR_ENVIRO_DNZB_ID: 'Movies > SD',
+        }
+        assert script.nzbheaders == {
+            'MOVIEYEAR': '1983',
+            'NAME': 'A.Great.Movie.1983.DVDRip.x264-AWESOME',
+            'PROPERNAME': 'A Great Movie',
+            'CATEGORY': 'Movies > SD',
+        }
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] == DIRECTORY
@@ -233,6 +245,8 @@ class TestPostProcessScript(TestBase):
         assert script.system['UNPACKSTATUS'] == unpackstatus
 
         assert script.config == {}
+        assert script.shared == {}
+        assert script.nzbheaders == {}
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] == directory
@@ -357,15 +371,17 @@ class TestPostProcessScript(TestBase):
         # variable defined with NZBGet v11
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
+        if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
+            del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         assert not script.validate()
         del script
 
         # Now let's set it and try again
-        os.environ['%sSCRIPTDIR' % CFG_ENVIRO_ID] = SCRIPTDIR
+        os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = SCRIPTDIR
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
         assert script.validate()
-        del os.environ['%sSCRIPTDIR' % CFG_ENVIRO_ID]
+        del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         del script
 
     def test_file_listings_as_string(self):

@@ -60,6 +60,17 @@ The following are some of the functionality that is built in for you:
                      information from it. lxml must be installed on your
                      system for this to work correctly
 
+ * parse_list() - Takes a string (or more) as well as lists of strings as
+                  input. It then cleans it up and produces an easy to
+                  manage list by combining all of the results into 1.
+                  Hence: parse_list('.mkv, .avi') returns:
+                      [ '.mkv', '.avi' ]
+
+ * parse_bool() - Handles all of NZBGet's configuration options such as
+                  'on' and 'off' as well as 'yes' or 'no', or 'True' and
+                  'False'.  It greatly simplifies the checking of these
+                  variables passed in from NZBGet
+
  * deobfuscate() - Take a filename and return it in a deobfuscated to the
                    best of its ability. (_PostProcessScript_ only)
 
