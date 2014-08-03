@@ -24,7 +24,7 @@ It was designed to be inheritied as a base class requiring you to only write
 the main() function which should preform the task you are intending.
 
 It looks after fetching all of the environment variables and will parse
-the meta information out of the NZB File.
+the meta information out of the NZB-File.
 
 It allows you to set variables that other scripts can access if they need to
 using the set() and get() variables. This is done through a simply self
@@ -218,7 +218,7 @@ class UNPACK_STATUS(object):
     SUCCESS = 2
 
 # Environment variable that prefixes all NZBGET options being passed into
-# scripts with respect to the NZB File (used in Post Processing Scripts)
+# scripts with respect to the NZB-File (used in Post Processing Scripts)
 POSTPROC_ENVIRO_ID = 'NZBPP_'
 
 # Precompile Regulare Expression for Speed
@@ -309,7 +309,7 @@ class PostProcessScript(ScriptBase):
             self.category = category
 
         # self.totalstatus
-        # Total status of the processing of the NZB File.  This value
+        # Total status of the processing of the NZB-File.  This value
         # includes the result from previous scripts that may have ran
         # before this one.
         if totalstatus is None:
@@ -375,24 +375,14 @@ class PostProcessScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if not (self.directory and isdir(self.directory)):
-            self.logger.warning('Directory is missing: %s' % \
-                self.directory)
-        else:
-            try:
-                chdir(self.directory)
-            except OSError:
-                self.logger.warning('Directory is not accessible: %s' % \
-                    self.directory)
-
         if not self.nzbfilename:
-            self.logger.warning('NZB File not defined.')
+            self.logger.warning('NZB-File not defined.')
 
         elif not isfile(self.nzbfilename):
-            self.logger.warning('NZB File not found: %s' % self.nzbfilename)
+            self.logger.warning('NZB-File not found: %s' % self.nzbfilename)
 
         elif parse_nzbfile:
-            # Initialize information fetched from NZB File
+            # Initialize information fetched from NZB-File
             self.nzbheaders = self.parse_nzbfile(self.nzbfilename)
 
         # Par Status
@@ -571,7 +561,7 @@ class PostProcessScript(ScriptBase):
                     new_name = join(new_name, parts[x])
         else:
 
-            # Check out NZB Filename
+            # Check out NZB-Filename
             fn = splitext(basename(self.nzbfilename))[0]
             if fn.find('.')==-1 and fn.find('_')==-1 and fn.find(' ')==-1:
                 if len(self.nzbheaders):

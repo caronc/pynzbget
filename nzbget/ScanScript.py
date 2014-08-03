@@ -24,7 +24,7 @@ It was designed to be inheritied as a base class requiring you to only write
 the main() function which should preform the task you are intending.
 
 It looks after fetching all of the environment variables and will parse
-the meta information out of the NZB File.
+the meta information out of the NZB-File.
 
 It allows you to set variables that other scripts can access if they need to
 using the set() and get() variables. This is done through a simply self
@@ -148,6 +148,7 @@ if __name__ == "__main__":
 
 """
 import re
+from os import chdir
 from os import environ
 from os.path import isdir
 from os.path import isfile
@@ -180,7 +181,7 @@ PRIORITIES = (
 )
 
 # Environment variable that prefixes all NZBGET options being passed into
-# scripts with respect to the NZB File (used in Scan Scripts)
+# scripts with respect to the NZB-File (used in Scan Scripts)
 SCAN_ENVIRO_ID = 'NZBNP_'
 
 # Precompile Regulare Expression for Speed
@@ -286,19 +287,25 @@ class ScanScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        if not self.filename:
+            self.logger.warning('NZB-File not defined.')
+
+        elif not isfile(self.filename):
+            self.logger.warning('NZB-File not found: %s' % self.filename)
+
+        elif parse_nzbfile:
+            # Initialize information fetched from NZB-File
+            self.nzbheaders = self.parse_nzbfile(self.filename)
+
         if not (self.directory and isdir(self.directory)):
             self.logger.warning('Process directory is missing: %s' % \
                 self.directory)
-
-        if not self.filename:
-            self.logger.warning('NZB File not defined.')
-
-        elif not isfile(self.filename):
-            self.logger.warning('NZB File not found: %s' % self.filename)
-
-        elif parse_nzbfile:
-            # Initialize information fetched from NZB File
-            self.nzbheaders = self.parse_nzbfile(self.filename)
+        else:
+            try:
+                chdir(self.directory)
+            except OSError:
+                self.logger.warning('Directory is not accessible: %s' % \
+                    self.directory)
 
         # Priority
         if not isinstance(self.priority, int):

@@ -187,7 +187,7 @@ class ScriptBase(object):
         self.shared = dict([(SHR_OPTS_RE.match(k).group(1), v.strip()) \
             for (k, v) in environ.items() if SHR_OPTS_RE.match(k)])
 
-        # Initialize information fetched from NZB File
+        # Initialize information fetched from NZB-File
         self.nzbheaders = {}
 
         if 'TEMPDIR' not in self.system:
@@ -504,19 +504,20 @@ class ScriptBase(object):
         # so all errors can be caught to make it easier for debugging
         is_okay = True
 
-        if isinstance(keys, basestring):
-            keys = re.split(STRING_DELIMITERS, keys)
+        if keys:
+            missing = []
+            if isinstance(keys, basestring):
+                keys = self.parse_list(keys)
 
-        missing = []
-        if isinstance(keys, list):
             missing = [
                 key for key in keys \
                         if key not in self.system \
             ]
-        if missing:
-            self.logger.error('Validation - Directives not set: %s' % \
-                  ', '.join(missing))
-            is_okay = False
+
+            if missing:
+                self.logger.error('Validation - Directives not set: %s' % \
+                      ', '.join(missing))
+                is_okay = False
 
         if not 'SCRIPTDIR' in self.system:
             self.logger.error(
