@@ -298,6 +298,19 @@ class ScriptBase(object):
                     'created: %s' % self.system['TEMPDIR'],
                 )
 
+        if self.debug:
+            # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+            # Print Global System Varables to help debugging process
+            # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+            for k, v in self.system.items():
+                self.logger.debug('%s%s=%s' % (SYS_ENVIRO_ID, k, v))
+
+            for k, v in self.config.items():
+                self.logger.debug('%s%s=%s' % (CFG_ENVIRO_ID, k, v))
+
+            for k, v in self.config.items():
+                self.logger.debug('%s%s=%s' % (SHR_ENVIRO_ID, k, v))
+
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Enforce system/global variables for script processing
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

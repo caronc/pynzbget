@@ -215,10 +215,19 @@ class ScanScript(ScriptBase):
         # Initialize Base Class
         super(ScanScript, self).__init__(logger=logger, debug=debug)
 
-        # Fetch/Load Post Process Script Configuration
-        self.system = dict(self.system.items() + \
-              [(SCAN_OPTS_RE.match(k).group(1), v.strip()) \
+        # Fetch/Load Scan Script Configuration
+        script_config = dict([(SCAN_OPTS_RE.match(k).group(1), v.strip()) \
                for (k, v) in environ.items() if SCAN_OPTS_RE.match(k)])
+
+        if self.debug:
+            # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+            # Print Global Script Varables to help debugging process
+            # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+            for k, v in script_config.items():
+                self.logger.debug('%s%s=%s' % (SCAN_ENVIRO_ID, k, v))
+
+        # Merge Script Configuration With System Config
+        self.system = dict(script_config.items() + self.system.items())
 
         # self.directory
         # This is the path to the destination directory for downloaded files.
