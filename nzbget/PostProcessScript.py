@@ -155,6 +155,7 @@ from os.path import isfile
 from os.path import join
 from os.path import splitext
 from os.path import basename
+from os.path import abspath
 
 # Relative Includes
 from ScriptBase import ScriptBase
@@ -375,6 +376,10 @@ class PostProcessScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        if self.nzbfilename:
+            # absolute path names
+            self.nzbfilename = abspath(self.nzbfilename)
+
         if not self.nzbfilename:
             self.logger.warning('NZB-File not defined.')
 
@@ -384,6 +389,20 @@ class PostProcessScript(ScriptBase):
         elif parse_nzbfile:
             # Initialize information fetched from NZB-File
             self.nzbheaders = self.parse_nzbfile(self.nzbfilename)
+
+        if self.directory:
+            # absolute path names
+            self.directory = abspath(self.directory)
+
+        if not (self.directory and isdir(self.directory)):
+            self.logger.warning('Process directory is missing: %s' % \
+                self.directory)
+        else:
+            try:
+                chdir(self.directory)
+            except OSError:
+                self.logger.warning('Directory is not accessible: %s' % \
+                    self.directory)
 
         # Par Status
         if not isinstance(self.parstatus, int):

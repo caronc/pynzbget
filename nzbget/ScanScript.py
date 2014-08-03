@@ -153,6 +153,7 @@ from os import environ
 from os.path import isdir
 from os.path import isfile
 from os.path import basename
+from os.path import abspath
 
 # Relative Includes
 from ScriptBase import ScriptBase
@@ -287,6 +288,10 @@ class ScanScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        if self.filename:
+            # absolute path names
+            self.filename = abspath(self.filename)
+
         if not self.filename:
             self.logger.warning('NZB-File not defined.')
 
@@ -296,6 +301,10 @@ class ScanScript(ScriptBase):
         elif parse_nzbfile:
             # Initialize information fetched from NZB-File
             self.nzbheaders = self.parse_nzbfile(self.filename)
+
+        if self.directory:
+            # absolute path names
+            self.directory = abspath(self.directory)
 
         if not (self.directory and isdir(self.directory)):
             self.logger.warning('Process directory is missing: %s' % \

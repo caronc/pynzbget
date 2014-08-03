@@ -443,7 +443,13 @@ class ScriptBase(object):
                 self.logger.debug('get(system) %s="%s"' % (key, value))
                 return value
 
-        # Save content to database
+        value = self.config.get('%s' % key)
+        if value is not None:
+            # only return if a key was found
+            self.logger.debug('get(config) %s="%s"' % (key, value))
+            return value
+
+        # Fetch content from database
         if self.database is None and self.database_key:
             try:
                 # Connect to database on first use only
@@ -477,12 +483,7 @@ class ScriptBase(object):
 
         # If we reach here, the content wasn't found in the database
         # or the database simply isn't enabled. We now fetch attempt to
-        # fetch the content from it's environment variable now
-        value = self.config.get('%s' % key)
-        if value is not None:
-            # only return if a key was found
-            self.logger.debug('get(config) %s="%s"' % (key, value))
-            return value
+        # fetch the content from it's shared variable now
 
         # We still haven't found the variable requested
         if check_shared:
@@ -715,13 +716,13 @@ class ScriptBase(object):
             exit_code = EXIT_CODE.FAILURE
 
         # Otherwise Be specific and if the code is not a valid one
-        # then simply swap it with the ERROR version
+        # then simply swap it with the FAILURE one
         if exit_code not in EXIT_CODES:
             self.logger.error(
                 'The exit code %d is not valid, ' % exit_code + \
-                'changing response to a failure (%d).' % (EXIT_CODE.ERROR),
+                'changing response to a failure (%d).' % (EXIT_CODE.FAILURE),
             )
-            exit_code = EXIT_CODE.ERROR
+            exit_code = EXIT_CODE.FAILURE
         return exit_code
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
