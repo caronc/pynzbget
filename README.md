@@ -130,7 +130,6 @@ class MyPostProcessScript(PostProcessScript):
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBPP_.*)
         # following dictionary (without the NZBOP_ or NZBPP_ prefix):
-        print 'TEMPDIR (directory is: %s' % self.get('TEMPDIR')
         print 'DIRECTORY %s' self.get('DIRECTORY')
         print 'NZBNAME %s' self.get('NZBNAME')
         print 'NZBFILENAME %s' self.get('NZBFILENAME')
@@ -230,7 +229,6 @@ class MyScanScript(ScanScript):
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBNP_.*)
         # following dictionary (without the NZBOP_ or NZBNP_ prefix):
-        print 'TEMPDIR (directory is: %s' % self.get('TEMPDIR')
         print 'DIRECTORY %s' self.get('DIRECTORY')
         print 'FILENAME %s' self.get('FILENAME')
         print 'NZBNAME %s' self.get('NZBNAME')
@@ -238,46 +236,6 @@ class MyScanScript(ScanScript):
         print 'PRIORITY %s' self.get('PRIORITY')
         print 'TOP %s' self.get('TOP')
         print 'PAUSED %s' self.get('PAUSED')
-
-        # Set any variable you want by any key.  Note that if you use
-        # keys that were defined by the system (such as CATEGORY, DIRECTORY,
-        # etc, you may have some undesirable results.  Try to avoid reusing
-        # system variables already defined (identified above):
-        self.set('MY_VAR', 'MY_VALUE')
-
-        # You can fetch it back; this will also set an entry in  the
-        # sqlite database for each hash references that can be pulled from
-        # another script that simply calls self.get('MY_VAR')
-        print self.get('MY_VAR') # prints MY_VALUE
-
-        # You can also use push() which is similar to set()
-        # except that it interacts with the NZBGet Server and does not use
-        # the sqlite database. This can only be reached across other
-        # scripts if the calling application is NZBGet itself
-        self.push('ANOTHER_VAR', 'ANOTHER_VALUE')
-
-        # You can still however locally retrieve what you set using push()
-        # with the get() function
-        print self.get('ANOTHER_VAR') # prints ANOTHER_VALUE
-
-        # Your script configuration files (NZBNP_.*) are here in this
-        # dictionary (again without the NZBNP_ prefix):
-        # assume you defined `Debug=no` in the first 10K of your ScanScript
-        # NZBGet translates this to `NZBNP_DEBUG` which can be retrieved
-        # as follows:
-        print 'DEBUG %s' self.get('DEBUG')
-
-        # Returns have been made easy.  Just return:
-        #   * True if everything was successful
-        #   * False if there was a problem
-        #   * None if you want to report that you've just gracefully
-                  skipped processing (this is better then False)
-                  in some circumstances. This is neither a failure or a
-                  success status.
-
-        # Feel free to use the actual exit codes as well defined by
-        # NZBGet on their website.  They have also been defined here
-        # from nzbget import EXIT_CODE
 
         return True
 
@@ -329,50 +287,9 @@ class MySchedulerScript(SchedulerScript):
         # script
 
         # All system environment variables (NZBOP_.*) as well as Post
-        # Process script specific content (NZBNP_.*)
-        # following dictionary (without the NZBOP_ or NZBNP_ prefix):
-        print 'TEMPDIR (directory is: %s' % self.get('TEMPDIR')
+        # Process script specific content (NZBSP_.*)
+        # following dictionary (without the NZBOP_ or NZBSP_ prefix):
         print 'DESTDIR %s' self.get('DESTDIR')
-
-        # Set any variable you want by any key.  Note that if you use
-        # keys that were defined by the system (such as CATEGORY, DIRECTORY,
-        # etc, you may have some undesirable results.  Try to avoid reusing
-        # system variables already defined (identified above):
-        self.set('MY_VAR', 'MY_VALUE')
-
-        # You can fetch it back; this will also set an entry in  the
-        # sqlite database for each hash references that can be pulled from
-        # another script that simply calls self.get('MY_VAR')
-        print self.get('MY_VAR') # prints MY_VALUE
-
-        # You can also use push() which is similar to set()
-        # except that it interacts with the NZBGet Server and does not use
-        # the sqlite database. This can only be reached across other
-        # scripts if the calling application is NZBGet itself
-        self.push('ANOTHER_VAR', 'ANOTHER_VALUE')
-
-        # You can still however locally retrieve what you set using push()
-        # with the get() function
-        print self.get('ANOTHER_VAR') # prints ANOTHER_VALUE
-
-        # Your script configuration files (NZBNP_.*) are here in this
-        # dictionary (again without the NZBNP_ prefix):
-        # assume you defined `Debug=no` in the first 10K of your SchedulerScript
-        # NZBGet translates this to `NZBNP_DEBUG` which can be retrieved
-        # as follows:
-        print 'DEBUG %s' self.get('DEBUG')
-
-        # Returns have been made easy.  Just return:
-        #   * True if everything was successful
-        #   * False if there was a problem
-        #   * None if you want to report that you've just gracefully
-                  skipped processing (this is better then False)
-                  in some circumstances. This is neither a failure or a
-                  success status.
-
-        # Feel free to use the actual exit codes as well defined by
-        # NZBGet on their website.  They have also been defined here
-        # from nzbget.ScriptBase import EXIT_CODE
 
         return True
 # Call your script as follows:

@@ -83,8 +83,8 @@ class MySchedulerScript(SchedulerScript):
         # script
 
         # All system environment variables (NZBOP_.*) as well as Post
-        # Process script specific content (NZBNP_.*)
-        # following dictionary (without the NZBOP_ or NZBNP_ prefix):
+        # Process script specific content (NZBSP_.*)
+        # following dictionary (without the NZBOP_ or NZBSP_ prefix):
         print 'TEMPDIR (directory is: %s' % self.get('TEMPDIR')
         print 'DESTDIR %s' self.get('DESTDIR')
 
