@@ -493,8 +493,8 @@ class PostProcessScript(ScriptBase):
             # future calls of set() and get() will allow access
             # to the database now
             try:
-                self.database_key = basename(self.nzbfilename)
-                self.logger.info('Connected to SQLite Database')
+                self.database_key = \
+                        self.get('NZBID', basename(self.nzbfilename))
             except AttributeError:
                 pass
 

@@ -540,6 +540,7 @@ class ScriptBase(object):
                     ),
                     logger=self.logger,
                 )
+                self.logger.info('Connected to SQLite Database')
 
                 # Database is ready to go
                 if isinstance(value, bool):
@@ -604,6 +605,7 @@ class ScriptBase(object):
                     ),
                     logger=self.logger,
                 )
+                self.logger.info('Connected to SQLite Database')
 
                 # Database is ready to go
                 value = self.database.get(key=key)
@@ -669,8 +671,7 @@ class ScriptBase(object):
 
             missing = [
                 key for key in keys \
-                        if key not in self.system \
-                            and k not in system.config
+                        if not (key in self.system or key in self.config)
             ]
 
             if missing:
