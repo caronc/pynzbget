@@ -71,7 +71,7 @@ from nzbget import PostProcessScript
 
 # Now define your class while inheriting the rest
 class MyPostProcessScript(PostProcessScript):
-    def main(self):
+    def main(self, *args, **kwargs):
 
         # Version Checking, Environment Variables Present, etc
         if not self.validate():
@@ -120,7 +120,7 @@ class MyPostProcessScript(PostProcessScript):
         # assume you defined `Debug=no` in the first 10K of your PostProcessScript
         # NZBGet translates this to `NZBPP_DEBUG` which can be retrieved
         # as follows:
-        print 'DEBUG %s' self.config.get('DEBUG')
+        print 'DEBUG %s' self.get('DEBUG')
 
         # Returns have been made easy.  Just return:
         #   * True if everything was successful
@@ -393,7 +393,13 @@ class PostProcessScript(ScriptBase):
             self.logger.warning('NZB-File not defined.')
 
         elif not isfile(self.nzbfilename):
-            self.logger.warning('NZB-File not found: %s' % self.nzbfilename)
+            if isfile('%s.queued' % self.nzbfilename):
+                # support .queued files
+                self.nzbheaders = self.parse_nzbfile(
+                    '%s.queued' % self.nzbfilename,
+                )
+            else:
+                self.logger.warning('NZB-File not found: %s' % self.nzbfilename)
 
         elif parse_nzbfile:
             # Initialize information fetched from NZB-File
@@ -412,6 +418,10 @@ class PostProcessScript(ScriptBase):
             except OSError:
                 self.logger.warning('Directory is not accessible: %s' % \
                     self.directory)
+
+        # Status
+        if not isinstance(self.status, basestring):
+            self.status = 'SUCCESS/ALL'
 
         # Par Status
         if not isinstance(self.parstatus, int):
@@ -491,24 +501,32 @@ class PostProcessScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Validatation
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def validate(self, keys=None, min_version=11, download_okay=True):
+    def postprocess_validate(self, keys=None, min_version=11,
+                 download_okay=True, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(PostProcessScript, self).validate(
+        is_okay = super(PostProcessScript, self).postprocess_validate(
             keys=keys,
             min_version=min_version,
+            download_okay=True,
         )
 
-        if self.parstatus == PAR_STATUS.FAILURE:
-            self.logger.error(
-                "par-checking the content of the retreived data",
-            )
-            is_okay = False
-        if self.unpackstatus == UNPACK_STATUS.FAILURE:
-            self.logger.error(
-                "unpacking the content of the retreived data",
-            )
-            is_okay = False
+        if download_okay:
+            # We need to be sure the download is okay before continuing
+            if self.parstatus == PAR_STATUS.FAILURE:
+                self.logger.error(
+                    "par-checking the content of the retreived data",
+                )
+                is_okay = False
+            if self.unpackstatus == UNPACK_STATUS.FAILURE:
+                self.logger.error(
+                    "unpacking the content of the retreived data",
+                )
+                is_okay = False
+            if self.status.split('/')[0] not in [ 'SUCCESS', 'WARNING' ]:
+                self.logger.error("Bad system status set: %s" % self.status)
+                is_okay = False
+
 
         if min_version >= 13:
             required_opts = (

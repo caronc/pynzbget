@@ -118,7 +118,7 @@ from nzbget import PostProcessScript
 
 # Now define your class while inheriting the rest
 class MyPostProcessScript(PostProcessScript):
-    def main(self):
+    def main(self, *args, **kwargs):
         # write all of your code here you would have otherwise put in the
         # script
 
@@ -165,7 +165,7 @@ class MyPostProcessScript(PostProcessScript):
         # assume you defined `Debug=no` in the first 10K of your PostProcessScript
         # NZBGet translates this to `NZBPP_DEBUG` which can be retrieved
         # as follows:
-        print 'DEBUG %s' self.config.get('DEBUG')
+        print 'DEBUG %s' self.get('DEBUG')
 
         # Returns have been made easy.  Just return:
         #   * True if everything was successful
@@ -222,7 +222,7 @@ from nzbget import ScanScript
 
 # Now define your class while inheriting the rest
 class MyScanScript(ScanScript):
-    def main(self):
+    def main(self, *args, **kwargs):
         # write all of your code here you would have otherwise put in the
         # script
 
@@ -269,7 +269,7 @@ class MyScanScript(ScanScript):
         # assume you defined `Debug=no` in the first 10K of your ScanScript
         # NZBGet translates this to `NZBNP_DEBUG` which can be retrieved
         # as follows:
-        print 'DEBUG %s' self.config.get('DEBUG')
+        print 'DEBUG %s' self.get('DEBUG')
 
         # Returns have been made easy.  Just return:
         #   * True if everything was successful

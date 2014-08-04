@@ -71,7 +71,7 @@ from nzbget import ScanScript
 
 # Now define your class while inheriting the rest
 class MyScanScript(ScanScript):
-    def main(self):
+    def main(self, *args, **kwargs):
 
         # Version Checking, Environment Variables Present, etc
         if not self.validate():
@@ -120,7 +120,7 @@ class MyScanScript(ScanScript):
         # assume you defined `Debug=no` in the first 10K of your ScanScript
         # NZBGet translates this to `NZBNP_DEBUG` which can be retrieved
         # as follows:
-        print 'DEBUG %s' self.config.get('DEBUG')
+        print 'DEBUG %s' self.get('DEBUG')
 
         # Returns have been made easy.  Just return:
         #   * True if everything was successful
@@ -305,7 +305,13 @@ class ScanScript(ScriptBase):
             self.logger.warning('NZB-File not defined.')
 
         elif not isfile(self.filename):
-            self.logger.warning('NZB-File not found: %s' % self.filename)
+            if isfile('%s.queued' % self.filename):
+                # support .queued files
+                self.nzbheaders = self.parse_filename(
+                    '%s.queued' % self.filename,
+                )
+            else:
+                self.logger.warning('NZB-File not found: %s' % self.filename)
 
         elif parse_nzbfile:
             # Initialize information fetched from NZB-File
@@ -390,6 +396,17 @@ class ScanScript(ScriptBase):
                 self.logger.info('Connected to SQLite Database')
             except AttributeError:
                 pass
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Validatation
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def scan_validate(self, keys=None, min_version=11, *args, **kargs):
+        """validate against environment variables
+        """
+        is_okay = super(ScanScript, self).scan_validate(
+            keys=keys,
+            min_version=min_version,
+        )
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval

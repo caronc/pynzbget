@@ -212,6 +212,49 @@ STRING_DELIMITERS = r'[\\\/\[\]\:;,\s]+'
 # SQLite Database
 NZBGET_DATABASE_FILENAME = "nzbget/nzbget.db"
 
+class SCRIPT_MODE(object):
+    # After the download of nzb-file is completed NZBGet can call
+    # post-processing scripts (pp-scripts). The scripts can perform further
+    # processing of downloaded files such es delete unwanted files
+    # (*.url, etc.), send an e-mail notification, transfer the files to other
+    # application and do any other things.
+    POSTPROCESSING = 'postprocess'
+
+    # Scan scripts are called when a new file is found in the incoming nzb
+    # directory (option `NzbDir`). If a file is being added via web-interface
+    # or via RPC-API from a third-party app the file is saved into nzb
+    # directory and then processed. NZBGet loads only files with nzb-extension
+    # but it calls the scan scripts for every file found in the nzb directory.
+    # This allows for example for scan scripts which unpack zip-files
+    # containing nzb-files.
+
+    # To activate a scan script or multiple scripts put them into `ScriptDir`,
+    # then choose them in the option `ScanScript`.
+    SCAN = 'scan'
+
+    # Queue scripts are called after the download queue was changed. In the
+    # current version the queue scripts are called only after an nzb-file was
+    # added to queue. In the future they can be calledon other events too.
+
+    # To activate a queue script or multiple scripts put them into `ScriptDir`,
+    # then choose them in the option `QueueScript`.
+    QUEUE = 'queue'
+
+    # Scheduler scripts are called by scheduler tasks (setup by the user).
+
+    # To activate a scheduler script or multiple scripts put them into
+    # `ScriptDir`, then choose them in the option `TaskX.Script`.
+    SCHEDULER = 'scheduler'
+
+# Depending on certain environment variables, a mode can be detected
+# a mode can be used to. When using a MultiScript
+SCRIPT_MODES = (
+    SCRIPT_MODE.POSTPROCESSING,
+    SCRIPT_MODE.SCAN,
+    SCRIPT_MODE.QUEUE,
+    SCRIPT_MODE.SCHEDULER,
+)
+
 class ScriptBase(object):
     """The intent is this is the script you run from within your script
        after overloading the main() function of your class
@@ -222,6 +265,9 @@ class ScriptBase(object):
         self.logger_id = self.__class__.__name__
         self.logger = logger
         self.debug = debug
+
+        # Script Mode
+        self.script_mode = None
 
         # For Database Handling
         self.database = None
@@ -259,8 +305,6 @@ class ScriptBase(object):
                 self.debug = bool(int(self.system.get('DEBUG'), False))
             except:
                 self.debug = False
-        else:
-            self.debug = False
 
         if isinstance(self.logger, basestring):
             # Use Log File
@@ -303,13 +347,13 @@ class ScriptBase(object):
             # Print Global System Varables to help debugging process
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
             for k, v in self.system.items():
-                self.logger.debug('%s%s=%s' % (SYS_ENVIRO_ID, k, v))
+                self.logger.debug('SYS %s=%s' % (k, v))
 
             for k, v in self.config.items():
-                self.logger.debug('%s%s=%s' % (CFG_ENVIRO_ID, k, v))
+                self.logger.debug('CFG %s=%s' % (k, v))
 
-            for k, v in self.config.items():
-                self.logger.debug('%s%s=%s' % (SHR_ENVIRO_ID, k, v))
+            for k, v in self.shared.items():
+                self.logger.debug('SHR %s=%s' % (k, v))
 
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Enforce system/global variables for script processing
@@ -596,13 +640,27 @@ class ScriptBase(object):
         self.logger.debug('get(default) %s=%s' % (key, str(default)))
         return default
 
-    def validate(self, keys=None, min_version=11):
+    def validate(self, keys=None, min_version=11, *args, **kwargs):
         """validate against environment variables
         """
 
         # Initialize a global variable, we run through the entire function
         # so all errors can be caught to make it easier for debugging
         is_okay = True
+
+        # version
+        try:
+            version = '%s.' % self.system.get('VERSION', '11')
+            version = int(version.split('.')[0])
+        except (TypeError, ValueError):
+            version = 11
+
+        if min_version > version:
+            self.logger.error(
+                'Validation - detected version %d, (min expected=%d)' % (
+                    version, min_version)
+            )
+            is_okay = False
 
         if keys:
             missing = []
@@ -612,6 +670,7 @@ class ScriptBase(object):
             missing = [
                 key for key in keys \
                         if key not in self.system \
+                            and k not in system.config
             ]
 
             if missing:
@@ -625,6 +684,24 @@ class ScriptBase(object):
             )
             is_okay = False
 
+        if self.script_mode is not None and \
+           hasattr(self, '%s_%s' % (self.script_mode, 'validate')):
+            # This part of the validate() function preforms the
+            # magic of supporting multiple script types by only
+            # executing the validation script of the desiganted mode.
+            #
+            # it requires that developers write a unique validation
+            # class per script type they want to support.
+            #
+            # hence: validate_postprocess() and validate_scheduler()
+
+            # Call our validation script if it exists
+            return getattr(
+                self, '%s_%s' % (self.script_mode, 'validate'))(
+                    keys=keys,
+                    min_version=min_version,
+                    *args, **kwargs
+                )
         return is_okay
 
     def get_api(self):
@@ -786,14 +863,31 @@ class ScriptBase(object):
         # Return all files
         return files
 
-    def run(self):
+    def run(self, *args, **kwargs):
         """The intent is this is the script you run from within your script
         after overloading the main() function of your class
         """
         import traceback
         from sys import exc_info
+
+        # Default
+        main_function = self.main
+
+        # Determine the function to use
+        # multi-scripts need to define a
+        #  - postprocess_main()
+        #  - scan_main()
+        #  - schedule_main()
+        #  - queue_main()
+        #
+        # otherwise main() is executed
+        if self.script_mode is not None and \
+           hasattr(self, '%s_%s' % (self.script_mode, 'main')):
+            main_function = getattr(
+                self, '%s_%s' % (self.script_mode, 'main'))
+
         try:
-            exit_code = self.main()
+            exit_code = main_function(*args, **kwargs)
         except:
             # Try to capture error
             exc_type, exc_value, exc_traceback = exc_info()
@@ -904,7 +998,14 @@ class ScriptBase(object):
         # Handle other types
         return bool(arg)
 
-    def main(self):
+    def detect_mode(self):
+        """
+        Attempt to detect the script mode based on environment variables
+        """
+        # TODO
+        return None
+
+    def main(self, *args, **kwargs):
         """Write all of your code here making uses of your functions while
         returning your exit code
         """
