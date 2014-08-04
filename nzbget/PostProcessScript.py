@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# A scripting wrapper for NZBGet Post and Pre Processing
+# A scripting wrapper for NZBGet's Post Processing Scripting
 #
 # Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
 #
@@ -141,10 +141,10 @@ if __name__ == "__main__":
     from sys import exit
 
     # Create an instance of your Script
-    ppscript = MyPostProcessScript()
+    myscript = MyPostProcessScript()
 
     # call run() and exit() using it's returned value
-    exit(ppscript.run())
+    exit(myscript.run())
 """
 
 import re
@@ -159,6 +159,7 @@ from os.path import abspath
 
 # Relative Includes
 from ScriptBase import ScriptBase
+from ScriptBase import SCRIPT_MODE
 from ScriptBase import NZBGET_BOOL_FALSE
 from Utils import os_path_split as split
 
@@ -226,33 +227,37 @@ POSTPROC_ENVIRO_ID = 'NZBPP_'
 POSTPROC_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % POSTPROC_ENVIRO_ID)
 
 class PostProcessScript(ScriptBase):
-    def __init__(self, directory=None, nzbname=None, nzbfilename=None,
-                 category=None, totalstatus=None, status=None,
-                 scriptstatus=None,
-                 # Parse specified NZBFile and extrat meta information
-                 parse_nzbfile=True,
-                 # Use SQLite Database
-                 use_database=True,
-                 # Supported Depricated variables < v13
-                 parstatus=None, unpackstatus=None,
-                 # Logging
-                 logger=True, debug=False):
-        """variables defined as none we attempt to extract from the
-        environment. If you want to avoid extracting content from the
-        environment, set the value to 'False' or even a blank string ''
-        will acomplish this for you.
-        """
+    def __init__(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        # Debug Handling
+        # Multi-Script Support
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if debug is None:
-            # Fetch DEBUG flag from environment
-            debug = self.parse_bool(
-                environ.get('%sDEBUG' % POSTPROC_ENVIRO_ID, NZBGET_BOOL_FALSE),
-            )
+        if not hasattr(self, 'script_dict'):
+            # Only define once
+            self.script_dict = {}
+        self.script_dict[SCRIPT_MODE.POSTPROCESSING] = self
 
-        # Initialize Base Class
-        super(PostProcessScript, self).__init__(logger=logger, debug=debug)
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Initialize Parent
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        super(PostProcessScript, self).__init__(*args, **kwargs)
+
+    def postprocess_init(self, *args, **kwargs):
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Fetch Script Specific Arguments
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        directory = kwargs.get('directory')
+        nzbname = kwargs.get('nzbname')
+        nzbfilename = kwargs.get('nzbfilename')
+        category = kwargs.get('category')
+        totalstatus = kwargs.get('totalstatus')
+        status = kwargs.get('status')
+        scriptstatus = kwargs.get('scriptstatus')
+        parse_nzbfile = kwargs.get('parse_nzbfile', True)
+        use_database = kwargs.get('use_database', True)
+
+        # Support Depricated Variables
+        parstatus = kwargs.get('parstatus')
+        unpackstatus = kwargs.get('unpackstatus')
 
         # Fetch/Load Post Process Script Configuration
         script_config = dict([(POSTPROC_OPTS_RE.match(k).group(1), v.strip()) \
@@ -263,7 +268,7 @@ class PostProcessScript(ScriptBase):
             # Print Global Script Varables to help debugging process
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
             for k, v in script_config.items():
-                self.logger.debug('%s%s=%s' % (POSTPROC_ENVIRO_ID, k, v))
+                self.logger.debug('SCR %s=%s' % (k, v))
 
         # Merge Script Configuration With System Config
         self.system = dict(script_config.items() + self.system.items())
@@ -419,6 +424,10 @@ class PostProcessScript(ScriptBase):
                 self.logger.warning('Directory is not accessible: %s' % \
                     self.directory)
 
+        # Total Status
+        if not isinstance(self.totalstatus, basestring):
+            self.totalstatus = TOTAL_STATUS.SUCCESS
+
         # Status
         if not isinstance(self.status, basestring):
             self.status = 'SUCCESS/ALL'
@@ -499,13 +508,31 @@ class PostProcessScript(ScriptBase):
                 pass
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Debug Flag Check
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def postprocess_debug(self):
+        """Uses the environment variables to detect if debug mode is set
+        """
+        return self.parse_bool(
+            environ.get('%sDEBUG' % POSTPROC_ENVIRO_ID, NZBGET_BOOL_FALSE),
+        )
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Sanity
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def postprocess_sanity_check(self, *args, **kargs):
+        """Sanity checking to ensure this really is a post_process script
+        """
+        return ('%sDIRECTORY' % POSTPROC_ENVIRO_ID in environ)
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Validatation
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def postprocess_validate(self, keys=None, min_version=11,
                  download_okay=True, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(PostProcessScript, self).postprocess_validate(
+        is_okay = super(PostProcessScript, self)._validate(
             keys=keys,
             min_version=min_version,
             download_okay=True,
@@ -523,6 +550,7 @@ class PostProcessScript(ScriptBase):
                     "unpacking the content of the retreived data",
                 )
                 is_okay = False
+
             if self.status.split('/')[0] not in [ 'SUCCESS', 'WARNING' ]:
                 self.logger.error("Bad system status set: %s" % self.status)
                 is_okay = False
@@ -548,8 +576,9 @@ class PostProcessScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def get_files(self, search_dir=None, regex_filter=None, prefix_filter=None,
-                    suffix_filter=None, fullstats=False):
+    def postprocess_get_files(self, search_dir=None, regex_filter=None,
+                              prefix_filter=None, suffix_filter=None,
+                              fullstats=False):
         """a wrapper to the get_files() function defined in the inherited class
            the only difference is the search_dir automatically uses the
            defined download `directory` as a default (if not specified).
@@ -557,7 +586,7 @@ class PostProcessScript(ScriptBase):
         if search_dir is None:
             search_dir = self.directory
 
-        return super(PostProcessScript, self).get_files(
+        return super(PostProcessScript, self)._get_files(
             search_dir=search_dir,
             regex_filter=regex_filter,
             prefix_filter=prefix_filter,

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# A base scripting class used for NZBGet Scripts
+# A base scripting class for NZBGet
 #
 # Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
 #
@@ -246,13 +246,20 @@ class SCRIPT_MODE(object):
     # `ScriptDir`, then choose them in the option `TaskX.Script`.
     SCHEDULER = 'scheduler'
 
+    # None is detected if you aren't using one of the above types
+    NONE = ''
+
 # Depending on certain environment variables, a mode can be detected
 # a mode can be used to. When using a MultiScript
 SCRIPT_MODES = (
+    # The order these are listed is very important,
+    # it identifies the order when preforming sanity
+    # checking
     SCRIPT_MODE.POSTPROCESSING,
     SCRIPT_MODE.SCAN,
     SCRIPT_MODE.QUEUE,
     SCRIPT_MODE.SCHEDULER,
+    SCRIPT_MODE.NONE,
 )
 
 class ScriptBase(object):
@@ -260,7 +267,9 @@ class ScriptBase(object):
        after overloading the main() function of your class
     """
 
-    def __init__(self, database_key=None, logger=True, debug=False):
+    def __init__(self, logger=True, debug=False, script_mode=None,
+                 database_key=None, *args, **kwargs):
+
         # logger identifier
         self.logger_id = self.__class__.__name__
         self.logger = logger
@@ -268,6 +277,9 @@ class ScriptBase(object):
 
         # Script Mode
         self.script_mode = None
+        if not hasattr(self, 'script_dict'):
+            # Only define once
+            self.script_dict = {}
 
         # For Database Handling
         self.database = None
@@ -300,10 +312,14 @@ class ScriptBase(object):
         # section of your script
         #Debug=no
         if self.debug is None:
-            # Configure one
-            try:
-                self.debug = bool(int(self.system.get('DEBUG'), False))
-            except:
+            # Check Script Environments
+            for k in SCRIPT_MODES:
+                # Initialize all script types
+                if hasattr(self, '%s_%s' % (k, 'debug')):
+                    if getattr(self, '%s_%s' % (k, 'debug'))(*args, **kwargs):
+                        self.debug = True
+                        break
+            if self.debug is None:
                 self.debug = False
 
         if isinstance(self.logger, basestring):
@@ -365,6 +381,29 @@ class ScriptBase(object):
             environ['%sDEBUG' % SYS_ENVIRO_ID] = NZBGET_BOOL_TRUE
         else:
             environ['%sDEBUG' % SYS_ENVIRO_ID] = NZBGET_BOOL_FALSE
+
+        if script_mode:
+            if script_mode in self.script_dict.keys() + [SCRIPT_MODE.NONE,]:
+                self.script_mode = script_mode
+                self.logger.info(
+                    'Script mode forced to: %s' % self.script_mode,
+                )
+            else:
+                self.logger.warning(
+                    'Could not force script mode to: %s' % script_mode,
+                )
+
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Detect the mode we're running in
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        if self.script_mode is None:
+            self.detect_mode()
+
+        # Initialize the chosen script mode
+        if hasattr(self, '%s_%s' % (self.script_mode, 'init')):
+            getattr(
+                self, '%s_%s' % (self.script_mode, 'init')
+            )(*args, **kwargs)
 
     def __del__(self):
         if self.logger_id:
@@ -642,7 +681,31 @@ class ScriptBase(object):
         self.logger.debug('get(default) %s=%s' % (key, str(default)))
         return default
 
-    def validate(self, keys=None, min_version=11, *args, **kwargs):
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Sanity
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def _sanity_check(self):
+        """Sanity checks on a base class are always successful
+        """
+        return True
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Validatation
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def validate(self, *args, **kwargs):
+        """A system wrapper to _validate() allowing a mult-script environment
+        """
+        # Default
+        core_function = self._validate
+        if self.script_mode is not None and \
+           hasattr(self, '%s_%s' % (self.script_mode, 'validate')):
+            core_function = getattr(
+                self, '%s_%s' % (self.script_mode, 'validate'))
+
+        # Execute
+        return core_function(*args, **kwargs)
+
+    def _validate(self, keys=None, min_version=11, *args, **kwargs):
         """validate against environment variables
         """
 
@@ -670,8 +733,8 @@ class ScriptBase(object):
                 keys = self.parse_list(keys)
 
             missing = [
-                key for key in keys \
-                        if not (key in self.system or key in self.config)
+                k for k in keys \
+                        if not (k in self.system or k in self.config)
             ]
 
             if missing:
@@ -685,24 +748,6 @@ class ScriptBase(object):
             )
             is_okay = False
 
-        if self.script_mode is not None and \
-           hasattr(self, '%s_%s' % (self.script_mode, 'validate')):
-            # This part of the validate() function preforms the
-            # magic of supporting multiple script types by only
-            # executing the validation script of the desiganted mode.
-            #
-            # it requires that developers write a unique validation
-            # class per script type they want to support.
-            #
-            # hence: validate_postprocess() and validate_scheduler()
-
-            # Call our validation script if it exists
-            return getattr(
-                self, '%s_%s' % (self.script_mode, 'validate'))(
-                    keys=keys,
-                    min_version=min_version,
-                    *args, **kwargs
-                )
         return is_okay
 
     def get_api(self):
@@ -738,7 +783,21 @@ class ScriptBase(object):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def get_files(self, search_dir, regex_filter=None, prefix_filter=None,
+    def get_files(self, *args, **kwargs):
+        """A system wrapper to _get_files() allowing a mult-script environment
+        """
+
+        # Default
+        core_function = self._get_files
+        if self.script_mode is not None and \
+           hasattr(self, '%s_%s' % (self.script_mode, 'get_files')):
+            core_function = getattr(
+                self, '%s_%s' % (self.script_mode, 'get_files'))
+
+        # Execute
+        return core_function(*args, **kwargs)
+
+    def _get_files(self, search_dir, regex_filter=None, prefix_filter=None,
                     suffix_filter=None, fullstats=False):
         """Returns a dict object of the files found in the download
            directory. You can additionally pass in filters as a list or
@@ -1002,9 +1061,37 @@ class ScriptBase(object):
     def detect_mode(self):
         """
         Attempt to detect the script mode based on environment variables
+        The modes are defied at the top and are determined by a certain
+        set of global variables defined.
         """
-        # TODO
-        return None
+        if self.script_mode is not None:
+            return self.script_mode
+
+        self.logger.debug('Detecting possible script mode from: %s' % \
+                         ', '.join(self.script_dict.keys()))
+
+        if len(self.script_dict.keys()) > 1:
+            for k in [ v for v in SCRIPT_MODES \
+                      if v in self.script_dict.keys() + [SCRIPT_MODE.NONE,]]:
+                if hasattr(self, '%s_%s' % (k, 'sanity_check')):
+                    if getattr(self, '%s_%s' % (k, 'sanity_check'))():
+                        self.script_mode = k
+                        if self.script_mode != SCRIPT_MODE.NONE:
+                            self.logger.info(
+                                'Script Mode: %s' % self.script_mode.upper())
+                        else:
+                            self.logger.warning(
+                                'The script mode could not be detected.')
+                        break
+
+        elif len(self.script_dict.keys()) == 1:
+            self.script_mode = self.script_dict.keys()[0]
+            if self.script_mode != SCRIPT_MODE.NONE:
+                self.logger.info('Script Mode: %s' % self.script_mode.upper())
+            else:
+                self.logger.warning('The script mode could not be detected.')
+
+        return self.script_mode
 
     def main(self, *args, **kwargs):
         """Write all of your code here making uses of your functions while

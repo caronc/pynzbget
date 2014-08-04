@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 #
-# A scripting wrapper for NZBGet Post and Pre Processing
+# A scripting wrapper for NZBGet's Scan Scripting
 #
 # Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
 #
@@ -141,10 +141,10 @@ if __name__ == "__main__":
     from sys import exit
 
     # Create an instance of your Script
-    scanscript = MyScanScript()
+    myscript = MyScanScript()
 
     # call run() and exit() using it's returned value
-    exit(scanscript.run())
+    exit(myscript.run())
 
 """
 import re
@@ -157,6 +157,7 @@ from os.path import abspath
 
 # Relative Includes
 from ScriptBase import ScriptBase
+from ScriptBase import SCRIPT_MODE
 from ScriptBase import NZBGET_BOOL_FALSE
 
 class PRIORITY(object):
@@ -189,31 +190,33 @@ SCAN_ENVIRO_ID = 'NZBNP_'
 SCAN_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SCAN_ENVIRO_ID)
 
 class ScanScript(ScriptBase):
-    def __init__(self, directory=None, nzbname=None, filename=None,
-                 category=None, priority=None, top=None, paused=None,
-                 # Parse specified NZBFile and extrat meta information
-                 parse_nzbfile=True,
-                 # Use SQLite Database
-                 use_database=True,
-                 # Logging
-                 logger=True, debug=False):
-        """variables defined as none we attempt to extract from the
-        environment. If you want to avoid extracting content from the
-        environment, set the value to 'False' or even a blank string ''
-        will acomplish this for you.
-        """
+    def __init__(self, *args, **kwargs):
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Multi-Script Support
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        if not hasattr(self, 'script_dict'):
+            # Only define once
+            self.script_dict = {}
+        self.script_dict[SCRIPT_MODE.SCAN] = self
 
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        # Debug Handling
+        # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if debug is None:
-            # Fetch DEBUG flag from environment
-            debug = self.parse_bool(
-                environ.get('%sDEBUG' % SCAN_ENVIRO_ID, NZBGET_BOOL_FALSE),
-            )
+        super(ScanScript, self).__init__(*args, **kwargs)
 
-        # Initialize Base Class
-        super(ScanScript, self).__init__(logger=logger, debug=debug)
+    def scan_init(self, *args, **kwargs):
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Fetch Script Specific Arguments
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        directory = kwargs.get('directory')
+        nzbname = kwargs.get('nzbname')
+        filename = kwargs.get('filename')
+        category = kwargs.get('category')
+        priority = kwargs.get('priority')
+        top = kwargs.get('top')
+        paused = kwargs.get('paused')
+        parse_nzbfile = kwargs.get('parse_nzbfile')
+        use_database = kwargs.get('use_database')
 
         # Fetch/Load Scan Script Configuration
         script_config = dict([(SCAN_OPTS_RE.match(k).group(1), v.strip()) \
@@ -224,7 +227,7 @@ class ScanScript(ScriptBase):
             # Print Global Script Varables to help debugging process
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
             for k, v in script_config.items():
-                self.logger.debug('%s%s=%s' % (SCAN_ENVIRO_ID, k, v))
+                self.logger.debug('SCR %s=%s' % (k, v))
 
         # Merge Script Configuration With System Config
         self.system = dict(script_config.items() + self.system.items())
@@ -398,21 +401,46 @@ class ScanScript(ScriptBase):
                 pass
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Debug Flag Check
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def scan_debug(self):
+        """Uses the environment variables to detect if debug mode is set
+        """
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        # Debug Handling
+        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        return self.parse_bool(
+            environ.get('%sDEBUG' % SCAN_ENVIRO_ID, NZBGET_BOOL_FALSE),
+        )
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Sanity
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def scan_sanity_check(self, *args, **kargs):
+        """Sanity checking to ensure this really is a post_process script
+        """
+        from PostProcessScript import POSTPROC_ENVIRO_ID
+        return ('%sDIRECTORY' % POSTPROC_ENVIRO_ID not in environ) and \
+               ('%sDIRECTORY' % SCAN_ENVIRO_ID in environ)
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Validatation
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def scan_validate(self, keys=None, min_version=11, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(ScanScript, self).scan_validate(
+        is_okay = super(ScanScript, self)._validate(
             keys=keys,
             min_version=min_version,
         )
+        return is_okay
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def get_files(self, search_dir=None, regex_filter=None, prefix_filter=None,
-                    suffix_filter=None, fullstats=False):
+    def scan_get_files(self, search_dir=None, regex_filter=None,
+                       prefix_filter=None, suffix_filter=None,
+                       fullstats=False):
         """a wrapper to the get_files() function defined in the inherited class
            the only difference is the search_dir automatically uses the
            defined download `directory` as a default (if not specified).
@@ -420,7 +448,7 @@ class ScanScript(ScriptBase):
         if search_dir is None:
             search_dir = self.directory
 
-        return super(ScanScript, self).get_files(
+        return super(ScanScript, self)._get_files(
             search_dir=search_dir,
             regex_filter=regex_filter,
             prefix_filter=prefix_filter,

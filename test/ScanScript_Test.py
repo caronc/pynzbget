@@ -127,6 +127,9 @@ class TestScanScript(TestBase):
         paused = not PAUSED
 
         script = ScanScript(
+            logger=False,
+            debug=True,
+
             directory=directory,
             nzbname=nzbname,
             filename=filename,
@@ -134,9 +137,6 @@ class TestScanScript(TestBase):
             priority=priority,
             top=top,
             paused=paused,
-            # a NZB Logger set to False uses stderr
-            logger=False,
-            debug=True,
         )
 
         assert script.directory == directory
@@ -179,7 +179,6 @@ class TestScanScript(TestBase):
         assert script.get(KEY, 'Default') == 'Default'
         assert script.set(KEY, VALUE) == True
         assert script.get(KEY, 'Default') == VALUE
-
 
     def test_config_varable_init(self):
         valid_entries = {

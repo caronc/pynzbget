@@ -15,5 +15,6 @@
 # GNU Lesser General Public License for more details.
 #
 from ScriptBase import *
+from SchedulerScript import *
 from PostProcessScript import *
 from ScanScript import *

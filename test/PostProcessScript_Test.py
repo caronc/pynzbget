@@ -208,6 +208,9 @@ class TestPostProcessScript(TestBase):
         unpackstatus = UNPACK_STATUS.FAILURE
 
         script = PostProcessScript(
+           logger=False,
+           debug=True,
+
            directory=directory,
            nzbname=nzbname,
            nzbfilename=nzbfilename,
@@ -215,12 +218,10 @@ class TestPostProcessScript(TestBase):
            totalstatus=totalstatus,
            status=status,
            scriptstatus=scriptstatus,
+
            # v11 Support
            parstatus=parstatus,
            unpackstatus=unpackstatus,
-           # a NZB Logger set to False uses stderr
-           logger=False,
-           debug=True,
         )
 
         assert script.directory == directory
