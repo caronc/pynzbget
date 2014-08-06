@@ -403,7 +403,7 @@ class ScanScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Debug Flag Check
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def scan_debug(self):
+    def scan_debug(self, *args, **kargs):
         """Uses the environment variables to detect if debug mode is set
         """
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -440,7 +440,7 @@ class ScanScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def scan_get_files(self, search_dir=None, regex_filter=None,
                        prefix_filter=None, suffix_filter=None,
-                       fullstats=False):
+                       fullstats=False, *args, **kargs):
         """a wrapper to the get_files() function defined in the inherited class
            the only difference is the search_dir automatically uses the
            defined download `directory` as a default (if not specified).

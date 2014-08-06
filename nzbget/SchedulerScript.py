@@ -231,7 +231,7 @@ class SchedulerScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Debug Flag Check
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def scheduler_debug(self):
+    def scheduler_debug(self, *args, **kwargs):
         """Uses the environment variables to detect if debug mode is set
         """
         return self.parse_bool(
@@ -265,7 +265,7 @@ class SchedulerScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def scheduler_get_files(self, search_dir=None, regex_filter=None,
                            prefix_filter=None, suffix_filter=None,
-                           fullstats=False):
+                           fullstats=False, *args, **kargs):
         """a wrapper to the get_files() function defined in the inherited class
            the only difference is the search_dir automatically uses the
            defined `destdir` as a default (if not specified).
