@@ -97,7 +97,10 @@ from os import environ
 from os import makedirs
 from os import walk
 from os.path import isdir
+from os.path import isfile
 from os.path import join
+from os.path import dirname
+from os.path import basename
 from os.path import splitext
 from getpass import getuser
 from logging import Logger
@@ -382,12 +385,15 @@ class ScriptBase(object):
         else:
             environ['%sDEBUG' % SYS_ENVIRO_ID] = NZBGET_BOOL_FALSE
 
-        if script_mode:
+        if script_mode is not None:
             if script_mode in self.script_dict.keys() + [SCRIPT_MODE.NONE,]:
                 self.script_mode = script_mode
-                self.logger.info(
-                    'Script mode forced to: %s' % self.script_mode,
-                )
+                if self.script_mode is SCRIPT_MODE.NONE:
+                    self.logger.debug('Script mode forced off.')
+                else:
+                    self.logger.debug(
+                        'Script mode forced to: %s' % self.script_mode,
+                    )
             else:
                 self.logger.warning(
                     'Could not force script mode to: %s' % script_mode,
@@ -886,8 +892,29 @@ class ScriptBase(object):
 
         """
 
-        if not isdir(search_dir):
-            return {}
+        try:
+            if isfile(search_dir):
+                # No problem - exclusive match
+                _file = {
+                    search_dir:{
+                    'basename': basename(search_dir),
+                    'dirname': dirname(search_dir),
+                    'extension': splitext(basename(search_dir))[1].lower(),
+                    }
+                }
+                if fullstats:
+                    stat_obj = stat(search_dir)
+                    _file[search_dir]['modified'] = \
+                        datetime.fromtimestamp(stat_obj[ST_MTIME])
+                    _file[search_dir]['filesize'] = stat_obj[ST_SIZE]
+                return _file
+
+            elif not isdir(search_dir):
+                return {}
+
+        except TypeError:
+            # search_dir is None
+                return {}
 
         # Change all filters strings lists (if they aren't already)
         if regex_filter is None:
