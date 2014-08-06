@@ -46,6 +46,9 @@ The following are some of the functionality that is built in for you:
                 put here as well so that it can be retrieved by another
                 script.
 
+ * unset()    - This allows you to unset values set by set() and get() as well
+                as ones set by push()
+
  * get_api()  - Retreive a simple API/RPC object built from the global
                 variables NZBGet passes into an external program when
                 called.
@@ -142,22 +145,22 @@ class MyPostProcessScript(PostProcessScript):
         # keys that were defined by the system (such as CATEGORY, DIRECTORY,
         # etc, you may have some undesirable results.  Try to avoid reusing
         # system variables already defined (identified above):
-        self.set('MY_VAR', 'MY_VALUE')
+        self.set('MY_KEY', 'MY_VALUE')
 
         # You can fetch it back; this will also set an entry in  the
         # sqlite database for each hash references that can be pulled from
         # another script that simply calls self.get('MY_VAR')
-        print self.get('MY_VAR') # prints MY_VALUE
+        print self.get('MY_KEY') # prints MY_VALUE
 
         # You can also use push() which is similar to set()
         # except that it interacts with the NZBGet Server and does not use
         # the sqlite database. This can only be reached across other
         # scripts if the calling application is NZBGet itself
-        self.push('ANOTHER_VAR', 'ANOTHER_VALUE')
+        self.push('ANOTHER_KEY', 'ANOTHER_VALUE')
 
         # You can still however locally retrieve what you set using push()
         # with the get() function
-        print self.get('ANOTHER_VAR') # prints ANOTHER_VALUE
+        print self.get('ANOTHER_KEY') # prints ANOTHER_VALUE
 
         # Your script configuration files (NZBPP_.*) are here in this
         # dictionary (again without the NZBPP_ prefix):
@@ -310,6 +313,7 @@ MultiScript Example
 ### NZBGET POST-PROCESSING/SCHEDULER SCRIPT                              ###
 #
 # Describe your Multi Script here
+#
 # Author: Your Name Goes Here <your@email.address>
 #
 

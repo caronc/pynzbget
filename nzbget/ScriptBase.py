@@ -557,18 +557,31 @@ class ScriptBase(object):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # set() and get() wrappers
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def set(self, key, value, notify_nzbget=True):
+    def unset(self, key, use_env=True, use_db=True):
+        """Unset a variable, this also occurs if you call set() with a value
+            set to None.
+        """
+        return self.set(key, None, use_env=use_env, use_db=use_db)
+
+    def set(self, key, value, use_env=True, use_db=True):
         """Sets a key/value pair into the configuration
+
+            if use_env is True, then content is additionaly set in the
+            local environment variables.
+
+            if use_db is True, then content is additionally set in a sqlite
+            database.
         """
         # clean key
         key = VALID_KEY_RE.sub('', key).upper()
+        if not key:
+            return False
 
-        self.logger.debug('set() %s=%s' % (key, value))
         if key in self.system:
             self.logger.warning('set() called using a system key (%s)' % key)
 
         # Save content to database
-        if self.database is None and self.database_key:
+        if use_db and self.database is None and self.database_key:
             try:
                 # Connect to database on first use only
                 self.database = Database(
@@ -579,44 +592,97 @@ class ScriptBase(object):
                     ),
                     logger=self.logger,
                 )
-                self.logger.info('Connected to SQLite Database')
 
                 # Database is ready to go
-                if isinstance(value, bool):
+                if isinstance(value, type(None)):
+                    # Remove Entry if it's set to None
+                    self.database.unset(key=key)
+                    self.logger.debug('unset(database) %s"' % key)
+
+                elif isinstance(value, bool):
+                    # Convert boolean to integer (change True to 1 or False to 0)
                     self.database.set(key=key, value=int(value))
+                    self.logger.debug('set(database) %s="%s"' % (
+                        key,
+                        int(value)),
+                    )
+
                 else:
                     self.database.set(key=key, value=value)
+                    self.logger.debug('set(database) %s="%s"' % (key, value))
 
             except NameError:
                 # Sqlite wasn't installed
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
 
-        elif self.database_key:
+        elif use_db and self.database_key:
             # Database is ready to go
-            if isinstance(value, bool):
+            if isinstance(value, type(None)):
+                # Remove Entry if it's set to None
+                self.database.unset(key=key)
+                self.logger.debug('unset(database) %s"' % key)
+
+            elif isinstance(value, bool):
+                # Convert boolean to integer (change True to 1 or False to 0)
                 self.database.set(key=key, value=int(value))
+                self.logger.debug('set(database) %s="%s"' % (
+                    key,
+                    int(value),
+                ))
+
             else:
                 self.database.set(key=key, value=value)
+                self.logger.debug('set(database) %s="%s"' % (key, value))
 
-        # Set environmental variables
-        self.config[key] = value
+        if isinstance(value, type(None)):
+            # Remove Entry if it's set to None
+            # This also touches the shared dictionary as well.
+            # This is intentional as it gives people who push() content
+            # a way of unsettting the local variable the set (in the event
+            # they should want to)
+            if key in self.config:
+                del self.config[key]
+            if key in self.shared:
+                del self.shared[key]
 
-        # convert boolean's to int's for consistency
-        if isinstance(value, bool):
-            environ['%s%s' % (CFG_ENVIRO_ID, key)] = str(int(value))
         else:
-            environ['%s%s' % (CFG_ENVIRO_ID, key)] = str(value)
+            # Set config variables
+            self.config[key] = value
+            self.logger.debug('set(config) %s="%s"' % (key, value))
+
+        if use_env:
+            # convert boolean's to int's for consistency
+            if isinstance(value, type(None)):
+                # Remove entry
+                if '%s%s' % (CFG_ENVIRO_ID, key) in environ:
+                    self.logger.debug('unset(environment) %s' % key)
+                    del environ['%s%s' % (CFG_ENVIRO_ID, key)]
+
+            elif isinstance(value, bool):
+                # Convert boolean to integer (change True to 1 or False to 0)
+                environ['%s%s' % (CFG_ENVIRO_ID, key)] = str(int(value))
+                self.logger.debug('set(environment) %s="%s"' % (
+                    key,
+                    str(int(value))),
+                )
+
+            else:
+                environ['%s%s' % (CFG_ENVIRO_ID, key)] = str(value)
+                self.logger.debug('set(environment) %s="%s"' % (key, value))
 
         return True
 
-    def get(self, key, default=None, check_system=True, check_shared=True):
+    def get(self, key, default=None, check_system=True,
+            check_shared=True, use_db=True):
         """works with set() operation making it easy to retrieve set()
         content
         """
 
         # clean key
         key = VALID_KEY_RE.sub('', key).upper()
+        if not key:
+            return False
 
         if check_system:
             # System variables over-ride all
@@ -633,7 +699,7 @@ class ScriptBase(object):
             return value
 
         # Fetch content from database
-        if self.database is None and self.database_key:
+        if use_db and self.database is None and self.database_key:
             try:
                 # Connect to database on first use only
                 self.database = Database(
@@ -644,7 +710,6 @@ class ScriptBase(object):
                     ),
                     logger=self.logger,
                 )
-                self.logger.info('Connected to SQLite Database')
 
                 # Database is ready to go
                 value = self.database.get(key=key)
@@ -658,7 +723,7 @@ class ScriptBase(object):
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
 
-        elif self.database_key:
+        elif use_db and self.database_key:
             value = self.database.get(key=key)
             if value is not None:
                 # only return if a key was found
@@ -697,8 +762,7 @@ class ScriptBase(object):
         """
         # Default
         core_function = self._validate
-        if self.script_mode is not None and \
-           hasattr(self, '%s_%s' % (self.script_mode, 'validate')):
+        if hasattr(self, '%s_%s' % (self.script_mode, 'validate')):
             core_function = getattr(
                 self, '%s_%s' % (self.script_mode, 'validate'))
 
@@ -941,8 +1005,7 @@ class ScriptBase(object):
         #  - queue_main()
         #
         # otherwise main() is executed
-        if self.script_mode is not None and \
-           hasattr(self, '%s_%s' % (self.script_mode, 'main')):
+        if hasattr(self, '%s_%s' % (self.script_mode, 'main')):
             main_function = getattr(
                 self, '%s_%s' % (self.script_mode, 'main'))
 

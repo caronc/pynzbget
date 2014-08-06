@@ -202,6 +202,8 @@ class Database(object):
         except:
             self.socket = None
             return False
+
+        self.logger.info('Connected to SQLite Database')
         return True
 
     def close(self):
@@ -323,6 +325,29 @@ class Database(object):
 
         return True
 
+    def unset(self, key):
+        """Remove a key from the database
+        """
+        if not self.socket:
+            self.connect()
+
+        # clean key
+        key = VALID_KEY_RE.sub('', key).upper()
+        if not key:
+            return None
+
+        # First see if keystore already has a match
+        if(bool(len(self.socket.execute(
+            "SELECT value FROM keystore WHERE container = ? AND key = ?;",
+            (self.container, key)).fetchall()))):
+            if not self.socket.execute(
+                "DELETE FROM keystore WHERE container = ? AND key = ?;",
+                (self.container, key),):
+                return False
+
+        return True
+
+
     def set(self, key, value):
         """Set a key and a value into the database for retrieval later
         """
@@ -333,9 +358,12 @@ class Database(object):
 
         # clean key
         key = VALID_KEY_RE.sub('', key).upper()
+        if not key:
+            return None
 
         # Get a cursor object
         cursor = self.socket.cursor()
+
         # First see if keystore already has a match
         if(bool(len(cursor.execute(
             "SELECT value FROM keystore WHERE container = ? AND key = ?;",

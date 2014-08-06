@@ -65,18 +65,95 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=True)
         assert script.run() == EXIT_CODE.FAILURE
 
+        class ScriptExceptionExit(ScriptBase):
+            def main(self, *args, **kwargs):
+                raise TypeError
+
+        script = ScriptExceptionExit()
+        assert script.run() == EXIT_CODE.FAILURE
+
     def test_set_and_get(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=True)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'
+        ADJUSTED_VALUE = 'MY_NEW_VALUE'
 
         # Value doe snot exist yet
         assert script.get(KEY) == None
-        assert script.get(KEY, 'Default') == 'Default'
+        assert script.get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
         assert script.set(KEY, VALUE) == True
-        assert script.get(KEY, 'Default') == VALUE
+        assert script.get(KEY, ADJUSTED_VALUE) == VALUE
+
+        # Remove a variable
+        assert script.unset(KEY) == True
+        # we'll get the default value now since the key wasn't
+        # found.
+        assert script.get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
+
+        # Reset our value but be careful not to set the environment
+        # or set the database
+        assert script.set(KEY, VALUE, use_env=False, use_db=False) == True
+
+        # observe content is not carried over
+        script = ScriptBase(logger=False, debug=True, database_key='test')
+        assert script.get(KEY) == None
+
+        # The below line will include environment variables when
+        # preforming the set and not the database
+        assert script.set(KEY, VALUE, use_db=False) == True
+        # If we destroy our instance
+        del script
+
+        # and reinitialize it; content should still carry from
+        # the environment variable
+        script = ScriptBase(logger=False, debug=True, database_key='test')
+        assert script.get(KEY) == VALUE
+        assert script.unset(KEY) == True
+
+        # Now we set the database by just the database and not
+        # the environment variable
+        assert script.set(KEY, ADJUSTED_VALUE, use_env=False) == True
+
+        # Destroy the instance
+        del script
+        script = ScriptBase(logger=False, debug=True, database_key='test')
+        # We can still retrieve our adjusted value
+        assert script.get(KEY) == ADJUSTED_VALUE
+        # But not if we don't reference the database
+        assert script.get(KEY, use_db=False) == None
+
+        # if we don't set a database key, then there is no way for a
+        # database connection to be established since we have no
+        # container to work out of. This can be emulated by just creating
+        # a ScriptBase object without a database_key set and we won't
+        # connect to the database
+        script = ScriptBase(logger=False, debug=True)
+
+        # Now we set the database by just the database and not
+        # the environment variable. Even though use_db defaults to
+        # true, we won't write anythign to it since we can't establish
+        # a connection to the database.
+
+        # If we set a key...
+        assert script.set(KEY, VALUE, use_env=False) == True
+
+        # We can check that it was set
+        assert script.get(KEY) == VALUE
+        del script
+
+        # But content won't carry over... infact, we'll fetch the last
+        # key we fetched if we use the same database_key (allowing us
+        # to access the same container as before)
+        script = ScriptBase(logger=False, debug=True, database_key='test')
+        # We can still retrieve our adjusted value
+        assert script.get(KEY) == ADJUSTED_VALUE
+
+        del script
+        # But we won't get anything under a different container
+        script = ScriptBase(logger=False, debug=True, database_key='ugh!')
+        assert script.get(KEY) == None
 
     def test_pushes(self):
         # a NZB Logger set to False uses stderr
