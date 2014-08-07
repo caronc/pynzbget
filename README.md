@@ -69,6 +69,10 @@ The following are some of the functionality that is built in for you:
                   Hence: parse_list('.mkv, .avi') returns:
                       [ '.mkv', '.avi' ]
 
+ * parse_path_list() - Very smilar to parse_list() except is used for
+                  to handle directory paths while cleaning them up at the
+                  same time.
+
  * parse_bool() - Handles all of NZBGet's configuration options such as
                   'on' and 'off' as well as 'yes' or 'no', or 'True' and
                   'False'.  It greatly simplifies the checking of these

@@ -60,7 +60,7 @@ SCRIPTDIR = join(TEMP_DIRECTORY, 'scripts')
 
 class TestPostProcessScript(TestBase):
     def setUp(self):
-        # common
+        """This method is run once before _each_ test method is executed"""
         super(TestPostProcessScript, self).setUp()
 
         # Create NZBFILE
@@ -106,6 +106,7 @@ class TestPostProcessScript(TestBase):
         os.environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID] = str(UNPACKSTATUS)
 
     def tearDown(self):
+        """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         del os.environ['%sTEMPDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]

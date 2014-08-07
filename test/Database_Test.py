@@ -15,8 +15,6 @@
 # GNU Lesser General Public License for more details.
 #
 import sys
-from os import makedirs
-from os import rmdir
 from os import unlink
 from os.path import dirname
 from os.path import join
@@ -35,7 +33,7 @@ KEY = 'The.Perfect.Name.nzb'
 
 class TestDatabase(TestBase):
     def tearDown(self):
-        """Remove the database"""
+        """This method is run once after _each_ test method is executed"""
         try:
             unlink(DATABASE)
         except:
@@ -43,16 +41,6 @@ class TestDatabase(TestBase):
 
         # common
         super(TestDatabase, self).tearDown()
-
-    def cleanup(self):
-        """Remove the database"""
-        try:
-            unlink(DATABASE)
-        except:
-            pass
-
-        # common
-        super(TestDatabase, self).cleanup()
 
     def test_schema_init(self):
 

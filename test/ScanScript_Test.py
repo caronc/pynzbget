@@ -43,7 +43,7 @@ PAUSED = False
 
 class TestScanScript(TestBase):
     def setUp(self):
-        # common
+        """This method is run once before _each_ test method is executed"""
         super(TestScanScript, self).setUp()
 
         # Create some environment variables
@@ -57,6 +57,7 @@ class TestScanScript(TestBase):
         os.environ['%sPAUSED' % SCAN_ENVIRO_ID] = str(int(PAUSED))
 
     def tearDown(self):
+        """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         del os.environ['%sTEMPDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]

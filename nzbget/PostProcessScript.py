@@ -98,22 +98,22 @@ class MyPostProcessScript(PostProcessScript):
         # keys that were defined by the system (such as CATEGORY, DIRECTORY,
         # etc, you may have some undesirable results.  Try to avoid reusing
         # system variables already defined (identified above):
-        self.set('MY_VAR', 'MY_VALUE')
+        self.set('MY_KEY', 'MY_VALUE')
 
         # You can fetch it back; this will also set an entry in  the
         # sqlite database for each hash references that can be pulled from
-        # another script that simply calls self.get('MY_VAR')
-        print self.get('MY_VAR') # prints MY_VALUE
+        # another script that simply calls self.get('MY_KEY')
+        print self.get('MY_KEY') # prints MY_VALUE
 
         # You can also use push() which is similar to set()
         # except that it interacts with the NZBGet Server and does not use
         # the sqlite database. This can only be reached across other
         # scripts if the calling application is NZBGet itself
-        self.push('ANOTHER_VAR', 'ANOTHER_VALUE')
+        self.push('ANOTHER_KEY', 'ANOTHER_VALUE')
 
         # You can still however locally retrieve what you set using push()
         # with the get() function
-        print self.get('ANOTHER_VAR') # prints ANOTHER_VALUE
+        print self.get('ANOTHER_KEY') # prints ANOTHER_VALUE
 
         # Your script configuration files (NZBPP_.*) are here in this
         # dictionary (again without the NZBPP_ prefix):

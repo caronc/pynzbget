@@ -36,6 +36,7 @@ TEMP_DIRECTORY = join(
 
 class TestBase(object):
     def setUp(self):
+        """This method is run once before _each_ test method is executed"""
         try:
             rmtree(TEMP_DIRECTORY)
         except:
@@ -43,6 +44,7 @@ class TestBase(object):
         makedirs(TEMP_DIRECTORY, 0700)
 
     def tearDown(self):
+        """This method is run once after _each_ test method is executed"""
         # Clean out System Environment
         for k in os.environ.keys():
             if SYS_OPTS_RE.match(k):

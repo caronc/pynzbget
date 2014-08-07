@@ -11,7 +11,7 @@ from TestBase import TEMP_DIRECTORY
 
 class TestPostProcessScript(TestBase):
     def setUp(self):
-        # common
+        """This method is run once before _each_ test method is executed"""
         super(TestPostProcessScript, self).setUp()
 
         if '%sDESTDIR' % SYS_ENVIRO_ID in os.environ:
@@ -22,6 +22,7 @@ class TestPostProcessScript(TestBase):
             del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
     def tearDown(self):
+        """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         if '%sDESTDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]

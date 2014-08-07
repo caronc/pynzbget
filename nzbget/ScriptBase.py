@@ -52,10 +52,9 @@ functionality such as:
                   Hence: parse_list('.mkv, .avi') returns:
                       [ '.mkv', '.avi' ]
 
- * parse_path_list() - Very smilar to parse_list() except is restrive
-                  to filtering directory paths only as well as cleaning
-                  them up. You should always use this when dealing with
-                  user input requiring directory or filename paths.
+ * parse_path_list() - Very smilar to parse_list() except is used for
+                  to handle directory paths while cleaning them up at the
+                  same time.
 
  * parse_bool() - Handles all of NZBGet's configuration options such as
                   'on' and 'off' as well as 'yes' or 'no', or 'True' and

@@ -98,22 +98,22 @@ class MyScanScript(ScanScript):
         # keys that were defined by the system (such as CATEGORY, DIRECTORY,
         # etc, you may have some undesirable results.  Try to avoid reusing
         # system variables already defined (identified above):
-        self.set('MY_VAR', 'MY_VALUE')
+        self.set('MY_KEY', 'MY_VALUE')
 
         # You can fetch it back; this will also set an entry in  the
         # sqlite database for each hash references that can be pulled from
-        # another script that simply calls self.get('MY_VAR')
-        print self.get('MY_VAR') # prints MY_VALUE
+        # another script that simply calls self.get('MY_KEY')
+        print self.get('MY_KEY') # prints MY_VALUE
 
         # You can also use push() which is similar to set()
         # except that it interacts with the NZBGet Server and does not use
         # the sqlite database. This can only be reached across other
         # scripts if the calling application is NZBGet itself
-        self.push('ANOTHER_VAR', 'ANOTHER_VALUE')
+        self.push('ANOTHER_KEY', 'ANOTHER_VALUE')
 
         # You can still however locally retrieve what you set using push()
         # with the get() function
-        print self.get('ANOTHER_VAR') # prints ANOTHER_VALUE
+        print self.get('ANOTHER_KEY') # prints ANOTHER_VALUE
 
         # Your script configuration files (NZBNP_.*) are here in this
         # dictionary (again without the NZBNP_ prefix):
@@ -159,28 +159,8 @@ from os.path import abspath
 from ScriptBase import ScriptBase
 from ScriptBase import SCRIPT_MODE
 from ScriptBase import NZBGET_BOOL_FALSE
-
-class PRIORITY(object):
-    """Although priority can be any integer value, the web-interface operates
-    with six predefined priorities.
-    """
-    VERY_LOW = -100
-    LOW = -50
-    NORMAL = 0
-    HIGH = 50
-    VERY_HIGH = 100
-    FORCE = 900
-
-# A list of priorities makes it easier to validate them
-# for each priority added above, make sure you also update this list.
-PRIORITIES = (
-    PRIORITY.VERY_LOW,
-    PRIORITY.LOW,
-    PRIORITY.NORMAL,
-    PRIORITY.HIGH,
-    PRIORITY.VERY_HIGH,
-    PRIORITY.FORCE,
-)
+from ScriptBase import PRIORITY
+from ScriptBase import PRIORITIES
 
 # Environment variable that prefixes all NZBGET options being passed into
 # scripts with respect to the NZB-File (used in Scan Scripts)
