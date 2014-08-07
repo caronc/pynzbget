@@ -232,7 +232,9 @@ class TestScriptBase(TestBase):
             '  D:\\\\weird path\\more spaces\\\\ ', # Duplicate is removed
             'relative path\\\\\\with\\crap\\\\ second_path\\more spaces\\ ',
             # lists supported too
-            [ 'relative path\\in\\list', 'second_path\\more spaces\\\\' ]
+            [ 'relative path\\in\\list', 'second_path\\more spaces\\\\' ],
+            # Unsupported and ignored types
+            None, 1, 4.3, True, False, -4000,
         )
 
         assert len(results) == 7

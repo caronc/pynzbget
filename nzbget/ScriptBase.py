@@ -637,7 +637,7 @@ class ScriptBase(object):
                 )
 
                 # Database is ready to go
-                if isinstance(value, type(None)):
+                if value is None:
                     # Remove Entry if it's set to None
                     self.database.unset(key=key)
                     self.logger.debug('unset(database) %s"' % key)
@@ -661,7 +661,7 @@ class ScriptBase(object):
 
         elif use_db and self.database_key:
             # Database is ready to go
-            if isinstance(value, type(None)):
+            if value is None:
                 # Remove Entry if it's set to None
                 self.database.unset(key=key)
                 self.logger.debug('unset(database) %s"' % key)
@@ -678,7 +678,7 @@ class ScriptBase(object):
                 self.database.set(key=key, value=value)
                 self.logger.debug('set(database) %s="%s"' % (key, value))
 
-        if isinstance(value, type(None)):
+        if value is None:
             # Remove Entry if it's set to None
             # This also touches the shared dictionary as well.
             # This is intentional as it gives people who push() content
@@ -696,7 +696,7 @@ class ScriptBase(object):
 
         if use_env:
             # convert boolean's to int's for consistency
-            if isinstance(value, type(None)):
+            if value is None:
                 # Remove entry
                 if '%s%s' % (CFG_ENVIRO_ID, key) in environ:
                     self.logger.debug('unset(environment) %s' % key)
@@ -1189,22 +1189,22 @@ class ScriptBase(object):
                 cleaned = self._path_win_re.sub('|\\1:\\2', cleaned)
                 result += cleaned.split('|')
 
-            elif isinstance(arg, list) or isinstance(arg, tuple):
+            elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(arg, basestring):
-                        cleaned = self._path_delimiter_re.sub('|', tidy_path(arg))
+                    if isinstance(_arg, basestring):
+                        cleaned = self._path_delimiter_re.sub('|', tidy_path(_arg))
                         cleaned = self._path_win_re.sub('|\\1:\\2', cleaned)
                         result += cleaned.split('|')
 
                     # A list inside a list? - use recursion
-                    elif isinstance(_arg, list) or isinstance(_arg, tuple):
+                    elif isinstance(_arg, (list, tuple)):
                         result += self.parse_path_list(_arg)
                     else:
-                        # Convert whatever it is to a string and work with it
-                        result += self.parse_path_list(str(_arg))
+                        # unsupported content
+                        continue
             else:
-                # Convert whatever it is to a string and work with it
-                result += self.parse_path_list(str(arg))
+                # unsupported content (None, bool's, int's, floats, etc)
+                continue
 
         # apply as well as make the list unique by converting it
         # to a set() first. filter() eliminates any empty entries
