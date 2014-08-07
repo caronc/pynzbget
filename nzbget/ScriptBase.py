@@ -52,6 +52,11 @@ functionality such as:
                   Hence: parse_list('.mkv, .avi') returns:
                       [ '.mkv', '.avi' ]
 
+ * parse_path_list() - Very smilar to parse_list() except is restrive
+                  to filtering directory paths only as well as cleaning
+                  them up. You should always use this when dealing with
+                  user input requiring directory or filename paths.
+
  * parse_bool() - Handles all of NZBGet's configuration options such as
                   'on' and 'off' as well as 'yes' or 'no', or 'True' and
                   'False'.  It greatly simplifies the checking of these
@@ -105,11 +110,13 @@ from os.path import splitext
 from getpass import getuser
 from logging import Logger
 from datetime import datetime
+from Utils import tidy_path
 
 # Relative Includes
 from NZBGetAPI import NZBGetAPI
 from Logger import init_logger
 from Logger import destroy_logger
+from Utils import ESCAPED_PATH_SEPARATOR
 
 # NZB Processing Support if lxml is installed
 try:
@@ -157,6 +164,28 @@ EXIT_CODES = (
    EXIT_CODE.SUCCESS,
    EXIT_CODE.FAILURE,
    EXIT_CODE.NONE,
+)
+
+class PRIORITY(object):
+    """Although priority can be any integer value, the web-interface operates
+    with six predefined priorities.
+    """
+    VERY_LOW = -100
+    LOW = -50
+    NORMAL = 0
+    HIGH = 50
+    VERY_HIGH = 100
+    FORCE = 900
+
+# A list of priorities makes it easier to validate them
+# for each priority added above, make sure you also update this list.
+PRIORITIES = (
+    PRIORITY.VERY_LOW,
+    PRIORITY.LOW,
+    PRIORITY.NORMAL,
+    PRIORITY.HIGH,
+    PRIORITY.VERY_HIGH,
+    PRIORITY.FORCE,
 )
 
 # Environment variables that identify specific configuration for scripts
@@ -210,7 +239,16 @@ VALID_KEY_RE = re.compile('[^a-zA-Z0-9_.-]')
 
 # delimiters used to separate values when content is passed in by string
 # This is useful when turning a string into a list
-STRING_DELIMITERS = r'[\\\/\[\]\:;,\s]+'
+STRING_DELIMITERS = r'[%s\[\]\:;,\s]+' % \
+        ESCAPED_PATH_SEPARATOR
+
+# For speparating paths
+PATH_DELIMITERS = r'([%s]+[%s;\|,\s]+|[;\|,\s%s]+[%s]+)' % (
+        ESCAPED_PATH_SEPARATOR,
+        ESCAPED_PATH_SEPARATOR,
+        ESCAPED_PATH_SEPARATOR,
+        ESCAPED_PATH_SEPARATOR,
+)
 
 # SQLite Database
 NZBGET_DATABASE_FILENAME = "nzbget/nzbget.db"
@@ -914,7 +952,7 @@ class ScriptBase(object):
 
         except TypeError:
             # search_dir is None
-                return {}
+            return {}
 
         # Change all filters strings lists (if they aren't already)
         if regex_filter is None:
@@ -1076,7 +1114,8 @@ class ScriptBase(object):
         Take a string list and break it into a delimited
         list of arguments. This funciton also supports
         the processing of a list of delmited strings and will
-        always return a unique set of arguments.
+        always return a unique set of arguments. Duplicates are
+        always combined in the final results.
 
         You can append as many items to the argument listing for
         parsing.
@@ -1113,6 +1152,64 @@ class ScriptBase(object):
         # apply as well as make the list unique by converting it
         # to a set() first. filter() eliminates any empty entries
         return filter(bool, list(set(result)))
+
+    def parse_path_list(self, *args):
+        """
+        Very similar to the parse_list() however this parses a listing of
+        provided directories.  The difference is that white space is
+        treated a bit more strictly since directory paths can contain
+        spaces in them. Trailing (back)slashes are always removed from
+        results. Duplicates are always combined in final results.
+
+        Hence: parse_path_list('C:\\test dir\\, D:\\test2') becomes:
+            [ 'C:\\test dir', D:\\test2' ]
+
+        Hence: parse_path_list('C:\\test dir\\, D:\\test2',
+            [ 'H:\\test 4', 'C:\\test dir', 'D:\\test2' ]
+        becomes:
+            [ 'C:\\test dir', D:\\test2', 'H:\\test 4' ]
+        """
+
+        if not hasattr(self, '_path_delimiter_re'):
+            # Compile for speed on first pass though
+            self._path_delimiter_re = re.compile(PATH_DELIMITERS)
+        if not hasattr(self, '_path_win_re'):
+            # Compile for speed on first pass though
+            # This separates D:\entry E:\entry2 by forcing a delimiter
+            # that will be caught with the _path_delimiter_re is ran
+            # afterwards
+            self._path_win_re = re.compile(
+                r'[\s,\|]+([A-Za-z]):+(%s)%s*' % (
+                    re.escape('\\'),
+                    re.escape('\\'),
+            ))
+        result = []
+        for arg in args:
+            if isinstance(arg, basestring):
+                cleaned = self._path_delimiter_re.sub('|', tidy_path(arg))
+                cleaned = self._path_win_re.sub('|\\1:\\2', cleaned)
+                result += cleaned.split('|')
+
+            elif isinstance(arg, list) or isinstance(arg, tuple):
+                for _arg in arg:
+                    if isinstance(arg, basestring):
+                        cleaned = self._path_delimiter_re.sub('|', tidy_path(arg))
+                        cleaned = self._path_win_re.sub('|\\1:\\2', cleaned)
+                        result += cleaned.split('|')
+
+                    # A list inside a list? - use recursion
+                    elif isinstance(_arg, list) or isinstance(_arg, tuple):
+                        result += self.parse_path_list(_arg)
+                    else:
+                        # Convert whatever it is to a string and work with it
+                        result += self.parse_path_list(str(_arg))
+            else:
+                # Convert whatever it is to a string and work with it
+                result += self.parse_path_list(str(arg))
+
+        # apply as well as make the list unique by converting it
+        # to a set() first. filter() eliminates any empty entries
+        return filter(bool, list(set([tidy_path(p) for p in result])))
 
     def parse_bool(self, arg, default=False):
         """

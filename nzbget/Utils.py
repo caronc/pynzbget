@@ -15,6 +15,8 @@
 # GNU Lesser General Public License for more details.
 #
 import re
+ESCAPED_PATH_SEPARATOR = re.escape('\\/')
+
 def os_path_split(path):
     """splits a path into a list (by it's path delimiter
 
@@ -33,7 +35,37 @@ def os_path_split(path):
        assert '/'.join(split_path('relative/file')) == \
                'relative/file'
     """
-    p_list = re.split('[%s]+' % re.escape('\\/'), path)
-    while not p_list[-1]:
-        p_list.pop()
+    path = path.strip()
+    if not path:
+        return []
+
+    p_list = re.split('[%s]+' % ESCAPED_PATH_SEPARATOR, path)
+    try:
+        # remove trailing slashes
+        while not p_list[-1] and len(p_list) > 1:
+            p_list.pop()
+    except IndexError:
+        # Nothing passed in
+        return []
     return p_list
+
+def tidy_path(path):
+    """take a filename and or directory and tidy it up
+    by removing trailing slashes and correcting any
+    formatting issues.
+
+    For example: ////absolute//path// becomes:
+        /absolute/path
+
+    """
+
+    path = re.sub('([%s])([%s]+)' % (
+        ESCAPED_PATH_SEPARATOR,
+        ESCAPED_PATH_SEPARATOR,
+    ), '\\1', path.strip())
+
+    # Linux Based Trim
+    path = re.sub('([^\/])[\s\/]+$', '\\1', path.strip())
+    # Windows Based Trim
+    path = re.sub('^(.+[^:][^\\\])[\s\\\]*$', '\\1', path.strip())
+    return path

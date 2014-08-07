@@ -219,6 +219,52 @@ class TestScriptBase(TestBase):
             '.mpg', '.avi', '.vob', '.xvid', '.mpeg', '.mp4',
         ]
 
+    def test_parse_path_list01(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+
+        # A simple single array entry (As str)
+        results = script.parse_path_list(
+            'C:\\test path with space\\and more spaces\\',
+            'D:\\weird path\\more spaces\\ ',
+            'D:\\weird path\\more spaces\\ G:\\save E:\\\\save_dir',
+            'D:\\weird path\\more spaces\\ ', # Duplicate is removed
+            '  D:\\\\weird path\\more spaces\\\\ ', # Duplicate is removed
+            'relative path\\\\\\with\\crap\\\\ second_path\\more spaces\\ ',
+            # lists supported too
+            [ 'relative path\\in\\list', 'second_path\\more spaces\\\\' ]
+        )
+
+        assert len(results) == 7
+        assert 'D:\\weird path\\more spaces' in results
+        assert 'E:\\save_dir' in results
+        assert 'G:\\save' in results
+        assert 'second_path\\more spaces' in results
+        assert 'relative path\\with\\crap' in results
+        assert 'relative path\\in\\list' in results
+        assert 'C:\\test path with space\\and more spaces' in results
+
+    def test_parse_path_list02(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+
+        # A simple single array entry (As str)
+        results = script.parse_path_list(
+            # 3 paths identified below
+            '//absolute/path /another///absolute//path/// /',
+            # A whole slew of duplicates and list inside list
+            '/', [ '/', '/', '//', '//////', [ '/', '' ], ],
+            'relative/path/here',
+            'relative/path/here/',
+            'another/relative////path///',
+        )
+        assert len(results) == 5
+        assert '/absolute/path' in results
+        assert 'another/absolute/path' in results
+        assert 'another/absolute/path' in results
+        assert '/' in results
+        assert 'relative/path/here' in results
+
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=True)
