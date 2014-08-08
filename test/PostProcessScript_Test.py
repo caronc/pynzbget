@@ -26,8 +26,10 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
 from ScriptBase import CFG_ENVIRO_ID
 from ScriptBase import SYS_ENVIRO_ID
-from ScriptBase import SHR_ENVIRO_DNZB_ID
+from ScriptBase import SHR_ENVIRO_ID
 from ScriptBase import NZBGET_MSG_PREFIX
+from ScriptBase import SHR_ENVIRO_GUESS_ID
+from ScriptBase import SHR_ENVIRO_DNZB_ID
 
 from PostProcessScript import PostProcessScript
 from PostProcessScript import POSTPROC_ENVIRO_ID
@@ -54,6 +56,8 @@ STATUS = SCRIPT_STATUS.SUCCESS
 SCRIPTSTATUS = 'SUCCESS/ALL'
 PARSTATUS = PAR_STATUS.SUCCESS
 UNPACKSTATUS = UNPACK_STATUS.SUCCESS
+
+SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
 # For validation
 SCRIPTDIR = join(TEMP_DIRECTORY, 'scripts')
@@ -105,6 +109,13 @@ class TestPostProcessScript(TestBase):
         os.environ['%sPARSTATUS' % POSTPROC_ENVIRO_ID] = str(PARSTATUS)
         os.environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID] = str(UNPACKSTATUS)
 
+        # ensure directory doesn't exist
+        try:
+            rmtree(SEARCH_DIR)
+        except:
+            pass
+        makedirs(SEARCH_DIR)
+
     def tearDown(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
@@ -117,6 +128,11 @@ class TestPostProcessScript(TestBase):
         del os.environ['%sSCRIPTSTATUS' % POSTPROC_ENVIRO_ID]
         del os.environ['%sPARSTATUS' % POSTPROC_ENVIRO_ID]
         del os.environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID]
+
+        try:
+            rmtree(SEARCH_DIR)
+        except:
+            pass
 
         # common
         super(TestPostProcessScript, self).tearDown()
@@ -367,6 +383,35 @@ class TestPostProcessScript(TestBase):
         assert script.directory == directory
         assert script.system['DIRECTORY'] == directory
 
+    def test_pushes(self):
+        # a NZB Logger set to False uses stderr
+        script = PostProcessScript(logger=False, debug=True)
+
+        KEY = 'MY_VAR'
+        VALUE = 'MY_VALUE'
+
+        # Value doe snot exist yet
+        assert script.get(KEY) == None
+
+        # Keep a handle on the real standard output
+        stdout = sys.stdout
+        sys.stdout = StringIO.StringIO()
+        script.push(KEY, VALUE)
+
+        # extract data
+        sys.stdout.seek(0)
+        output = sys.stdout.read().strip()
+
+        # return stdout back to how it was
+        sys.stdout = stdout
+        assert output == '%s%s%s=%s' % (
+            NZBGET_MSG_PREFIX,
+            SHR_ENVIRO_ID,
+            KEY,
+            VALUE,
+        )
+        assert script.get(KEY) == VALUE
+
     def test_validation(self):
 
         # This will fail because it's looking for the SCRIPTDIR
@@ -388,28 +433,22 @@ class TestPostProcessScript(TestBase):
 
     def test_file_listings_as_string(self):
 
-        search_dir = join(TEMP_DIRECTORY, 'file_listing')
-        # ensure directory doesn't exist
-        try:
-            rmtree(search_dir)
-        except:
-            pass
-        makedirs(search_dir)
+        SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
-        assert script.get_files(search_dir=search_dir) == {}
+        assert script.get_files(search_dir=SEARCH_DIR) == {}
 
         # Create some temporary files to work with
-        open(join(search_dir,'file.mkv'), 'w').close()
-        open(join(search_dir,'file.par2'), 'w').close()
-        open(join(search_dir,'file.PAR2'), 'w').close()
-        open(join(search_dir,'file.txt'), 'w').close()
-        open(join(search_dir,'sample.mp4'), 'w').close()
-        open(join(search_dir,'sound.mp3'), 'w').close()
+        open(join(SEARCH_DIR,'file.mkv'), 'w').close()
+        open(join(SEARCH_DIR,'file.par2'), 'w').close()
+        open(join(SEARCH_DIR,'file.PAR2'), 'w').close()
+        open(join(SEARCH_DIR,'file.txt'), 'w').close()
+        open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
+        open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
 
         script = PostProcessScript(logger=False, debug=True)
-        files = script.get_files(search_dir=search_dir)
+        files = script.get_files(search_dir=SEARCH_DIR)
         assert len(files) == 6
         assert 'basename' in files[files.keys()[0]]
         assert 'dirname' in files[files.keys()[0]]
@@ -419,7 +458,7 @@ class TestPostProcessScript(TestBase):
 
         files = script.get_files(
             fullstats=True,
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 6
         assert 'basename' in files[files.keys()[0]]
@@ -431,7 +470,7 @@ class TestPostProcessScript(TestBase):
         # Test Filters (as strings)
         files = script.get_files(
             regex_filter='.*\.par2$',
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 1
 
@@ -439,14 +478,14 @@ class TestPostProcessScript(TestBase):
         # want to pre-compile our own list and pass it in
         files = script.get_files(
             regex_filter=re.compile('.*\.par2$', re.IGNORECASE),
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 2
 
         # Test Filters (as strings)
         files = script.get_files(
             suffix_filter='.par2',
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 1
 
@@ -456,78 +495,64 @@ class TestPostProcessScript(TestBase):
         # these
         files = script.get_files(
             suffix_filter='.par2,.PAR2',
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 2
 
         # Test Filters (as strings)
         files = script.get_files(
             prefix_filter='sound',
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 1
 
         # Test Filters (as strings)
         files = script.get_files(
             prefix_filter='sound, file',
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 5
 
         # Test Filters (as strings)
         files = script.get_files(
             prefix_filter='s',
-            search_dir=search_dir,
+            search_dir=SEARCH_DIR,
         )
         assert len(files) == 2
 
-        # cleanup
-        try:
-            rmtree(search_dir)
-        except:
-            pass
-
     def test_file_listings_as_list(self):
-
-        search_dir = join(TEMP_DIRECTORY, 'file_listing')
-        # ensure directory doesn't exist
-        try:
-            rmtree(search_dir)
-        except:
-            pass
-        makedirs(search_dir)
 
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
-        assert script.get_files(search_dir=search_dir) == {}
+        assert script.get_files(search_dir=[SEARCH_DIR, ]) == {}
 
         # Create some temporary files to work with
-        open(join(search_dir,'file.mkv'), 'w').close()
-        open(join(search_dir,'file.par2'), 'w').close()
-        open(join(search_dir,'file.PAR2'), 'w').close()
-        open(join(search_dir,'file.txt'), 'w').close()
-        open(join(search_dir,'sample.mp4'), 'w').close()
-        open(join(search_dir,'sound.mp3'), 'w').close()
+        open(join(SEARCH_DIR,'file.mkv'), 'w').close()
+        open(join(SEARCH_DIR,'file.par2'), 'w').close()
+        open(join(SEARCH_DIR,'file.PAR2'), 'w').close()
+        open(join(SEARCH_DIR,'file.txt'), 'w').close()
+        open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
+        open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
 
         # Test Filters
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             regex_filter=('.*\.par2$',),
-            search_dir=search_dir,
         )
         assert len(files) == 1
 
         # Assume case sensitivity matters to us, we might
         # want to pre-compile our own list and pass it in
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             regex_filter=(re.compile('.*\.par2$', re.IGNORECASE),),
-            search_dir=search_dir,
         )
         assert len(files) == 2
 
         # Test Filters (as strings)
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             suffix_filter=('.par2',),
-            search_dir=search_dir,
         )
         assert len(files) == 1
 
@@ -536,36 +561,35 @@ class TestPostProcessScript(TestBase):
         # are automatically handled so you can chain them using
         # these
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             suffix_filter=('.par2,.PAR2',),
-            search_dir=search_dir,
         )
         assert len(files) == 2
 
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             suffix_filter=('.par2','.PAR2'),
-            search_dir=search_dir,
         )
         assert len(files) == 2
 
-        # Test Filters (as strings)
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             prefix_filter=('sound',),
-            search_dir=search_dir,
         )
         assert len(files) == 1
 
-        # Test Filters (as strings)
         files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
             prefix_filter=('sound, file',),
-            search_dir=search_dir,
         )
         assert len(files) == 5
 
-        # cleanup
-        try:
-            rmtree(search_dir)
-        except:
-            pass
+        # Duplicates should merge
+        files = script.get_files(
+            search_dir=[SEARCH_DIR, SEARCH_DIR, SEARCH_DIR ],
+            prefix_filter=('sound, file',),
+        )
+        assert len(files) == 5
 
     def test_file_obsfucation(self):
 
@@ -619,3 +643,55 @@ class TestPostProcessScript(TestBase):
             rmtree(obsfucated_dir)
         except:
             pass
+
+    def test_guesses(self):
+        # a NZB Logger set to False uses stderr
+        script = PostProcessScript(logger=False, debug=True)
+
+        guess_dict = {
+            'type': 'movie',
+            'title':'A Great Title',
+            'year': 1998,
+            'screenSize': '720p',
+            'format': 'HD-DVD',
+            'audioCodec': 'DTS',
+            'videoCodec': 'h264',
+            'releaseGroup': 'GREATTEAM',
+            'BadEntry': 'Ignored',
+        }
+
+        # Keep a handle on the real standard output
+        stdout = sys.stdout
+        sys.stdout = StringIO.StringIO()
+        script.push_guess(guess_dict)
+
+        # extract data
+        sys.stdout.seek(0)
+        output = sys.stdout.read().strip()
+
+        # return stdout back to how it was
+        sys.stdout = stdout
+
+        guess_keys = guess_dict.keys()
+        guess_keys.remove('BadEntry')
+        cmp_output = ['%s%s%s%s=%s' % (
+            NZBGET_MSG_PREFIX,
+            SHR_ENVIRO_ID,
+            SHR_ENVIRO_GUESS_ID,
+            k.upper(),
+            str(guess_dict[k]),
+        ) for k in guess_keys ]
+
+        output = re.split('[\r\n]+', output)
+        for _str in output:
+            assert _str in cmp_output
+
+        # Retrieve content
+        results = script.pull_guess()
+
+        # Minus 1 for BadEntry that should not
+        # be part of fetch
+        assert len(results) == len(guess_dict) - 1
+        for k, v in results.items():
+            assert k in guess_dict
+            assert str(guess_dict[k]) == v

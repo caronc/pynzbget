@@ -16,6 +16,7 @@
 #
 import os
 import sys
+import re
 from os.path import dirname
 from os.path import join
 from os import linesep
@@ -32,7 +33,12 @@ from ScriptBase import SHR_ENVIRO_GUESS_ID
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
+from shutil import rmtree
+from os import makedirs
+
 import StringIO
+
+SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
 class TestScriptBase(TestBase):
     def setUp(self):
@@ -43,6 +49,13 @@ class TestScriptBase(TestBase):
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
 
+        # ensure directory doesn't exist
+        try:
+            rmtree(SEARCH_DIR)
+        except:
+            pass
+        makedirs(SEARCH_DIR)
+
     def tearDown(self):
         if '%sTEMPDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sTEMPDIR' % SYS_ENVIRO_ID]
@@ -50,6 +63,11 @@ class TestScriptBase(TestBase):
             del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         if '%sDEBUG' % CFG_ENVIRO_ID in os.environ:
             del os.environ['%sDEBUG' % CFG_ENVIRO_ID]
+
+        try:
+            rmtree(SEARCH_DIR)
+        except:
+            pass
 
         # common
         super(TestScriptBase, self).tearDown()
@@ -155,34 +173,74 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=True, database_key='ugh!')
         assert script.get(KEY) == None
 
-    def test_pushes(self):
+    def test_file_listings_with_file(self):
+
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=True)
+        assert script.get_files(search_dir=[SEARCH_DIR, ]) == {}
 
-        KEY = 'MY_VAR'
-        VALUE = 'MY_VALUE'
+        # Create some temporary files to work with
+        open(join(SEARCH_DIR,'file.mkv'), 'w').close()
+        open(join(SEARCH_DIR,'file.par2'), 'w').close()
+        open(join(SEARCH_DIR,'file.PAR2'), 'w').close()
+        open(join(SEARCH_DIR,'file.txt'), 'w').close()
+        open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
+        open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
 
-        # Value doe snot exist yet
-        assert script.get(KEY) == None
-
-        # Keep a handle on the real standard output
-        stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        script.push(KEY, VALUE)
-
-        # extract data
-        sys.stdout.seek(0)
-        output = sys.stdout.read().strip()
-
-        # return stdout back to how it was
-        sys.stdout = stdout
-        assert output == '%s%s%s=%s' % (
-            NZBGET_MSG_PREFIX,
-            SHR_ENVIRO_ID,
-            KEY,
-            VALUE,
+        # Search File
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
         )
-        assert script.get(KEY) == VALUE
+        assert len(files) == 1
+
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            suffix_filter='.mov',
+        )
+        assert len(files) == 0
+
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            suffix_filter='.mkv',
+        )
+        assert len(files) == 1
+
+
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            suffix_filter='.mkv',
+            prefix_filter='fi',
+        )
+        assert len(files) == 1
+
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            suffix_filter='.mkv',
+            prefix_filter='file',
+        )
+        assert len(files) == 1
+
+        # Absolute match
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            suffix_filter='file.mkv',
+            prefix_filter='file.mkv',
+        )
+        assert len(files) == 1
+
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            regex_filter='^file\.mkv$',
+        )
+        assert len(files) == 1
+
+        files = script.get_files(
+            search_dir=join(SEARCH_DIR, 'file.mkv'),
+            suffix_filter='file.mkv',
+            prefix_filter='file.mkv',
+            regex_filter='^file\.mkv$',
+        )
+        assert len(files) == 1
 
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
@@ -333,7 +391,7 @@ class TestScriptBase(TestBase):
         # return stdout back to how it was
         sys.stdout = stdout
 
-        guess_keys = sorted(guess_dict.keys())
+        guess_keys = guess_dict.keys()
         guess_keys.remove('BadEntry')
         cmp_output = ['%s%s%s%s=%s' % (
             NZBGET_MSG_PREFIX,
@@ -341,16 +399,40 @@ class TestScriptBase(TestBase):
             SHR_ENVIRO_GUESS_ID,
             k.upper(),
             str(guess_dict[k]),
-        ) for k in sorted(guess_keys) ]
+        ) for k in guess_keys ]
 
-        assert output == linesep.join(cmp_output)
+        output = re.split('[\r\n]+', output)
+        # Clean "" entry
+        output = filter(bool, output)
 
-        # Retrieve content
-        results = script.pull_guess()
+        # Pushes are disabled in Standalone mode
+        assert len(output) == 0
 
-        # Minus 1 for BadEntry that should not
-        # be part of fetch
-        assert len(results) == len(guess_dict) - 1
-        for k, v in results.items():
-            assert k in guess_dict
-            assert str(guess_dict[k]) == v
+    def test_pushes(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+
+        KEY = 'MY_VAR'
+        VALUE = 'MY_VALUE'
+
+        # Value doe snot exist yet
+        assert script.get(KEY) == None
+
+        # Keep a handle on the real standard output
+        stdout = sys.stdout
+        sys.stdout = StringIO.StringIO()
+        script.push(KEY, VALUE)
+
+        # extract data
+        sys.stdout.seek(0)
+        output = sys.stdout.read().strip()
+
+        sys.stdout = stdout
+
+        # Pushes are disabled in Standalone mode
+        output = re.split('[\r\n]+', output)
+        # Clean "" entry
+        output = filter(bool, output)
+
+        assert len(output) == 0
+        assert script.get(KEY) == VALUE

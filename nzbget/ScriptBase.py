@@ -467,15 +467,33 @@ class ScriptBase(object):
         users should be utlizing the push() command instead of
         this one.
         """
+        # Content is only pushable in certain modes
+        if self.script_mode is SCRIPT_MODE.NONE:
+            # if there is no script mode, then the calling
+            # function isn't supported by NZBGet (or this
+            # framework)
+            return True
+
+        elif value is None:
+            # Never print... well.. nothing, you can acomplish
+            # this by passing in an empty string ('')
+            return False
+
         # clean key
         key = VALID_KEY_RE.sub('', key).upper()
 
-        # Push message on to nzbget
-        print('%s%s=%s' % (
-           NZBGET_MSG_PREFIX,
-           key,
-           value,
-        ))
+        if isinstance(value, bool):
+            # convert boolean's to int's for consistency
+            value = str(int(value))
+
+        elif not isinstance(value, basestring):
+            value = str(value)
+
+        # Push message on to nzbget (by simply sending it to
+        # stdout)
+        print('%s%s=%s' % (NZBGET_MSG_PREFIX, key, value))
+
+        # No reason to fail if we make it this far
         return True
 
     def push(self, key, value):
@@ -492,18 +510,16 @@ class ScriptBase(object):
         self.shared[key] = value
         if isinstance(value, bool):
             # convert boolean's to int's for consistency
-            environ['%s%s' % (SHR_ENVIRO_ID, key)] = str(int(value))
-        else:
-            environ['%s%s' % (SHR_ENVIRO_ID, key)] = str(value)
+            value = str(int(value))
+
+        elif not isinstance(value, basestring):
+            value = str(value)
+
+        # Save environment variable
+        environ['%s%s' % (SHR_ENVIRO_ID, key)] = value
 
         # Alert NZBGet of variable being set
-        print('%s%s%s=%s' % (
-           NZBGET_MSG_PREFIX,
-           SHR_ENVIRO_ID,
-           key,
-           str(value),
-        ))
-        return True
+        return self._push('%s%s' % (SHR_ENVIRO_ID, key), value)
 
     def push_guess(self, guess):
         """pushes guess results to NZBGet Server. The function was
@@ -517,7 +533,7 @@ class ScriptBase(object):
             # if set.
             return False
 
-        for key in sorted(guess.keys()):
+        for key in guess.keys():
             if key.upper() in GUESS_KEY_MAP.keys():
                 # Push content to NZB Server
                 self.push('%s%s' % (
@@ -931,28 +947,22 @@ class ScriptBase(object):
 
         """
 
-        try:
-            if isfile(search_dir):
-                # No problem - exclusive match
-                _file = {
-                    search_dir:{
-                    'basename': basename(search_dir),
-                    'dirname': dirname(search_dir),
-                    'extension': splitext(basename(search_dir))[1].lower(),
-                    }
-                }
-                if fullstats:
-                    stat_obj = stat(search_dir)
-                    _file[search_dir]['modified'] = \
-                        datetime.fromtimestamp(stat_obj[ST_MTIME])
-                    _file[search_dir]['filesize'] = stat_obj[ST_SIZE]
-                return _file
+        # Build file list
+        files = {}
+        if isinstance(search_dir, (list, tuple)):
+            for _dir in search_dir:
+                # use recursion to build a master (unique) list
+                files = dict(files.items() + self._get_files(
+                    _dir,
+                    regex_filter=regex_filter,
+                    prefix_filter=prefix_filter,
+                    suffix_filter=suffix_filter,
+                    fullstats=fullstats,
+                ).items())
+            return files
 
-            elif not isdir(search_dir):
-                return {}
-
-        except TypeError:
-            # search_dir is None
+        elif not isinstance(search_dir, basestring):
+            # Unsupported
             return {}
 
         # Change all filters strings lists (if they aren't already)
@@ -998,10 +1008,62 @@ class ScriptBase(object):
             # apply
             regex_filter = _filters
 
-        # Build file list
-        files = {}
-        if not isdir(search_dir):
-            return files
+        if isfile(search_dir):
+            fname = basename(search_dir)
+            dname = dirname(search_dir)
+            filtered = False
+            if regex_filter:
+                filtered = True
+                for regex in regex_filter:
+                    if regex.search(fname):
+                        self.logger.debug('Allowed %s (regex)' % fname)
+                        filtered = False
+                        break
+                if filtered:
+                    self.logger.debug('Denied %s (regex)' % fname)
+
+            if not filtered and prefix_filter:
+                filtered = True
+                for prefix in prefix_filter:
+                    if fname[0:len(prefix)] == prefix:
+                        self.logger.debug('Allowed %s (prefix)' % fname)
+                        filtered = False
+                        break
+                if filtered:
+                    self.logger.debug('Denied %s (prefix)' % fname)
+
+            if not filtered and suffix_filter:
+                filtered = True
+                for suffix in suffix_filter:
+                    if fname[-len(suffix):] == suffix:
+                        self.logger.debug('Allowed %s (suffix)' % fname)
+                        filtered = False
+                        break
+                if filtered:
+                    self.logger.debug('Denied %s (suffix)' % fname)
+
+            if filtered:
+                # File does not meet implied filters
+                return {}
+
+            # If we reach here, we can prepare a file using the data
+            # we fetch
+            _file = {
+                search_dir: {
+                'basename': fname,
+                'dirname': dname,
+                'extension': splitext(basename(fname))[1].lower(),
+                }
+            }
+            if fullstats:
+                stat_obj = stat(search_dir)
+                _file[search_dir]['modified'] = \
+                    datetime.fromtimestamp(stat_obj[ST_MTIME])
+                _file[search_dir]['filesize'] = stat_obj[ST_SIZE]
+            return _file
+
+        elif not isdir(search_dir):
+            return {}
 
         for dname, dnames, fnames in walk(search_dir):
             for fname in fnames:
@@ -1015,6 +1077,9 @@ class ScriptBase(object):
                             self.logger.debug('Allowed %s (regex)' % fname)
                             filtered = False
                             break
+                    if filtered:
+                        self.logger.debug('Denied %s (regex)' % fname)
+                        continue
 
                 if not filtered and prefix_filter:
                     filtered = True
@@ -1023,6 +1088,9 @@ class ScriptBase(object):
                             self.logger.debug('Allowed %s (prefix)' % fname)
                             filtered = False
                             break
+                    if filtered:
+                        self.logger.debug('Denied %s (prefix)' % fname)
+                        continue
 
                 if not filtered and suffix_filter:
                     filtered = True
@@ -1031,9 +1099,9 @@ class ScriptBase(object):
                             self.logger.debug('Allowed %s (suffix)' % fname)
                             filtered = False
                             break
-
-                if filtered:
-                    continue
+                    if filtered:
+                        self.logger.debug('Denied %s (suffix)' % fname)
+                        continue
 
                 # If we reach here, we store the file found
                 extension = splitext(fname)[1].lower()
@@ -1136,12 +1204,12 @@ class ScriptBase(object):
             if isinstance(arg, basestring):
                 result += re.split(STRING_DELIMITERS, arg)
 
-            elif isinstance(arg, list) or isinstance(arg, tuple):
+            elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
                     if isinstance(arg, basestring):
                         result += re.split(STRING_DELIMITERS, arg)
                     # A list inside a list? - use recursion
-                    elif isinstance(_arg, list) or isinstance(_arg, tuple):
+                    elif isinstance(_arg, (list, tuple)):
                         result += self.parse_list(_arg)
                     else:
                         # Convert whatever it is to a string and work with it
@@ -1266,7 +1334,8 @@ class ScriptBase(object):
         if self.script_mode is not None:
             return self.script_mode
 
-        self.logger.debug('Detecting possible script mode from: %s' % \
+        if len(self.script_dict):
+            self.logger.debug('Detecting possible script mode from: %s' % \
                          ', '.join(self.script_dict.keys()))
 
         if len(self.script_dict.keys()) > 1:
@@ -1278,17 +1347,16 @@ class ScriptBase(object):
                         if self.script_mode != SCRIPT_MODE.NONE:
                             self.logger.info(
                                 'Script Mode: %s' % self.script_mode.upper())
-                        else:
-                            self.logger.warning(
-                                'The script mode could not be detected.')
-                        break
+                            return self.script_mode
 
         elif len(self.script_dict.keys()) == 1:
             self.script_mode = self.script_dict.keys()[0]
             if self.script_mode != SCRIPT_MODE.NONE:
                 self.logger.info('Script Mode: %s' % self.script_mode.upper())
-            else:
-                self.logger.warning('The script mode could not be detected.')
+                return self.script_mode
+
+        self.logger.warning('Script Mode: <Standalone>')
+        self.script_mode = SCRIPT_MODE.NONE
 
         return self.script_mode
 
