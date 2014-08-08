@@ -15,10 +15,39 @@
 # GNU Lesser General Public License for more details.
 #
 import re
+
+# Pre-Escape content since we reference it so much
 ESCAPED_PATH_SEPARATOR = re.escape('\\/')
+ESCAPED_WIN_PATH_SEPARATOR = re.escape('\\')
+ESCAPED_NUX_PATH_SEPARATOR = re.escape('/')
+
+TIDY_WIN_PATH_RE = re.compile(
+    '(^[%s]{2}|[^%s\s][%s]|[\s][%s]{2}])([%s]+)' % (
+        ESCAPED_WIN_PATH_SEPARATOR,
+        ESCAPED_WIN_PATH_SEPARATOR,
+        ESCAPED_WIN_PATH_SEPARATOR,
+        ESCAPED_WIN_PATH_SEPARATOR,
+        ESCAPED_WIN_PATH_SEPARATOR,
+))
+TIDY_WIN_TRIM_RE = re.compile(
+    '^(.+[^:][^%s])[\s%s]*$' %(
+        ESCAPED_WIN_PATH_SEPARATOR,
+        ESCAPED_WIN_PATH_SEPARATOR,
+))
+
+TIDY_NUX_PATH_RE = re.compile(
+    '([%s])([%s]+)' % (
+        ESCAPED_NUX_PATH_SEPARATOR,
+        ESCAPED_NUX_PATH_SEPARATOR,
+))
+TIDY_NUX_TRIM_RE = re.compile(
+    '([^%s])[\s%s]+$' % (
+        ESCAPED_NUX_PATH_SEPARATOR,
+        ESCAPED_NUX_PATH_SEPARATOR,
+))
 
 def os_path_split(path):
-    """splits a path into a list (by it's path delimiter
+    """splits a path into a list by it's path delimiter
 
        hence: split_path('/etc/test/file') outputs:
                 ['', 'etc', 'test', 'file']
@@ -58,14 +87,13 @@ def tidy_path(path):
         /absolute/path
 
     """
-
-    path = re.sub('([%s])([%s]+)' % (
-        ESCAPED_PATH_SEPARATOR,
-        ESCAPED_PATH_SEPARATOR,
-    ), '\\1', path.strip())
+    # Windows
+    path = TIDY_WIN_PATH_RE.sub('\\1', path.strip())
+    # Linux
+    path = TIDY_NUX_PATH_RE.sub('\\1', path.strip())
 
     # Linux Based Trim
-    path = re.sub('([^\/])[\s\/]+$', '\\1', path.strip())
+    path = TIDY_NUX_TRIM_RE.sub('\\1', path.strip())
     # Windows Based Trim
-    path = re.sub('^(.+[^:][^\\\])[\s\\\]*$', '\\1', path.strip())
+    path = TIDY_WIN_TRIM_RE.sub('\\1', path.strip())
     return path

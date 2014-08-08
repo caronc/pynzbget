@@ -72,11 +72,14 @@ class TestUtils(TestBase):
         assert tidy_path('C:\\\\\My Directory\\\\\\SubDirectory  ') == \
             'C:\\My Directory\\SubDirectory'
 
-        print tidy_path('C:\\')
         assert tidy_path('C:\\') == 'C:\\'
         assert tidy_path('C:\\\\\\') == 'C:\\'
         assert tidy_path('/') == '/'
         assert tidy_path('///////////') == '/'
         assert tidy_path('////path///////') == '/path'
         assert tidy_path('////path/with spaces//////') == \
-        '/path/with spaces'
+            '/path/with spaces'
+
+        # Network Paths
+        assert tidy_path('\\\\network\\\\path\\ ') == \
+                '\\\\network\\path'

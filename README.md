@@ -69,7 +69,7 @@ The following are some of the functionality that is built in for you:
                   Hence: parse_list('.mkv, .avi') returns:
                       [ '.mkv', '.avi' ]
 
- * parse_path_list() - Very smilar to parse_list() except is used for
+ * parse_path_list() - Very smilar to parse_list() except that it is used
                   to handle directory paths while cleaning them up at the
                   same time.
 

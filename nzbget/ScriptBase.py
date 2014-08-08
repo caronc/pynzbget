@@ -52,7 +52,7 @@ functionality such as:
                   Hence: parse_list('.mkv, .avi') returns:
                       [ '.mkv', '.avi' ]
 
- * parse_path_list() - Very smilar to parse_list() except is used for
+ * parse_path_list() - Very smilar to parse_list() except that it is used
                   to handle directory paths while cleaning them up at the
                   same time.
 
@@ -116,6 +116,8 @@ from NZBGetAPI import NZBGetAPI
 from Logger import init_logger
 from Logger import destroy_logger
 from Utils import ESCAPED_PATH_SEPARATOR
+from Utils import ESCAPED_WIN_PATH_SEPARATOR
+from Utils import ESCAPED_NUX_PATH_SEPARATOR
 
 # NZB Processing Support if lxml is installed
 try:
@@ -243,10 +245,10 @@ STRING_DELIMITERS = r'[%s\[\]\:;,\s]+' % \
 
 # For speparating paths
 PATH_DELIMITERS = r'([%s]+[%s;\|,\s]+|[;\|,\s%s]+[%s]+)' % (
-        ESCAPED_PATH_SEPARATOR,
-        ESCAPED_PATH_SEPARATOR,
-        ESCAPED_PATH_SEPARATOR,
-        ESCAPED_PATH_SEPARATOR,
+        ESCAPED_NUX_PATH_SEPARATOR,
+        ESCAPED_NUX_PATH_SEPARATOR,
+        ESCAPED_NUX_PATH_SEPARATOR,
+        ESCAPED_NUX_PATH_SEPARATOR,
 )
 
 # SQLite Database
@@ -1172,28 +1174,39 @@ class ScriptBase(object):
         if not hasattr(self, '_path_delimiter_re'):
             # Compile for speed on first pass though
             self._path_delimiter_re = re.compile(PATH_DELIMITERS)
-        if not hasattr(self, '_path_win_re'):
+
             # Compile for speed on first pass though
             # This separates D:\entry E:\entry2 by forcing a delimiter
             # that will be caught with the _path_delimiter_re is ran
             # afterwards
-            self._path_win_re = re.compile(
+            self._path_win_drive_re = re.compile(
                 r'[\s,\|]+([A-Za-z]):+(%s)%s*' % (
-                    re.escape('\\'),
-                    re.escape('\\'),
+                    ESCAPED_WIN_PATH_SEPARATOR,
+                    ESCAPED_WIN_PATH_SEPARATOR,
             ))
+
+            self._path_win_re = re.compile(
+                r'[%s]+[\s,\|]+([%s]{2}%s*|[^%s])' % (
+                    ESCAPED_WIN_PATH_SEPARATOR,
+                    ESCAPED_WIN_PATH_SEPARATOR,
+                    ESCAPED_WIN_PATH_SEPARATOR,
+                    ESCAPED_WIN_PATH_SEPARATOR,
+            ))
+
         result = []
         for arg in args:
             if isinstance(arg, basestring):
                 cleaned = self._path_delimiter_re.sub('|', tidy_path(arg))
-                cleaned = self._path_win_re.sub('|\\1:\\2', cleaned)
+                cleaned = self._path_win_re.sub('|\\1', cleaned)
+                cleaned = self._path_win_drive_re.sub('|\\1:\\2', cleaned)
                 result += cleaned.split('|')
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
                     if isinstance(_arg, basestring):
                         cleaned = self._path_delimiter_re.sub('|', tidy_path(_arg))
-                        cleaned = self._path_win_re.sub('|\\1:\\2', cleaned)
+                        cleaned = self._path_win_re.sub('|\\1', cleaned)
+                        cleaned = self._path_win_drive_re.sub('|\\1:\\2', cleaned)
                         result += cleaned.split('|')
 
                     # A list inside a list? - use recursion

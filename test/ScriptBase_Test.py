@@ -231,17 +231,21 @@ class TestScriptBase(TestBase):
             'D:\\weird path\\more spaces\\ ', # Duplicate is removed
             '  D:\\\\weird path\\more spaces\\\\ ', # Duplicate is removed
             'relative path\\\\\\with\\crap\\\\ second_path\\more spaces\\ ',
+            # Windows Network Paths
+            '\\\\a\\network\\path\\\\ \\\\\\another\\nw\\\\path\\\\         ',
             # lists supported too
             [ 'relative path\\in\\list', 'second_path\\more spaces\\\\' ],
             # Unsupported and ignored types
             None, 1, 4.3, True, False, -4000,
         )
 
-        assert len(results) == 7
+        assert len(results) == 9
         assert 'D:\\weird path\\more spaces' in results
         assert 'E:\\save_dir' in results
         assert 'G:\\save' in results
         assert 'second_path\\more spaces' in results
+        assert '\\\\a\\network\\path' in results
+        assert '\\\\another\\nw\\path' in results
         assert 'relative path\\with\\crap' in results
         assert 'relative path\\in\\list' in results
         assert 'C:\\test path with space\\and more spaces' in results
