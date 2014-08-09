@@ -155,6 +155,7 @@ from os.path import isfile
 from os.path import join
 from os.path import splitext
 from os.path import basename
+from os.path import dirname
 from os.path import abspath
 
 # Relative Includes
@@ -397,16 +398,53 @@ class PostProcessScript(ScriptBase):
         if not self.nzbfilename:
             self.logger.warning('NZB-File not defined.')
 
-        elif not isfile(self.nzbfilename):
-            if isfile('%s.queued' % self.nzbfilename):
-                # support .queued files
-                self.nzbheaders = self.parse_nzbfile(
-                    '%s.queued' % self.nzbfilename,
-                )
-            else:
-                self.logger.warning('NZB-File not found: %s' % self.nzbfilename)
+        elif isdir(dirname(self.nzbfilename)):
 
-        elif parse_nzbfile:
+            file_escaped = re.escape(basename(self.nzbfilename))
+            file_regex = '^(%s|%s\.queued|%s\.[0-9]+\.queued)$' % (
+                file_escaped, file_escaped, file_escaped,
+            )
+
+            # look in the directory and extract all matches
+            _nzbfilenames = self.get_files(
+                search_dir=dirname(self.nzbfilename),
+                regex_filter=file_regex,
+                fullstats=True,
+                max_depth=1,
+            )
+            if len(_nzbfilenames):
+                # sort our results by access time
+                _files = sorted (
+                    _nzbfilenames.iterkeys(),
+                    key=lambda k: (
+                        # Sort by Accessed time first
+                        _nzbfilenames[k]['accessed'],
+                        # Then sort by Created Date
+                        _nzbfilenames[k]['created'],
+                        # Then sort by filename length
+                        # file.nzb.2.queued > file.nzb.queued
+                        len(k)),
+                    reverse=True,
+                )
+                if self.debug:
+                    for _file in _files:
+                        self.logger.debug('NZB-Files located: %s (%s)' % (
+                            basename(_file),
+                            _nzbfilenames[_file]['accessed']\
+                                .strftime('%Y-%m-%d %H:%M:%S'),
+                        ))
+                # Assign first file (since we've listed by access time)
+                self.nzbfilename = _files[0]
+                self.logger.info(
+                    'NZB-File detected: %s' % basename(self.nzbfilename),
+                )
+
+        else:
+            self.logger.warning(
+                'NZB-File not found: %s' % basename(self.nzbfilename),
+            )
+
+        if self.nzbfilename and parse_nzbfile:
             # Initialize information fetched from NZB-File
             self.nzbheaders = self.parse_nzbfile(self.nzbfilename)
 
@@ -576,9 +614,7 @@ class PostProcessScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def postprocess_get_files(self, search_dir=None, regex_filter=None,
-                              prefix_filter=None, suffix_filter=None,
-                              fullstats=False, *args, **kargs):
+    def postprocess_get_files(self, search_dir=None, *args, **kargs):
         """a wrapper to the get_files() function defined in the inherited class
            the only difference is the search_dir automatically uses the
            defined download `directory` as a default (if not specified).
@@ -587,12 +623,7 @@ class PostProcessScript(ScriptBase):
             search_dir = self.directory
 
         return super(PostProcessScript, self)._get_files(
-            search_dir=search_dir,
-            regex_filter=regex_filter,
-            prefix_filter=prefix_filter,
-            suffix_filter=suffix_filter,
-            fullstats=fullstats,
-        )
+            search_dir=search_dir, *args, **kargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Obfuscation Handling

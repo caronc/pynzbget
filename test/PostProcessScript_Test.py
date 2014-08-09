@@ -49,7 +49,8 @@ from shutil import rmtree
 DIRECTORY = TEMP_DIRECTORY
 NZBNAME = 'A.Great.Movie'
 NZBFILENAME = join(TEMP_DIRECTORY, 'A.Great.Movie.nzb')
-NZBFILENAME_SHOW = join(TEMP_DIRECTORY, 'A.Great.TV.Show.nzb')
+NZBFILENAME_SHOW_A = join(TEMP_DIRECTORY, 'A.Great.TV.Show.nzb')
+NZBFILENAME_SHOW_B = join(TEMP_DIRECTORY, 'Another.Great.TV.Show.nzb')
 CATEGORY = 'movie'
 TOTALSTATUS = TOTAL_STATUS.SUCCESS
 STATUS = SCRIPT_STATUS.SUCCESS
@@ -82,7 +83,7 @@ class TestPostProcessScript(TestBase):
           </nzb>""")
         _f.close()
 
-        _f = open(NZBFILENAME_SHOW, 'w')
+        _f = open(NZBFILENAME_SHOW_A, 'w')
         _f.write("""<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
             <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
@@ -92,6 +93,62 @@ class TestPostProcessScript(TestBase):
              <meta type="name">A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME</meta>
              <meta type="propername">A Great TV Show</meta>
              <meta type="episodename">An Amazing Episode Name</meta>
+            </head>
+          </nzb>""")
+        _f.close()
+
+        _f = open('%s.queued' % NZBFILENAME_SHOW_A, 'w')
+        _f.write("""<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+            <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+
+            <head>
+             <meta type="category">TV &gt; HD</meta>
+             <meta type="name">A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME</meta>
+             <meta type="propername">A Great TV Show</meta>
+             <meta type="episodename">An Amazing Episode Name</meta>
+            </head>
+          </nzb>""")
+        _f.close()
+
+        _f = open('%s' % NZBFILENAME_SHOW_B, 'w')
+        _f.write("""<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+            <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+
+            <head>
+             <meta type="category">TV &gt; HD</meta>
+             <meta type="name">Another.Great.TV.Show.S01E02.720p.HDTV.x264-AWESOME</meta>
+             <meta type="propername">Another Great TV Show</meta>
+             <meta type="episodename">An Okay Episode Name</meta>
+            </head>
+          </nzb>""")
+        _f.close()
+
+        _f = open('%s.queued' % NZBFILENAME_SHOW_B, 'w')
+        _f.write("""<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+            <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+
+            <head>
+             <meta type="category">TV &gt; HD</meta>
+             <meta type="name">Another.Great.TV.Show.S01E02.720p.HDTV.x264-AWESOME</meta>
+             <meta type="propername">Another Great TV Show</meta>
+             <meta type="episodename">An Okay Episode Name</meta>
+            </head>
+          </nzb>""")
+        _f.close()
+
+        _f = open('%s.2.queued' % NZBFILENAME_SHOW_B, 'w')
+        _f.write("""<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
+            <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+
+            <head>
+             <meta type="category">TV &gt; HD</meta>
+             <meta type="name">Another.Great.TV.Show.S01E02.720p.HDTV.x264-AWESOME</meta>
+             <meta type="propername">Another Great TV Show</meta>
+             <meta type="episodename">An Okay Episode Name</meta>
             </head>
           </nzb>""")
         _f.close()
@@ -317,7 +374,7 @@ class TestPostProcessScript(TestBase):
         for k, v in invalid_entries.items():
             os.environ['%s%s' % (CFG_ENVIRO_ID, k)] = v
 
-        script = PostProcessScript()
+        script = PostProcessScript(logger=False, debug=True)
         for k, v in valid_entries.items():
             assert k in script.config
             assert script.config[k] == v
@@ -433,8 +490,6 @@ class TestPostProcessScript(TestBase):
 
     def test_file_listings_as_string(self):
 
-        SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
-
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
         assert script.get_files(search_dir=SEARCH_DIR) == {}
@@ -455,6 +510,8 @@ class TestPostProcessScript(TestBase):
         assert 'extension' in files[files.keys()[0]]
         assert 'filesize' not in files[files.keys()[0]]
         assert 'modified' not in files[files.keys()[0]]
+        assert 'accessed' not in files[files.keys()[0]]
+        assert 'created' not in files[files.keys()[0]]
 
         files = script.get_files(
             fullstats=True,
@@ -466,13 +523,23 @@ class TestPostProcessScript(TestBase):
         assert 'extension' in files[files.keys()[0]]
         assert 'filesize' in files[files.keys()[0]]
         assert 'modified' in files[files.keys()[0]]
+        assert 'accessed' in files[files.keys()[0]]
+        assert 'created' in files[files.keys()[0]]
 
         # Test Filters (as strings)
         files = script.get_files(
             regex_filter='.*\.par2$',
             search_dir=SEARCH_DIR,
+            case_sensitive=True,
         )
         assert len(files) == 1
+
+        # Test Filters (as strings) (default is case-insensitive)
+        files = script.get_files(
+            regex_filter='.*\.par2$',
+            search_dir=SEARCH_DIR,
+        )
+        assert len(files) == 2
 
         # Assume case sensitivity matters to us, we might
         # want to pre-compile our own list and pass it in
@@ -538,8 +605,16 @@ class TestPostProcessScript(TestBase):
         files = script.get_files(
             search_dir=[SEARCH_DIR, ],
             regex_filter=('.*\.par2$',),
+            case_sensitive=True
         )
         assert len(files) == 1
+
+        # Default is not case-sensitive
+        files = script.get_files(
+            search_dir=[SEARCH_DIR, ],
+            regex_filter=('.*\.par2$',),
+        )
+        assert len(files) == 2
 
         # Assume case sensitivity matters to us, we might
         # want to pre-compile our own list and pass it in
@@ -591,6 +666,23 @@ class TestPostProcessScript(TestBase):
         )
         assert len(files) == 5
 
+    def test_nzbfilename_searching(self):
+
+        # a NZB Logger set to False uses stderr
+        script = PostProcessScript(
+            logger=False,
+            debug=True,
+            nzbfilename=NZBFILENAME_SHOW_A
+        )
+        assert script.nzbfilename == '%s.queued' % NZBFILENAME_SHOW_A
+
+        script = PostProcessScript(
+            logger=False,
+            debug=True,
+            nzbfilename=NZBFILENAME_SHOW_B
+        )
+        assert script.nzbfilename == '%s.2.queued' % NZBFILENAME_SHOW_B
+
     def test_file_obsfucation(self):
 
         download_dir = join(TEMP_DIRECTORY, 'obsfucation')
@@ -610,14 +702,15 @@ class TestPostProcessScript(TestBase):
 
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
-        assert len(script.parse_nzbfile(NZBFILENAME_SHOW)) == 4
-        assert script.parse_nzbfile(NZBFILENAME_SHOW)['PROPERNAME'] == \
+
+        assert len(script.parse_nzbfile(NZBFILENAME_SHOW_A)) == 4
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['PROPERNAME'] == \
                 'A Great TV Show'
-        assert script.parse_nzbfile(NZBFILENAME_SHOW)['NAME'] == \
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['NAME'] == \
                 'A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME'
-        assert script.parse_nzbfile(NZBFILENAME_SHOW)['EPISODENAME'] == \
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['EPISODENAME'] == \
                 'An Amazing Episode Name'
-        assert script.parse_nzbfile(NZBFILENAME_SHOW)['CATEGORY'] == 'TV > HD'
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['CATEGORY'] == 'TV > HD'
 
         assert len(script.parse_nzbfile(NZBFILENAME)) == 4
         assert script.parse_nzbfile(NZBFILENAME)['CATEGORY'] == 'Movies > SD'

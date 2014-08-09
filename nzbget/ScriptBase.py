@@ -105,6 +105,7 @@ from os.path import isfile
 from os.path import join
 from os.path import dirname
 from os.path import basename
+from os.path import normpath
 from os.path import splitext
 from getpass import getuser
 from logging import Logger
@@ -135,8 +136,11 @@ except ImportError:
     pass
 
 # File Stats
+from stat import ST_ATIME
+from stat import ST_CTIME
 from stat import ST_MTIME
 from stat import ST_SIZE
+
 from os import stat
 
 # Some booleans that are read to and from nzbget
@@ -923,7 +927,9 @@ class ScriptBase(object):
         return core_function(*args, **kwargs)
 
     def _get_files(self, search_dir, regex_filter=None, prefix_filter=None,
-                    suffix_filter=None, fullstats=False):
+                    suffix_filter=None, fullstats=False,
+                   followlinks=False, min_depth=None, max_depth=None,
+                  case_sensitive=False):
         """Returns a dict object of the files found in the download
            directory. You can additionally pass in filters as a list or
            string) to filter the results returned.
@@ -940,7 +946,11 @@ class ScriptBase(object):
 
                      # filesize is in bytes
                      'filesize': 10000,
-                     # modified date
+                     # accessed date
+                     'accessed': datetime(),
+                     # created date
+                     'created': datetime(),
+                     # created date
                      'modified': datetime(),
                  }
               }
@@ -953,11 +963,15 @@ class ScriptBase(object):
             for _dir in search_dir:
                 # use recursion to build a master (unique) list
                 files = dict(files.items() + self._get_files(
-                    _dir,
+                    search_dir=_dir,
                     regex_filter=regex_filter,
                     prefix_filter=prefix_filter,
                     suffix_filter=suffix_filter,
                     fullstats=fullstats,
+                    followlinks=followlinks,
+                    min_depth=min_depth,
+                    max_depth=max_depth,
+                    case_sensitive=case_sensitive,
                 ).items())
             return files
 
@@ -994,8 +1008,11 @@ class ScriptBase(object):
             _filters = []
             for f in regex_filter:
                 if not isinstance(f, re._pattern_type):
+                    flags = re.MULTILINE
+                    if not case_sensitive:
+                        flags |= re.IGNORECASE
                     try:
-                        _filters.append(re.compile(f))
+                        _filters.append(re.compile(f, flags=flags))
                         self.logger.debug('Compiled regex "%s"' % f)
                     except:
                         self.logger.error(
@@ -1025,20 +1042,34 @@ class ScriptBase(object):
             if not filtered and prefix_filter:
                 filtered = True
                 for prefix in prefix_filter:
-                    if fname[0:len(prefix)] == prefix:
-                        self.logger.debug('Allowed %s (prefix)' % fname)
-                        filtered = False
-                        break
+                    if case_sensitive:
+                        if fname[0:len(prefix)] == prefix:
+                            self.logger.debug('Allowed %s (prefix)' % fname)
+                            filtered = False
+                            break
+                    else:
+                        # Not Case Sensitive
+                        if fname[0:len(prefix)].lower() == prefix.lower():
+                            self.logger.debug('Allowed %s (prefix)' % fname)
+                            filtered = False
+                            break
                 if filtered:
                     self.logger.debug('Denied %s (prefix)' % fname)
 
             if not filtered and suffix_filter:
                 filtered = True
                 for suffix in suffix_filter:
-                    if fname[-len(suffix):] == suffix:
-                        self.logger.debug('Allowed %s (suffix)' % fname)
-                        filtered = False
-                        break
+                    if case_sensitive:
+                        if fname[-len(suffix):] == suffix:
+                            self.logger.debug('Allowed %s (suffix)' % fname)
+                            filtered = False
+                            break
+                    else:
+                        # Not Case Sensitive
+                        if fname[-len(suffix):].lower() == suffix.lower():
+                            self.logger.debug('Allowed %s (suffix)' % fname)
+                            filtered = False
+                            break
                 if filtered:
                     self.logger.debug('Denied %s (suffix)' % fname)
 
@@ -1059,13 +1090,38 @@ class ScriptBase(object):
                 stat_obj = stat(search_dir)
                 _file[search_dir]['modified'] = \
                     datetime.fromtimestamp(stat_obj[ST_MTIME])
+                _file[search_dir]['accessed'] = \
+                    datetime.fromtimestamp(stat_obj[ST_ATIME])
+                _file[search_dir]['created'] = \
+                    datetime.fromtimestamp(stat_obj[ST_CTIME])
                 _file[search_dir]['filesize'] = stat_obj[ST_SIZE]
             return _file
 
         elif not isdir(search_dir):
             return {}
 
-        for dname, dnames, fnames in walk(search_dir):
+        # For depth matching
+        search_dir = normpath(search_dir)
+        depth_offset = len(re.split('[%s]' % ESCAPED_PATH_SEPARATOR, search_dir)) - 1
+        self.logger.debug('File depth offset %d' % depth_offset)
+
+        for dname, dnames, fnames in walk(
+            search_dir, followlinks=followlinks):
+
+            # Depth handling
+            current_depth = \
+                    len(re.split('[%s]' % ESCAPED_PATH_SEPARATOR, dname))\
+                    - depth_offset
+
+            # Min and Max depth handling
+            if max_depth and max_depth < current_depth:
+                continue
+            if min_depth and min_depth > current_depth:
+                continue
+
+            self.logger.debug('CUR depth %d (MAX=%s, MIN=%s)' % \
+                              (current_depth, str(max_depth), str(min_depth)))
+
             for fname in fnames:
                 filtered = False
 
@@ -1117,6 +1173,10 @@ class ScriptBase(object):
                     stat_obj = stat(_file)
                     files[_file]['modified'] = \
                         datetime.fromtimestamp(stat_obj[ST_MTIME])
+                    files[_file]['accessed'] = \
+                        datetime.fromtimestamp(stat_obj[ST_ATIME])
+                    files[_file]['created'] = \
+                        datetime.fromtimestamp(stat_obj[ST_CTIME])
                     files[_file]['filesize'] = stat_obj[ST_SIZE]
         # Return all files
         return files

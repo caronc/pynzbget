@@ -429,12 +429,7 @@ class ScanScript(ScriptBase):
             search_dir = self.directory
 
         return super(ScanScript, self)._get_files(
-            search_dir=search_dir,
-            regex_filter=regex_filter,
-            prefix_filter=prefix_filter,
-            suffix_filter=suffix_filter,
-            fullstats=fullstats,
-        )
+            search_dir=search_dir, *args, **kargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Set/Control Functions (also passes data back to NZBGet)

@@ -242,6 +242,53 @@ class TestScriptBase(TestBase):
         )
         assert len(files) == 1
 
+    def test_file_listings_with_depth(self):
+
+        subdirs = (
+            'depth2/depth3/depth4/depth5',
+            'depth2_a/depth3_a/depth4_a/depth5_a',
+            'depth2_b/depth3_b/depth4_b/depth5_b',
+            'depth2_c/depth3_c/depth4_c/depth5_c/depth6_c',
+        )
+        for _dir in subdirs:
+            makedirs(join(SEARCH_DIR, _dir))
+
+        # Create some temporary files to work with
+        open(join(SEARCH_DIR,'file.001'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2_c', 'depth3_c',
+                  'depth4_c', 'depth5_c', 'depth6_c', 'file.006'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2', 'depth3', 'depth4',
+                  'depth5', 'file.005'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2_a', 'depth3_a', 'depth4_a',
+                  'depth5_a','file.005'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2_b', 'depth3_b', 'depth4_b',
+                  'depth5_b', 'file.005'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2', 'depth3', 'depth4',
+                  'file.004'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2', 'depth3',
+                  'file.003'), 'w').close()
+        open(join(SEARCH_DIR, 'depth2', 'file.002'), 'w').close()
+
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+        results = script.get_files(search_dir=SEARCH_DIR, max_depth=2)
+        assert len(results) == 2
+        assert join(SEARCH_DIR, 'depth2', 'file.002') in results.keys()
+        assert join(SEARCH_DIR, 'file.001') in results.keys()
+
+        # Recursion works a little differnetly, check that results
+        # are the same:
+        results = script.get_files(search_dir=[SEARCH_DIR, ], max_depth=2)
+        assert len(results) == 2
+        assert join(SEARCH_DIR, 'depth2', 'file.002') in results.keys()
+        assert join(SEARCH_DIR, 'file.001') in results.keys()
+
+        # This should fetch them all
+        files = script.get_files(SEARCH_DIR)
+        print len(files)
+        assert len(files) == 8
+
+
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=True)
