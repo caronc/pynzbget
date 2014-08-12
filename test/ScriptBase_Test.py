@@ -78,17 +78,38 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=True)
         assert script.run() == EXIT_CODE.SUCCESS
 
-        del script
-        del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
-        script = ScriptBase(logger=False, debug=True)
-        assert script.run() == EXIT_CODE.FAILURE
-
         class ScriptExceptionExit(ScriptBase):
             def main(self, *args, **kwargs):
                 raise TypeError
 
         script = ScriptExceptionExit()
         assert script.run() == EXIT_CODE.FAILURE
+
+    def test_nzbset_and_nzbget(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+        KEY = 'MY_NZBVAR'
+        KEYL = 'my_nzbvar'
+        VALUE = 'MY_NZBVALUE'
+        ADJUSTED_VALUE = 'MY_NEW_NZBVALUE'
+
+        # Value does not exist yet
+        assert script.nzb_get(KEY) == None
+        assert script.nzb_get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
+        assert script.nzb_get(KEYL, ADJUSTED_VALUE) == ADJUSTED_VALUE
+        assert script.nzb_set(KEY, VALUE) == True
+        assert script.nzb_get(KEY, ADJUSTED_VALUE) == VALUE
+        assert script.nzb_get(KEYL, ADJUSTED_VALUE) == VALUE
+        assert script.nzb_unset(KEYL) == True
+        assert script.nzb_get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
+
+        # Reset with content
+        assert script.nzb_set(KEY, ADJUSTED_VALUE) == True
+        assert script.nzb_get(KEY, VALUE) == ADJUSTED_VALUE
+
+        # Same as nzb_unset
+        assert script.nzb_set(KEY, None) == True
+        assert script.nzb_get(KEY, VALUE) == VALUE
 
     def test_set_and_get(self):
         # a NZB Logger set to False uses stderr
@@ -98,7 +119,7 @@ class TestScriptBase(TestBase):
         VALUE = 'MY_VALUE'
         ADJUSTED_VALUE = 'MY_NEW_VALUE'
 
-        # Value doe snot exist yet
+        # Value does not exist yet
         assert script.get(KEY) == None
         assert script.get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
         assert script.set(KEY, VALUE) == True

@@ -30,6 +30,7 @@ from ScriptBase import SHR_ENVIRO_ID
 from ScriptBase import NZBGET_MSG_PREFIX
 from ScriptBase import SHR_ENVIRO_GUESS_ID
 from ScriptBase import SHR_ENVIRO_DNZB_ID
+from ScriptBase import EXIT_CODE
 
 from PostProcessScript import PostProcessScript
 from PostProcessScript import POSTPROC_ENVIRO_ID
@@ -79,6 +80,8 @@ class TestPostProcessScript(TestBase):
              <meta type="name">A.Great.Movie.1983.DVDRip.x264-AWESOME</meta>
              <meta type="propername">A Great Movie</meta>
              <meta type="movieyear">1983</meta>
+            <!-- extra record used to determine what file we're reading -->
+             <meta type="letter">A</meta>
             </head>
           </nzb>""")
         _f.close()
@@ -93,6 +96,8 @@ class TestPostProcessScript(TestBase):
              <meta type="name">A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME</meta>
              <meta type="propername">A Great TV Show</meta>
              <meta type="episodename">An Amazing Episode Name</meta>
+            <!-- extra record used to determine what file we're reading -->
+             <meta type="letter">B</meta>
             </head>
           </nzb>""")
         _f.close()
@@ -107,6 +112,8 @@ class TestPostProcessScript(TestBase):
              <meta type="name">A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME</meta>
              <meta type="propername">A Great TV Show</meta>
              <meta type="episodename">An Amazing Episode Name</meta>
+            <!-- extra record used to determine what file we're reading -->
+             <meta type="letter">C</meta>
             </head>
           </nzb>""")
         _f.close()
@@ -121,6 +128,8 @@ class TestPostProcessScript(TestBase):
              <meta type="name">Another.Great.TV.Show.S01E02.720p.HDTV.x264-AWESOME</meta>
              <meta type="propername">Another Great TV Show</meta>
              <meta type="episodename">An Okay Episode Name</meta>
+            <!-- extra record used to determine what file we're reading -->
+             <meta type="letter">D</meta>
             </head>
           </nzb>""")
         _f.close()
@@ -135,6 +144,8 @@ class TestPostProcessScript(TestBase):
              <meta type="name">Another.Great.TV.Show.S01E02.720p.HDTV.x264-AWESOME</meta>
              <meta type="propername">Another Great TV Show</meta>
              <meta type="episodename">An Okay Episode Name</meta>
+            <!-- extra record used to determine what file we're reading -->
+             <meta type="letter">E</meta>
             </head>
           </nzb>""")
         _f.close()
@@ -149,11 +160,14 @@ class TestPostProcessScript(TestBase):
              <meta type="name">Another.Great.TV.Show.S01E02.720p.HDTV.x264-AWESOME</meta>
              <meta type="propername">Another Great TV Show</meta>
              <meta type="episodename">An Okay Episode Name</meta>
+            <!-- extra record used to determine what file we're reading -->
+             <meta type="letter">F</meta>
             </head>
           </nzb>""")
         _f.close()
 
         # Create some environment variables
+        os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = DIRECTORY
         os.environ['%sNZBNAME' % POSTPROC_ENVIRO_ID] = NZBNAME
@@ -176,6 +190,8 @@ class TestPostProcessScript(TestBase):
     def tearDown(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
+        if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
+            del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sTEMPDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
         del os.environ['%sNZBNAME' % POSTPROC_ENVIRO_ID]
@@ -193,6 +209,16 @@ class TestPostProcessScript(TestBase):
 
         # common
         super(TestPostProcessScript, self).tearDown()
+
+    def test_main_returns(self):
+        # a NZB Logger set to False uses stderr
+        script = PostProcessScript(logger=False, debug=True)
+        assert script.run() == EXIT_CODE.SUCCESS
+
+        del script
+        del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
+        script = PostProcessScript(logger=False, debug=True)
+        assert script.run() == EXIT_CODE.FAILURE
 
     def test_environment_varable_init(self):
         """
@@ -233,18 +259,18 @@ class TestPostProcessScript(TestBase):
         assert script.get('UNPACKSTATUS') == UNPACKSTATUS
 
         assert script.config == {}
-        assert script.shared == {
-            '%sMOVIEYEAR' % SHR_ENVIRO_DNZB_ID: '1983',
-            '%sNAME' % SHR_ENVIRO_DNZB_ID: 'A.Great.Movie.1983.DVDRip.x264-AWESOME',
-            '%sPROPERNAME' % SHR_ENVIRO_DNZB_ID: 'A Great Movie',
-            '%sCATEGORY' % SHR_ENVIRO_DNZB_ID: 'Movies > SD',
-        }
-        assert script.nzbheaders == {
-            'MOVIEYEAR': '1983',
-            'NAME': 'A.Great.Movie.1983.DVDRip.x264-AWESOME',
-            'PROPERNAME': 'A Great Movie',
-            'CATEGORY': 'Movies > SD',
-        }
+
+        assert script.nzbheaders['MOVIEYEAR'] == '1983'
+        assert script.nzbheaders['NAME'] == \
+            'A.Great.Movie.1983.DVDRip.x264-AWESOME'
+        assert script.nzbheaders['PROPERNAME'] == 'A Great Movie'
+        assert script.nzbheaders['CATEGORY'] == 'Movies > SD'
+
+        assert script.nzb_get('movieyear') == '1983'
+        assert script.nzb_get('name') == \
+            'A.Great.Movie.1983.DVDRip.x264-AWESOME'
+        assert script.nzb_get('propername') == 'A Great Movie'
+        assert script.nzb_get('category') == 'Movies > SD'
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] == DIRECTORY
@@ -474,9 +500,9 @@ class TestPostProcessScript(TestBase):
         # This will fail because it's looking for the SCRIPTDIR
         # variable defined with NZBGet v11
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
         if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
+        script = PostProcessScript(logger=False, debug=True)
         assert not script.validate()
         del script
 
@@ -674,14 +700,24 @@ class TestPostProcessScript(TestBase):
             debug=True,
             nzbfilename=NZBFILENAME_SHOW_A
         )
-        assert script.nzbfilename == '%s.queued' % NZBFILENAME_SHOW_A
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['LETTER'] == 'B'
+        os.unlink(NZBFILENAME_SHOW_A)
+
+        script = PostProcessScript(
+            logger=False,
+            debug=True,
+            nzbfilename=NZBFILENAME_SHOW_A
+        )
+        assert 'LETTER' not in script.parse_nzbfile(NZBFILENAME_SHOW_A)
+        assert script.parse_nzbfile(
+            NZBFILENAME_SHOW_A, check_queued=True)['LETTER'] == 'C'
 
         script = PostProcessScript(
             logger=False,
             debug=True,
             nzbfilename=NZBFILENAME_SHOW_B
         )
-        assert script.nzbfilename == '%s.2.queued' % NZBFILENAME_SHOW_B
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_B)['LETTER'] == 'D'
 
     def test_file_obsfucation(self):
 
@@ -703,7 +739,8 @@ class TestPostProcessScript(TestBase):
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=True)
 
-        assert len(script.parse_nzbfile(NZBFILENAME_SHOW_A)) == 4
+        assert len(script.parse_nzbfile(NZBFILENAME_SHOW_A)) == 5
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['LETTER'] == 'B'
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['PROPERNAME'] == \
                 'A Great TV Show'
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['NAME'] == \
@@ -712,7 +749,8 @@ class TestPostProcessScript(TestBase):
                 'An Amazing Episode Name'
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['CATEGORY'] == 'TV > HD'
 
-        assert len(script.parse_nzbfile(NZBFILENAME)) == 4
+        assert len(script.parse_nzbfile(NZBFILENAME)) == 5
+        assert script.parse_nzbfile(NZBFILENAME)['LETTER'] == 'A'
         assert script.parse_nzbfile(NZBFILENAME)['CATEGORY'] == 'Movies > SD'
         assert script.parse_nzbfile(NZBFILENAME)['PROPERNAME'] == \
                 'A Great Movie'
