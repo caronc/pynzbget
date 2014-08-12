@@ -49,6 +49,14 @@ The following are some of the functionality that is built in for you:
  * unset()    - This allows you to unset values set by set() and get() as well
                 as ones set by push()
 
+ * nzb_set()  - Similar to the set() function identified above except it
+                is used to build an nzb meta hash table which can be later
+                pushed to the server using push_dnzb().
+
+ * nzb_get()  - Retieves NZB Meta information previously stored.
+
+ * nzb_unset()- Removes a variable previously set completely.
+
  * get_api()  - Retreive a simple API/RPC object built from the global
                 variables NZBGet passes into an external program when
                 called.
@@ -87,6 +95,14 @@ The following are some of the functionality that is built in for you:
                   why redo grunt work if it's already done for you?
                   if no previous guess content was pushed, then an
                   empty dictionary is returned.
+
+ * push_dnzb() - You can push all nzb meta information onbtained to
+                  the NZBGet server as DNZB_ meta tags.
+
+ * pull_dnzb() - Pull all DNZB_ meta tags issued by the server and
+                 return their values in a dictionary.
+                  if no  DNZB_ (NZB Meta information) was found, then an
+                  empty dictionary is returned instead.
 
  * deobfuscate() - Take a filename and return it in a deobfuscated to the
                    best of its ability. (_PostProcessScript_ only)
