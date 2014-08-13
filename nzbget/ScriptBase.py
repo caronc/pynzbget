@@ -358,6 +358,13 @@ class ScriptBase(object):
             # enforce temporary directory
             environ['%sTEMPDIR' % SYS_ENVIRO_ID] = self.system['TEMPDIR']
 
+        # version detection
+        try:
+            self.version = '%s.' % self.system.get('VERSION')
+            self.version = int(self.version.split('.')[0])
+        except (TypeError, ValueError):
+            self.version = 11
+
         # Enabling DEBUG as a flag by specifying  near in the configuration
         # section of your script
         #Debug=no
@@ -897,7 +904,7 @@ class ScriptBase(object):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # nzb_set() and nzb_get() wrappers
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def nzb_unset(self, key, use_env=True, use_db=True):
+    def nzb_unset(self, key, use_env=True):
         """Unset a variable, this also occurs if you call nzb_set() with a
             value set to None.
         """
@@ -1018,7 +1025,8 @@ class ScriptBase(object):
 
             missing = [
                 k for k in keys \
-                        if not (k in self.system or k in self.config)
+                        if (not k.upper() in self.system \
+                             or k.upper() in self.config)
             ]
 
             if missing:
@@ -1031,20 +1039,15 @@ class ScriptBase(object):
             # NZBGet environment
             return is_okay
 
-        # version
-        try:
-            version = '%s.' % self.system.get('VERSION', '11')
-            version = int(version.split('.')[0])
-        except (TypeError, ValueError):
-            version = 11
-
-        if min_version > version:
+        if min_version > self.version:
             self.logger.error(
                 'Validation - detected version %d, (min expected=%d)' % (
-                    version, min_version)
+                    self.version, min_version)
             )
             is_okay = False
 
+        # Always a bad thing if SCRIPTDIR doesn't work since that is
+        # introduced in v11 (the minimum version we support)
         if not 'SCRIPTDIR' in self.system:
             self.logger.error(
                 'Validation - (<v11) Directive not set: %s' % 'SCRIPTDIR',

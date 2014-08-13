@@ -504,3 +504,10 @@ class TestScriptBase(TestBase):
 
         assert len(output) == 0
         assert script.get(KEY) == VALUE
+
+    def test_validate(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+        script.validate('TEMPDIR') == True
+        # allow lowercase and mixed characters too
+        script.validate('TempDir') == True

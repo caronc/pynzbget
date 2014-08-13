@@ -85,8 +85,8 @@ class MySchedulerScript(SchedulerScript):
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBSP_.*)
         # following dictionary (without the NZBOP_ or NZBSP_ prefix):
-        print 'TEMPDIR (directory is: %s' % self.get('TEMPDIR')
-        print 'DESTDIR %s' self.get('DESTDIR')
+        print('TEMPDIR (directory is: %s' % self.get('TEMPDIR'))
+        print('DESTDIR %s' self.get('DESTDIR'))
 
         # Set any variable you want by any key.  Note that if you use
         # keys that were defined by the system (such as CATEGORY, DIRECTORY,
@@ -97,7 +97,7 @@ class MySchedulerScript(SchedulerScript):
         # You can fetch it back; this will also set an entry in  the
         # sqlite database for each hash references that can be pulled from
         # another script that simply calls self.get('MY_KEY')
-        print self.get('MY_KEY') # prints MY_VALUE
+        print(self.get('MY_KEY')) # prints MY_VALUE
 
         # You can also use push() which is similar to set()
         # except that it interacts with the NZBGet Server and does not use
@@ -107,14 +107,14 @@ class MySchedulerScript(SchedulerScript):
 
         # You can still however locally retrieve what you set using push()
         # with the get() function
-        print self.get('ANOTHER_KEY') # prints ANOTHER_VALUE
+        print(self.get('ANOTHER_KEY')) # prints ANOTHER_VALUE
 
         # Your script configuration files (NZBNP_.*) are here in this
         # dictionary (again without the NZBNP_ prefix):
         # assume you defined `Debug=no` in the first 10K of your SchedulerScript
         # NZBGet translates this to `NZBNP_DEBUG` which can be retrieved
         # as follows:
-        print 'DEBUG %s' self.get('DEBUG')
+        print('DEBUG %s' self.get('DEBUG'))
 
         # Returns have been made easy.  Just return:
         #   * True if everything was successful
