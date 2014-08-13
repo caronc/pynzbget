@@ -21,6 +21,7 @@ from ScanScript import ScanScript
 from ScanScript import SCAN_ENVIRO_ID
 from SchedulerScript import SchedulerScript
 from ScriptBase import SCRIPT_MODE
+from ScriptBase import EXIT_CODE
 from ScriptBase import SYS_ENVIRO_ID
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
@@ -314,3 +315,21 @@ class TestPostProcessScript(TestBase):
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
+
+    def test_dual_run(self):
+        class TestDualScript(SchedulerScript, PostProcessScript):
+            def postprocess_main(self, *args, **kwargs):
+                return None
+            def scheduler_main(self, *args, **kwargs):
+                return False
+        script = TestDualScript(
+            logger=False, debug=True,
+            script_mode=SCRIPT_MODE.POSTPROCESSING,
+        )
+        assert script.run() == EXIT_CODE.NONE
+
+        script = TestDualScript(
+            logger=False, debug=True,
+            script_mode=SCRIPT_MODE.SCHEDULER,
+        )
+        assert script.run() == EXIT_CODE.FAILURE

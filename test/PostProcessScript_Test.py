@@ -215,10 +215,18 @@ class TestPostProcessScript(TestBase):
         script = PostProcessScript(logger=False, debug=True)
         assert script.run() == EXIT_CODE.SUCCESS
 
+        class TestPostProcessMain(PostProcessScript):
+            def postprocess_main(self, *args, **kwargs):
+                return None
+
+        script = TestPostProcessMain(logger=False, debug=True)
+        assert script.run() == EXIT_CODE.NONE
+
         del script
         del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         script = PostProcessScript(logger=False, debug=True)
         assert script.run() == EXIT_CODE.FAILURE
+
 
     def test_environment_varable_init(self):
         """
