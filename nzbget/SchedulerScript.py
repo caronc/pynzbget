@@ -142,15 +142,11 @@ if __name__ == "__main__":
 
 """
 import re
-from os import chdir
 from os import environ
-from os.path import isdir
-from os.path import abspath
 
 # Relative Includes
 from ScriptBase import ScriptBase
 from ScriptBase import NZBGET_BOOL_FALSE
-from ScriptBase import SYS_ENVIRO_ID
 from ScriptBase import SCRIPT_MODE
 
 # Environment variable that prefixes all NZBGET options being passed into
@@ -179,7 +175,7 @@ class SchedulerScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Fetch Script Specific Arguments
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        destdir = kwargs.get('destdir')
+        taskid = kwargs.get('taskid')
 
         # Fetch/Load Scan Script Configuration
         script_config = dict([(SCHEDULER_OPTS_RE.match(k).group(1), v.strip()) \
@@ -195,38 +191,23 @@ class SchedulerScript(ScriptBase):
         # Merge Script Configuration With System Config
         self.system = dict(script_config.items() + self.system.items())
 
-        # self.destdir
-        # This is the path to the destination directory for downloaded files.
-        if destdir is None:
-            self.destdir = environ.get(
-                '%sDESTDIR' % SCHEDULER_ENVIRO_ID,
+        # self.taskid
+        # This is the Task Identifier passed in from NZBGet
+        if taskid is None:
+            self.taskid = environ.get(
+                '%sTASKID' % SCHEDULER_ENVIRO_ID,
             )
         else:
-            self.destdir = destdir
+            self.taskid = taskid
 
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Error Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if self.destdir:
-            # absolute path names
-            self.destdir = abspath(self.destdir)
-
-        if not (self.destdir and isdir(self.destdir)):
-            self.logger.warning('Process destdir is missing: %s' % \
-                self.destdir)
-        else:
-            try:
-                chdir(self.destdir)
-            except OSError:
-                self.logger.warning('Directory is not accessible: %s' % \
-                    self.destdir)
-
-        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        # Enforce system/global variables for script processing
-        # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        self.system['DESTDIR'] = self.destdir
-        if self.destdir is not None:
-            environ['%sDESTDIR' % SYS_ENVIRO_ID] = self.destdir
+        try:
+            self.taskid = int(self.taskid)
+        except (ValueError, TypeError):
+            # Default is 0
+            self.taskid = 0
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Debug Flag Check
@@ -248,6 +229,20 @@ class SchedulerScript(ScriptBase):
             keys=keys,
             min_version=min_version,
         )
+
+        required_opts = (
+            'TASKID',
+        )
+
+        found_opts = set(self.system) & required_opts
+        if found_opts != required_opts:
+            missing_opts = list(required_opts ^ found_opts)
+            self.logger.error(
+                'Validation - (v11) Directives not set: %s' % \
+                  missing_opts.join(', ')
+            )
+            is_okay = False
+
         return is_okay
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -258,25 +253,4 @@ class SchedulerScript(ScriptBase):
         """
         from PostProcessScript import POSTPROC_ENVIRO_ID
         return ('%sDIRECTORY' % POSTPROC_ENVIRO_ID not in environ) and \
-               ('%sDESTDIR' % SYS_ENVIRO_ID in environ)
-
-    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # File Retrieval
-    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def scheduler_get_files(self, search_dir=None, regex_filter=None,
-                           prefix_filter=None, suffix_filter=None,
-                           fullstats=False, *args, **kargs):
-        """a wrapper to the get_files() function defined in the inherited class
-           the only difference is the search_dir automatically uses the
-           defined `destdir` as a default (if not specified).
-        """
-        if search_dir is None:
-            search_dir = self.destdir
-
-        return super(SchedulerScript, self)._get_files(
-            search_dir=search_dir,
-            regex_filter=regex_filter,
-            prefix_filter=prefix_filter,
-            suffix_filter=suffix_filter,
-            fullstats=fullstats,
-        )
+               ('%sTASKID' % SCHEDULER_ENVIRO_ID in environ)

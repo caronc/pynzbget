@@ -522,6 +522,22 @@ class TestPostProcessScript(TestBase):
         del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         del script
 
+        # Now let's set it and try again
+        os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = SCRIPTDIR
+        os.environ['%sVALUE_A' % CFG_ENVIRO_ID] = 'A'
+        os.environ['%sVALUE_B' % CFG_ENVIRO_ID] = 'B'
+        os.environ['%sVALUE_C' % CFG_ENVIRO_ID] = 'C'
+
+        # a NZB Logger set to False uses stderr
+        script = PostProcessScript(logger=False, debug=True)
+        assert script.validate(keys=(
+            'Value_A', 'VALUE_B', 'value_c'
+        ))
+        del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
+        del os.environ['%sVALUE_A' % CFG_ENVIRO_ID]
+        del os.environ['%sVALUE_B' % CFG_ENVIRO_ID]
+        del os.environ['%sVALUE_C' % CFG_ENVIRO_ID]
+
     def test_file_listings_as_string(self):
 
         # a NZB Logger set to False uses stderr

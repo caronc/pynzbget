@@ -628,6 +628,7 @@ class ScriptBase(object):
                 fullstats=True,
                 max_depth=1,
             )
+
             if len(_filenames):
                 # sort our results by access time
                 _files = sorted (
@@ -654,10 +655,6 @@ class ScriptBase(object):
                 self.logger.info(
                     'NZB-File detected: %s' % basename(nzbfile),
                 )
-        else:
-            self.logger.warning(
-                'NZB-File not found: %s' % basename(nzbfile),
-            )
 
         try:
             for event, element in etree.iterparse(
@@ -678,7 +675,8 @@ class ScriptBase(object):
             self.logger.warning('NZBParse - Skipped; lxml is not installed')
 
         except IOError:
-            self.logger.error('NZBParse - NZB-File is missing: %s' % nzbfile)
+            self.logger.warning(
+                'NZBParse - NZB-File is missing: %s' % basename(nzbfile))
 
         except XMLSyntaxError, e:
             if e[0] is None:
@@ -1025,7 +1023,7 @@ class ScriptBase(object):
 
             missing = [
                 k for k in keys \
-                        if (not k.upper() in self.system \
+                        if not (k.upper() in self.system \
                              or k.upper() in self.config)
             ]
 

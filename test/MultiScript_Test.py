@@ -20,6 +20,7 @@ from PostProcessScript import POSTPROC_ENVIRO_ID
 from ScanScript import ScanScript
 from ScanScript import SCAN_ENVIRO_ID
 from SchedulerScript import SchedulerScript
+from SchedulerScript import SCHEDULER_ENVIRO_ID
 from ScriptBase import SCRIPT_MODE
 from ScriptBase import EXIT_CODE
 from ScriptBase import SYS_ENVIRO_ID
@@ -61,10 +62,10 @@ class TestPostProcessScript(TestBase):
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
-        os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
+        os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] = '1'
         script = TestDualScript(logger=False, debug=True)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
-        del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
+        del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
@@ -109,10 +110,10 @@ class TestPostProcessScript(TestBase):
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
-        os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
+        os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] = '1'
         script = TestDualScript(logger=False, debug=True)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
-        del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
+        del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
@@ -275,10 +276,10 @@ class TestPostProcessScript(TestBase):
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
-        os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
+        os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] = '1'
         script = TestTriScript(logger=False, debug=True)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
-        del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
+        del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
