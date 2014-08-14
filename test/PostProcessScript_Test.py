@@ -27,6 +27,7 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 from ScriptBase import CFG_ENVIRO_ID
 from ScriptBase import SYS_ENVIRO_ID
 from ScriptBase import SHR_ENVIRO_ID
+from ScriptBase import PUSH_ENVIRO_ID
 from ScriptBase import NZBGET_MSG_PREFIX
 from ScriptBase import SHR_ENVIRO_GUESS_ID
 from ScriptBase import SHR_ENVIRO_DNZB_ID
@@ -497,7 +498,7 @@ class TestPostProcessScript(TestBase):
         sys.stdout = stdout
         assert output == '%s%s%s=%s' % (
             NZBGET_MSG_PREFIX,
-            SHR_ENVIRO_ID,
+            PUSH_ENVIRO_ID,
             KEY,
             VALUE,
         )
@@ -831,7 +832,7 @@ class TestPostProcessScript(TestBase):
         guess_keys.remove('BadEntry')
         cmp_output = ['%s%s%s%s=%s' % (
             NZBGET_MSG_PREFIX,
-            SHR_ENVIRO_ID,
+            PUSH_ENVIRO_ID,
             SHR_ENVIRO_GUESS_ID,
             k.upper(),
             str(guess_dict[k]),
