@@ -23,6 +23,11 @@ with versions 12 and 11 as well.
 * It greatly simplifies the handling of environment variables and interaction
   to and from NZBGet
 
+Documentation
+=============
+For the most up to date information and API, visit the wiki at
+* https://github.com/caronc/pynzbget/wiki
+
 The entire framework was based on the information found here:
 * NZBGet: http://nzbget.net
 * NZBGet: scripting documentation: http://nzbget.net/Extension_scripts
