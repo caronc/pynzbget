@@ -21,6 +21,7 @@ from os.path import join
 sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
 from Database import Database
+from Database import Category
 from Database import NZBGET_DATABASE_VERSION
 
 # Temporary Directory
@@ -77,6 +78,56 @@ class TestDatabase(TestBase):
         )
         assert db.get('MY_KEY') == 'MY_NEW_VALUE'
         assert db.get('MY_OTHER_KEY') == 'MY_OTHER_VALUE'
+
+        # Removing
+        assert db.unset('MY_OTHER_KEY')
+        assert db.get('MY_OTHER_KEY', 'MISSING') == 'MISSING'
+
+    def test_category_manip(self):
+
+        db = Database(
+            container=KEY,
+            database=DATABASE,
+            reset=True,
+        )
+        # New Keys
+        assert db.set('MY_KEY', 'MY_VALUE')
+        assert db.get('MY_KEY') == 'MY_VALUE'
+        assert db.set('MY_KEY', 'MY_NEW_VALUE', category=Category.NZB)
+        # No change in key
+        assert db.get('MY_KEY') == 'MY_VALUE'
+        # However, different category has different key mapped
+        assert db.get('MY_KEY', category=Category.NZB) == 'MY_NEW_VALUE'
+
+        # Updates
+        assert db.set('MY_KEY', 'ANOTHER_VALUE', category=Category.NZB)
+        assert db.get('MY_KEY', category=Category.NZB) == 'ANOTHER_VALUE'
+        del db
+
+        # Content saved across sessions
+        db = Database(
+            container=KEY,
+            database=DATABASE,
+        )
+        assert db.get('MY_KEY') == 'MY_VALUE'
+        assert db.get('MY_KEY', category=Category.NZB) == 'ANOTHER_VALUE'
+
+
+    def test_key_purges(self):
+
+        db = Database(
+            container=KEY,
+            database=DATABASE,
+            reset=True,
+        )
+
+        assert db.set('MY_KEY', 'MY_VALUE')
+        assert db.get('MY_KEY') == 'MY_VALUE'
+
+        assert db.set('MY_OTHER_KEY', 'MY_OTHER_VALUE')
+        assert db.get('MY_OTHER_KEY') == 'MY_OTHER_VALUE'
+
+        # purge entries (0 = all)
 
     def test_key_purges(self):
 
