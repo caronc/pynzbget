@@ -1621,8 +1621,14 @@ class ScriptBase(object):
             exc_type, exc_value, exc_traceback = exc_info()
             lines = traceback.format_exception(
                      exc_type, exc_value, exc_traceback)
-            self.logger.error('Fatal Exception:\n%s' % \
-                ''.join('[ERROR]  ' + line for line in lines))
+            if self.script_mode != SCRIPT_MODE.NONE:
+                # NZBGet Mode enabled
+                for line in lines:
+                    self.logger.error(line)
+            else:
+                # Display error as is
+                self.logger.error('Fatal Exception:\n%s' % \
+                    ''.join('  ' + line for line in lines))
             exit_code = EXIT_CODE.FAILURE
 
         # Simplify return codes for those who just want to use

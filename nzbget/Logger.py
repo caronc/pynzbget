@@ -91,7 +91,7 @@ def init_logger(name=None, logger=True, debug=False, nzbget_mode=True,
                         " - %(levelname)s - %(message)s"))
             else:
                 l.setFormatter(logging. \
-                    Formatter("%(levelname)s - %(message)s"))
+                    Formatter("[%(levelname)s] %(message)s"))
         return logger
 
     if name is None:
@@ -153,7 +153,7 @@ def init_logger(name=None, logger=True, debug=False, nzbget_mode=True,
                     " - %(levelname)s - %(message)s"))
     else:
         h1.setFormatter(logging. \
-                Formatter("%(levelname)s - %(message)s"))
+                Formatter("[%(levelname)s] %(message)s"))
 
     # Add Handler
     _logger.addHandler(h1)
