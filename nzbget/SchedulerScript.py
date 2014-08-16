@@ -240,11 +240,11 @@ class SchedulerScript(ScriptBase):
             min_version=min_version,
         )
 
-        required_opts = (
+        required_opts = set((
             'TASKID',
-        )
+        ))
 
-        found_opts = set(self.system) & required_opts
+        found_opts = set(self.system) & set(required_opts)
         if found_opts != required_opts:
             missing_opts = list(required_opts ^ found_opts)
             self.logger.error(
