@@ -511,3 +511,30 @@ class TestScriptBase(TestBase):
         script.validate('TEMPDIR') == True
         # allow lowercase and mixed characters too
         script.validate('TempDir') == True
+
+    def test_items(self):
+        """see if we can retreive all our set variables using the items()
+        function.
+        """
+
+        keypair = {
+            'KEY1': 'val1',
+            'KEY2': 'val2',
+            'KEY3': 'val3',
+            'KEY4': 'val4',
+            'KEY5': 'val5',
+        }
+
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=True)
+        for k, v in keypair.items():
+            script.set(k, v)
+
+        # Value doe snot exist yet
+        for k, v in keypair.items():
+            assert script.get(k) == v
+
+        all_items = dict(script.items())
+        for k, v in keypair.items():
+            assert k in all_items
+            assert script.get(k) == v
