@@ -382,22 +382,15 @@ class ScriptBase(object):
         # section of your script
         #Debug=no
         if self.debug is None:
-            # Check Script Environments
-            for k in SCRIPT_MODES:
-                # Initialize all script types
-                if hasattr(self, '%s_%s' % (k, 'debug')):
-                    if getattr(self, '%s_%s' % (k, 'debug'))(*args, **kwargs):
-                        self.debug = True
-                        break
-            if self.debug is None:
-                self.debug = False
+            self.debug = self.parse_bool(
+                self.config.get('DEBUG', False))
 
         if isinstance(self.logger, basestring):
             # Use Log File
             self.logger = init_logger(
                 name=self.logger_id,
                 logger=logger,
-                debug=debug,
+                debug=self.debug,
                 nzbget_mode=False,
             )
 
@@ -408,7 +401,7 @@ class ScriptBase(object):
                 self.logger = init_logger(
                     name=self.logger_id,
                     logger=None,
-                    debug=debug,
+                    debug=self.debug,
                     nzbget_mode=True,
                 )
             else:
@@ -416,7 +409,7 @@ class ScriptBase(object):
                 self.logger = init_logger(
                     name=self.logger_id,
                     logger=True,
-                    debug=debug,
+                    debug=self.debug,
                     nzbget_mode=True,
                 )
         else:
@@ -460,7 +453,7 @@ class ScriptBase(object):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Enforce system/global variables for script processing
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        self.system['DEBUG'] = self.debug
+        self.config['DEBUG'] = self.debug
 
         # Set environment variable how NZBGet Would have done so
         if self.debug:
@@ -502,7 +495,7 @@ class ScriptBase(object):
             self.logger = init_logger(
                 name=self.logger_id,
                 logger=self.logger,
-                debug=debug,
+                debug=self.debug,
 
                 # NZBGet mode disabled
                 nzbget_mode=False,
