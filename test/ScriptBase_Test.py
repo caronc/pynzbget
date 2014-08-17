@@ -312,7 +312,70 @@ class TestScriptBase(TestBase):
         print len(files)
         assert len(files) == 8
 
+    def test_parse_url(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
+        assert script.parse_url('http://hostname') == (
+            'http',
+            'hostname',
+            None,
+            None,
+            None,
+            '',
+            'http://hostname',
+        )
+
+        assert script.parse_url('http://hostname////') == (
+            'http',
+            'hostname',
+            None,
+            None,
+            None,
+            '/',
+            'http://hostname/',
+        )
+
+        assert script.parse_url('http://hostname:40////') == (
+            'http',
+            'hostname',
+            40,
+            None,
+            None,
+            '/',
+            'http://hostname:40/',
+        )
+
+        assert script.parse_url('http://hostname:40/test.php') == (
+            'http',
+            'hostname',
+            40,
+            None,
+            None,
+            '/test.php',
+            'http://hostname:40/test.php',
+        )
+
+        assert script.parse_url('HTTP://user@hostname/test.py') == (
+            'http',
+            'hostname',
+            None,
+            'user',
+            None,
+            '/test.py',
+            'http://user@hostname/test.py',
+        )
+
+        assert script.parse_url(
+            'HTTPS://user:password@otherhost/full///path/name/') == (
+            'https',
+            'otherhost',
+             None,
+            'user',
+            'password',
+            '/full/path/name',
+            'https://user:password@otherhost/full/path/name',
+        )
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
