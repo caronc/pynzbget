@@ -267,7 +267,8 @@ class TestPostProcessScript(TestBase):
         assert script.get('PARSTATUS') == PARSTATUS
         assert script.get('UNPACKSTATUS') == UNPACKSTATUS
 
-        assert script.config == {}
+        assert len(script.config) == 1
+        assert script.config.get('DEBUG') == True
 
         assert script.nzbheaders['MOVIEYEAR'] == '1983'
         assert script.nzbheaders['NAME'] == \
@@ -354,7 +355,8 @@ class TestPostProcessScript(TestBase):
         assert script.system['PARSTATUS'] == parstatus
         assert script.system['UNPACKSTATUS'] == unpackstatus
 
-        assert script.config == {}
+        assert len(script.config) == 1
+        assert script.config.get('DEBUG') == True
         assert script.shared == {}
         assert script.nzbheaders == {}
 

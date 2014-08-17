@@ -81,7 +81,8 @@ class TestSchedulerScript(TestBase):
         assert script.get('%s%s_TIME' % (
             TASK_ENVIRO_ID, TASKID)) == TASK_TIME
 
-        assert script.config == {}
+        assert len(script.config) == 1
+        assert script.config.get('DEBUG') == True
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] == TASKID
@@ -108,7 +109,8 @@ class TestSchedulerScript(TestBase):
         assert script.system['TEMPDIR'] == TEMP_DIRECTORY
         assert script.system['TASKID'] == taskid
 
-        assert script.config == {}
+        assert len(script.config) == 1
+        assert script.config.get('DEBUG') == True
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] == str(taskid)

@@ -103,7 +103,8 @@ class TestScanScript(TestBase):
         assert script.get('TOP') == TOP
         assert script.get('PAUSED') == PAUSED
 
-        assert script.config == {}
+        assert len(script.config) == 1
+        assert script.config.get('DEBUG') == True
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] == DIRECTORY
@@ -157,7 +158,8 @@ class TestScanScript(TestBase):
         assert script.system['TOP'] == top
         assert script.system['PAUSED'] == paused
 
-        assert script.config == {}
+        assert len(script.config) == 1
+        assert script.config.get('DEBUG') == True
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] == directory
