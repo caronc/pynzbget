@@ -1871,7 +1871,7 @@ class ScriptBase(object):
             self.logger.debug('Detecting possible script mode from: %s' % \
                          ', '.join(self.script_dict.keys()))
 
-        if len(self.script_dict.keys()) > 1:
+        if len(self.script_dict.keys()):
             for k in [ v for v in SCRIPT_MODES \
                       if v in self.script_dict.keys() + [SCRIPT_MODE.NONE,]]:
                 if hasattr(self, '%s_%s' % (k, 'sanity_check')):
@@ -1882,13 +1882,7 @@ class ScriptBase(object):
                                 'Script Mode: %s' % self.script_mode.upper())
                             return self.script_mode
 
-        elif len(self.script_dict.keys()) == 1:
-            self.script_mode = self.script_dict.keys()[0]
-            if self.script_mode != SCRIPT_MODE.NONE:
-                self.logger.info('Script Mode: %s' % self.script_mode.upper())
-                return self.script_mode
-
-        self.logger.warning('Script Mode: <Standalone>')
+        self.logger.info('Script Mode: STANDALONE')
         self.script_mode = SCRIPT_MODE.NONE
 
         return self.script_mode
