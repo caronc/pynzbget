@@ -30,6 +30,8 @@ from SchedulerScript import TASK_ENVIRO_ID
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
+from Logger import VERY_VERBOSE_DEBUG
+
 # Some constants to work with
 TASKID = "1"
 TASK_PARAM = 'MyScript.py'
@@ -65,7 +67,7 @@ class TestSchedulerScript(TestBase):
         Testing NZBGet Script initialization using environment variables
         """
         # a NZB Logger set to False uses stderr
-        script = SchedulerScript(logger=False, debug=True)
+        script = SchedulerScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.taskid == int(TASKID)
 
         assert script.system['TASKID'] == int(TASKID)
@@ -82,7 +84,7 @@ class TestSchedulerScript(TestBase):
             TASK_ENVIRO_ID, TASKID)) == TASK_TIME
 
         assert len(script.config) == 1
-        assert script.config.get('DEBUG') == True
+        assert script.config.get('DEBUG') == VERY_VERBOSE_DEBUG
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] == TASKID
@@ -99,7 +101,7 @@ class TestSchedulerScript(TestBase):
         taskid = int(TASKID) + 1
         script = SchedulerScript(
             logger=False,
-            debug=True,
+            debug=VERY_VERBOSE_DEBUG,
 
             taskid=taskid,
         )
@@ -110,21 +112,21 @@ class TestSchedulerScript(TestBase):
         assert script.system['TASKID'] == taskid
 
         assert len(script.config) == 1
-        assert script.config.get('DEBUG') == True
+        assert script.config.get('DEBUG') == VERY_VERBOSE_DEBUG
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] == str(taskid)
 
     def test_get_task(self):
 
-        script = SchedulerScript(logger=False, debug=True)
+        script = SchedulerScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         task = script.get_task()
         print str(task)
         assert len(task) == 2
 
     def test_set_and_get(self):
         # a NZB Logger set to False uses stderr
-        script = SchedulerScript(logger=False, debug=True)
+        script = SchedulerScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'

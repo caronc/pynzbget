@@ -23,6 +23,7 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 from Database import Database
 from Database import Category
 from Database import NZBGET_DATABASE_VERSION
+from Logger import VERY_VERBOSE_DEBUG
 
 # Temporary Directory
 from TestBase import TestBase
@@ -49,6 +50,8 @@ class TestDatabase(TestBase):
             container=KEY,
             database=DATABASE,
             reset=True,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
         assert db._get_version() == NZBGET_DATABASE_VERSION
         assert db._schema_okay()
@@ -59,6 +62,8 @@ class TestDatabase(TestBase):
             container=KEY,
             database=DATABASE,
             reset=True,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
         # New Keys
         assert db.set('MY_KEY', 'MY_VALUE')
@@ -75,6 +80,8 @@ class TestDatabase(TestBase):
         db = Database(
             container=KEY,
             database=DATABASE,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
         assert db.get('MY_KEY') == 'MY_NEW_VALUE'
         assert db.get('MY_OTHER_KEY') == 'MY_OTHER_VALUE'
@@ -89,6 +96,8 @@ class TestDatabase(TestBase):
             container=KEY,
             database=DATABASE,
             reset=True,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
         # New Keys
         assert db.set('MY_KEY', 'MY_VALUE')
@@ -108,17 +117,21 @@ class TestDatabase(TestBase):
         db = Database(
             container=KEY,
             database=DATABASE,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
         assert db.get('MY_KEY') == 'MY_VALUE'
         assert db.get('MY_KEY', category=Category.NZB) == 'ANOTHER_VALUE'
 
 
-    def test_key_purges(self):
+    def test_key_purges01(self):
 
         db = Database(
             container=KEY,
             database=DATABASE,
             reset=True,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
 
         assert db.set('MY_KEY', 'MY_VALUE')
@@ -129,12 +142,14 @@ class TestDatabase(TestBase):
 
         # purge entries (0 = all)
 
-    def test_key_purges(self):
+    def test_key_purges02(self):
 
         db = Database(
             container=KEY,
             database=DATABASE,
             reset=True,
+
+            debug=VERY_VERBOSE_DEBUG,
         )
 
         assert db.set('MY_KEY', 'MY_VALUE')

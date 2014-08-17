@@ -40,6 +40,8 @@ from PostProcessScript import TOTAL_STATUS
 from PostProcessScript import PAR_STATUS
 from PostProcessScript import UNPACK_STATUS
 
+from Logger import VERY_VERBOSE_DEBUG
+
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
@@ -213,19 +215,19 @@ class TestPostProcessScript(TestBase):
 
     def test_main_returns(self):
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.run() == EXIT_CODE.SUCCESS
 
         class TestPostProcessMain(PostProcessScript):
             def postprocess_main(self, *args, **kwargs):
                 return None
 
-        script = TestPostProcessMain(logger=False, debug=True)
+        script = TestPostProcessMain(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.run() == EXIT_CODE.NONE
 
         del script
         del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.run() == EXIT_CODE.FAILURE
 
 
@@ -234,7 +236,7 @@ class TestPostProcessScript(TestBase):
         Testing NZBGet Script initialization using environment variables
         """
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.directory == DIRECTORY
         assert script.nzbname == NZBNAME
         assert script.nzbfilename == NZBFILENAME
@@ -268,7 +270,7 @@ class TestPostProcessScript(TestBase):
         assert script.get('UNPACKSTATUS') == UNPACKSTATUS
 
         assert len(script.config) == 1
-        assert script.config.get('DEBUG') == True
+        assert script.config.get('DEBUG') == VERY_VERBOSE_DEBUG
 
         assert script.nzbheaders['MOVIEYEAR'] == '1983'
         assert script.nzbheaders['NAME'] == \
@@ -319,7 +321,7 @@ class TestPostProcessScript(TestBase):
 
         script = PostProcessScript(
            logger=False,
-           debug=True,
+           debug=VERY_VERBOSE_DEBUG,
 
            directory=directory,
            nzbname=nzbname,
@@ -356,7 +358,7 @@ class TestPostProcessScript(TestBase):
         assert script.system['UNPACKSTATUS'] == unpackstatus
 
         assert len(script.config) == 1
-        assert script.config.get('DEBUG') == True
+        assert script.config.get('DEBUG') == VERY_VERBOSE_DEBUG
         assert script.shared == {}
         assert script.nzbheaders == {}
 
@@ -382,7 +384,7 @@ class TestPostProcessScript(TestBase):
 
     def test_set_and_get(self):
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'
@@ -411,7 +413,7 @@ class TestPostProcessScript(TestBase):
         for k, v in invalid_entries.items():
             os.environ['%s%s' % (CFG_ENVIRO_ID, k)] = v
 
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         for k, v in valid_entries.items():
             assert k in script.config
             assert script.config[k] == v
@@ -428,7 +430,7 @@ class TestPostProcessScript(TestBase):
     def test_nzbget_push_directory(self):
 
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         directory = join(DIRECTORY, 'new', 'path')
 
@@ -454,7 +456,7 @@ class TestPostProcessScript(TestBase):
     def test_nzbget_push_final_directory(self):
 
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         directory = join(DIRECTORY, 'new', 'path')
 
@@ -479,7 +481,7 @@ class TestPostProcessScript(TestBase):
 
     def test_pushes(self):
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'
@@ -513,14 +515,14 @@ class TestPostProcessScript(TestBase):
         # a NZB Logger set to False uses stderr
         if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert not script.validate()
         del script
 
         # Now let's set it and try again
         os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = SCRIPTDIR
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.validate()
         del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         del script
@@ -532,7 +534,7 @@ class TestPostProcessScript(TestBase):
         os.environ['%sVALUE_C' % CFG_ENVIRO_ID] = 'C'
 
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.validate(keys=(
             'Value_A', 'VALUE_B', 'value_c'
         ))
@@ -544,7 +546,7 @@ class TestPostProcessScript(TestBase):
     def test_file_listings_as_string(self):
 
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.get_files(search_dir=SEARCH_DIR) == {}
 
         # Create some temporary files to work with
@@ -555,7 +557,7 @@ class TestPostProcessScript(TestBase):
         open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
         open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
 
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         files = script.get_files(search_dir=SEARCH_DIR)
         assert len(files) == 6
         assert 'basename' in files[files.keys()[0]]
@@ -643,7 +645,7 @@ class TestPostProcessScript(TestBase):
     def test_file_listings_as_list(self):
 
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.get_files(search_dir=[SEARCH_DIR, ]) == {}
 
         # Create some temporary files to work with
@@ -724,7 +726,7 @@ class TestPostProcessScript(TestBase):
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(
             logger=False,
-            debug=True,
+            debug=VERY_VERBOSE_DEBUG,
             nzbfilename=NZBFILENAME_SHOW_A
         )
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['LETTER'] == 'B'
@@ -732,7 +734,7 @@ class TestPostProcessScript(TestBase):
 
         script = PostProcessScript(
             logger=False,
-            debug=True,
+            debug=VERY_VERBOSE_DEBUG,
             nzbfilename=NZBFILENAME_SHOW_A
         )
         assert 'LETTER' not in script.parse_nzbfile(NZBFILENAME_SHOW_A)
@@ -741,7 +743,7 @@ class TestPostProcessScript(TestBase):
 
         script = PostProcessScript(
             logger=False,
-            debug=True,
+            debug=VERY_VERBOSE_DEBUG,
             nzbfilename=NZBFILENAME_SHOW_B
         )
         assert script.parse_nzbfile(NZBFILENAME_SHOW_B)['LETTER'] == 'D'
@@ -764,7 +766,7 @@ class TestPostProcessScript(TestBase):
         makedirs(obsfucated_dir)
 
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         assert len(script.parse_nzbfile(NZBFILENAME_SHOW_A)) == 5
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['LETTER'] == 'B'
@@ -804,7 +806,7 @@ class TestPostProcessScript(TestBase):
 
     def test_guesses(self):
         # a NZB Logger set to False uses stderr
-        script = PostProcessScript(logger=False, debug=True)
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         guess_dict = {
             'type': 'movie',

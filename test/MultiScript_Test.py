@@ -26,6 +26,7 @@ from ScriptBase import EXIT_CODE
 from ScriptBase import SYS_ENVIRO_ID
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
+from Logger import VERY_VERBOSE_DEBUG
 
 class TestPostProcessScript(TestBase):
     def setUp(self):
@@ -58,30 +59,30 @@ class TestPostProcessScript(TestBase):
 
         print os.environ.keys()
         # No environment variables make us unsure what we're testing
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
         os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] = '1'
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
         del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
 
         # PostProcess Sanity
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
@@ -90,7 +91,7 @@ class TestPostProcessScript(TestBase):
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
@@ -106,30 +107,30 @@ class TestPostProcessScript(TestBase):
             pass
 
         # No environment variables make us unsure what we're testing
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
         os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] = '1'
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
         del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
 
         # PostProcess Sanity
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
@@ -138,7 +139,7 @@ class TestPostProcessScript(TestBase):
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
@@ -155,30 +156,30 @@ class TestPostProcessScript(TestBase):
             pass
 
         # No environment variables make us unsure what we're testing
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.SCAN
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
 
         # PostProcess Sanity
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
@@ -187,7 +188,7 @@ class TestPostProcessScript(TestBase):
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestDualScript(logger=False, debug=True)
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
@@ -198,21 +199,21 @@ class TestPostProcessScript(TestBase):
         class TestDualScript(ScanScript, PostProcessScript):
             pass
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.POSTPROCESSING)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.SCAN)
         assert script.detect_mode() == SCRIPT_MODE.SCAN
 
         # SchedulerScript is not part of DualScript, so therefore
         # it can't be foreced
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.SCHEDULER)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.NONE)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
@@ -221,21 +222,21 @@ class TestPostProcessScript(TestBase):
         class TestDualScript(SchedulerScript, PostProcessScript):
             pass
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.POSTPROCESSING)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
 
         # ScanScript is not part of DualScript, so therefore
         # it can't be foreced
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.SCAN)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.SCHEDULER)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.NONE)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
@@ -246,19 +247,19 @@ class TestPostProcessScript(TestBase):
 
         # PostProcessingScript is not part of DualScript, so therefore
         # it can't be foreced
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.POSTPROCESSING)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.SCAN)
         assert script.detect_mode() == SCRIPT_MODE.SCAN
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.SCHEDULER)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
 
-        script = TestDualScript(logger=False, debug=True,
+        script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG,
                                 script_mode=SCRIPT_MODE.NONE)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
@@ -272,37 +273,37 @@ class TestPostProcessScript(TestBase):
             pass
 
         # No environment variables make us unsure what we're testing
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
 
         # Scheduler Sanity
         os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] = '1'
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.SCHEDULER
         del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
 
         # Scan Sanity
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.SCAN
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
 
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.SCAN
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
 
         # PostProcess Sanity
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
@@ -311,7 +312,7 @@ class TestPostProcessScript(TestBase):
         os.environ['%sDESTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = TEMP_DIRECTORY
-        script = TestTriScript(logger=False, debug=True)
+        script = TestTriScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.POSTPROCESSING
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
@@ -324,13 +325,13 @@ class TestPostProcessScript(TestBase):
             def scheduler_main(self, *args, **kwargs):
                 return False
         script = TestDualScript(
-            logger=False, debug=True,
+            logger=False, debug=VERY_VERBOSE_DEBUG,
             script_mode=SCRIPT_MODE.POSTPROCESSING,
         )
         assert script.run() == EXIT_CODE.NONE
 
         script = TestDualScript(
-            logger=False, debug=True,
+            logger=False, debug=VERY_VERBOSE_DEBUG,
             script_mode=SCRIPT_MODE.SCHEDULER,
         )
         assert script.run() == EXIT_CODE.FAILURE

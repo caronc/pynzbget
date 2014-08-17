@@ -19,19 +19,17 @@ import sys
 import re
 from os.path import dirname
 from os.path import join
-from os import linesep
 sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
 from ScriptBase import ScriptBase
 from ScriptBase import SYS_ENVIRO_ID
 from ScriptBase import EXIT_CODE
 from ScriptBase import CFG_ENVIRO_ID
-from ScriptBase import SHR_ENVIRO_ID
-from ScriptBase import NZBGET_MSG_PREFIX
-from ScriptBase import SHR_ENVIRO_GUESS_ID
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
+
+from Logger import VERY_VERBOSE_DEBUG
 
 from shutil import rmtree
 from os import makedirs
@@ -75,7 +73,7 @@ class TestScriptBase(TestBase):
     def test_main_returns(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.run() == EXIT_CODE.SUCCESS
 
         class ScriptExceptionExit(ScriptBase):
@@ -87,7 +85,7 @@ class TestScriptBase(TestBase):
 
     def test_nzbset_and_nzbget(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         KEY = 'MY_NZBVAR'
         KEYL = 'my_nzbvar'
         VALUE = 'MY_NZBVALUE'
@@ -113,7 +111,7 @@ class TestScriptBase(TestBase):
 
     def test_set_and_get(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'
@@ -136,7 +134,8 @@ class TestScriptBase(TestBase):
         assert script.set(KEY, VALUE, use_env=False, use_db=False) == True
 
         # observe content is not carried over
-        script = ScriptBase(logger=False, debug=True, database_key='test')
+        script = ScriptBase(
+            logger=False, debug=VERY_VERBOSE_DEBUG, database_key='test')
         assert script.get(KEY) == None
 
         # The below line will include environment variables when
@@ -147,7 +146,8 @@ class TestScriptBase(TestBase):
 
         # and reinitialize it; content should still carry from
         # the environment variable
-        script = ScriptBase(logger=False, debug=True, database_key='test')
+        script = ScriptBase(
+            logger=False, debug=VERY_VERBOSE_DEBUG, database_key='test')
         assert script.get(KEY) == VALUE
         assert script.unset(KEY) == True
 
@@ -157,7 +157,8 @@ class TestScriptBase(TestBase):
 
         # Destroy the instance
         del script
-        script = ScriptBase(logger=False, debug=True, database_key='test')
+        script = ScriptBase(
+            logger=False, debug=VERY_VERBOSE_DEBUG, database_key='test')
         # We can still retrieve our adjusted value
         assert script.get(KEY) == ADJUSTED_VALUE
         # But not if we don't reference the database
@@ -168,7 +169,7 @@ class TestScriptBase(TestBase):
         # container to work out of. This can be emulated by just creating
         # a ScriptBase object without a database_key set and we won't
         # connect to the database
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         # Now we set the database by just the database and not
         # the environment variable. Even though use_db defaults to
@@ -185,19 +186,21 @@ class TestScriptBase(TestBase):
         # But content won't carry over... infact, we'll fetch the last
         # key we fetched if we use the same database_key (allowing us
         # to access the same container as before)
-        script = ScriptBase(logger=False, debug=True, database_key='test')
+        script = ScriptBase(
+            logger=False, debug=VERY_VERBOSE_DEBUG, database_key='test')
         # We can still retrieve our adjusted value
         assert script.get(KEY) == ADJUSTED_VALUE
 
         del script
         # But we won't get anything under a different container
-        script = ScriptBase(logger=False, debug=True, database_key='ugh!')
+        script = ScriptBase(
+            logger=False, debug=VERY_VERBOSE_DEBUG, database_key='ugh!')
         assert script.get(KEY) == None
 
     def test_file_listings_with_file(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.get_files(search_dir=[SEARCH_DIR, ]) == {}
 
         # Create some temporary files to work with
@@ -291,7 +294,7 @@ class TestScriptBase(TestBase):
         open(join(SEARCH_DIR, 'depth2', 'file.002'), 'w').close()
 
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         results = script.get_files(search_dir=SEARCH_DIR, max_depth=2)
         assert len(results) == 2
         assert join(SEARCH_DIR, 'depth2', 'file.002') in results.keys()
@@ -312,7 +315,7 @@ class TestScriptBase(TestBase):
 
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         # A simple single array entry (As str)
         results = script.parse_list('.mkv,.avi,.divx,.xvid,' + \
@@ -347,7 +350,7 @@ class TestScriptBase(TestBase):
 
     def test_parse_path_list01(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         # A simple single array entry (As str)
         results = script.parse_path_list(
@@ -378,7 +381,7 @@ class TestScriptBase(TestBase):
 
     def test_parse_path_list02(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         # A simple single array entry (As str)
         results = script.parse_path_list(
@@ -399,7 +402,7 @@ class TestScriptBase(TestBase):
 
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.parse_bool('Yes') == True
         assert script.parse_bool('YES') == True
         assert script.parse_bool('No') == False
@@ -433,7 +436,7 @@ class TestScriptBase(TestBase):
 
     def test_guesses(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         guess_dict = {
             'type': 'movie',
@@ -461,13 +464,6 @@ class TestScriptBase(TestBase):
 
         guess_keys = guess_dict.keys()
         guess_keys.remove('BadEntry')
-        cmp_output = ['%s%s%s%s=%s' % (
-            NZBGET_MSG_PREFIX,
-            SHR_ENVIRO_ID,
-            SHR_ENVIRO_GUESS_ID,
-            k.upper(),
-            str(guess_dict[k]),
-        ) for k in guess_keys ]
 
         output = re.split('[\r\n]+', output)
         # Clean "" entry
@@ -478,7 +474,7 @@ class TestScriptBase(TestBase):
 
     def test_pushes(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'
@@ -507,10 +503,10 @@ class TestScriptBase(TestBase):
 
     def test_validate(self):
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
-        script.validate('TEMPDIR') == True
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+        assert script.validate('TEMPDIR') == True
         # allow lowercase and mixed characters too
-        script.validate('TempDir') == True
+        assert script.validate('TempDir') == True
 
     def test_items(self):
         """see if we can retreive all our set variables using the items()
@@ -526,7 +522,7 @@ class TestScriptBase(TestBase):
         }
 
         # a NZB Logger set to False uses stderr
-        script = ScriptBase(logger=False, debug=True)
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         for k, v in keypair.items():
             script.set(k, v)
 

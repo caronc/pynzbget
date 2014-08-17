@@ -30,6 +30,9 @@ from ScanScript import PRIORITY
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
+
+from Logger import VERY_VERBOSE_DEBUG
+
 import StringIO
 
 # Some constants to work with
@@ -76,7 +79,7 @@ class TestScanScript(TestBase):
         Testing NZBGet Script initialization using environment variables
         """
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.directory == DIRECTORY
         assert script.nzbname == NZBNAME
         assert script.filename == FILENAME
@@ -104,7 +107,7 @@ class TestScanScript(TestBase):
         assert script.get('PAUSED') == PAUSED
 
         assert len(script.config) == 1
-        assert script.config.get('DEBUG') == True
+        assert script.config.get('DEBUG') == VERY_VERBOSE_DEBUG
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] == DIRECTORY
@@ -130,7 +133,7 @@ class TestScanScript(TestBase):
 
         script = ScanScript(
             logger=False,
-            debug=True,
+            debug=VERY_VERBOSE_DEBUG,
 
             directory=directory,
             nzbname=nzbname,
@@ -159,7 +162,7 @@ class TestScanScript(TestBase):
         assert script.system['PAUSED'] == paused
 
         assert len(script.config) == 1
-        assert script.config.get('DEBUG') == True
+        assert script.config.get('DEBUG') == VERY_VERBOSE_DEBUG
 
         assert os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] == TEMP_DIRECTORY
         assert os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID] == directory
@@ -172,7 +175,7 @@ class TestScanScript(TestBase):
 
     def test_set_and_get(self):
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         KEY = 'MY_VAR'
         VALUE = 'MY_VALUE'
@@ -217,7 +220,7 @@ class TestScanScript(TestBase):
     def test_nzbget_push_nzbname(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         nzbname = '%s.but.with.more.content' % NZBNAME
 
@@ -243,7 +246,7 @@ class TestScanScript(TestBase):
     def test_nzbget_push_category(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         category = '%s100' % CATEGORY
 
@@ -269,7 +272,7 @@ class TestScanScript(TestBase):
     def test_nzbget_push_priority(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         priority = PRIORITY.FORCE
 
@@ -295,7 +298,7 @@ class TestScanScript(TestBase):
     def test_nzbget_push_top(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         top = not TOP
 
@@ -321,7 +324,7 @@ class TestScanScript(TestBase):
     def test_nzbget_push_paused(self):
 
         # a NZB Logger set to False uses stderr
-        script = ScanScript(logger=False, debug=True)
+        script = ScanScript(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         paused = not PAUSED
 
