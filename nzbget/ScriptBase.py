@@ -525,15 +525,6 @@ class ScriptBase(object):
                 self.logger.warning(
                     'Could not force script mode to: %s' % script_mode,
                 )
-        else:
-            # An NZBGet Mode means we should work out of a writeable directory
-            try:
-                chdir(self.tempdir)
-            except OSError:
-                self.logger.warning(
-                    'Temporary directory is not ' + 'accessible: %s' % \
-                    self.tempdir,
-                )
 
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Detect the mode we're running in
@@ -551,6 +542,15 @@ class ScriptBase(object):
                 # NZBGet mode disabled
                 nzbget_mode=False,
             )
+        else:
+            # An NZBGet Mode means we should work out of a writeable directory
+            try:
+                chdir(self.tempdir)
+            except OSError:
+                self.logger.warning(
+                    'Temporary directory is not ' + 'accessible: %s' % \
+                    self.tempdir,
+                )
 
         # Initialize the chosen script mode
         if hasattr(self, '%s_%s' % (self.script_mode, 'init')):
