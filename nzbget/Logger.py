@@ -183,7 +183,7 @@ def init_logger(name=None, logger=True, debug=False, nzbget_mode=True,
     if debug is True:
         _logger.setLevel(DEBUG)
 
-    elif debug is True:
+    elif debug in (False, None):
         # Default
         _logger.setLevel(logging.INFO)
     else:
