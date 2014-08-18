@@ -309,73 +309,116 @@ class TestScriptBase(TestBase):
 
         # This should fetch them all
         files = script.get_files(SEARCH_DIR)
-        print len(files)
         assert len(files) == 8
 
     def test_parse_url(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
-        assert script.parse_url('http://hostname') == (
-            'http',
-            'hostname',
-            None,
-            None,
-            None,
-            '',
-            'http://hostname',
-        )
+        result = script.parse_url('http://hostname')
+        assert result['schema'] == 'http'
+        assert result['host'] == 'hostname'
+        assert result['port'] == None
+        assert result['user'] == None
+        assert result['password'] == None
+        assert result['fullpath'] == None
+        assert result['path'] == None
+        assert result['query'] == None
+        assert result['url'] == 'http://hostname'
 
-        assert script.parse_url('http://hostname////') == (
-            'http',
-            'hostname',
-            None,
-            None,
-            None,
-            '/',
-            'http://hostname/',
-        )
+        result = script.parse_url('http://hostname/')
+        assert result['schema'] == 'http'
+        assert result['host'] == 'hostname'
+        assert result['port'] == None
+        assert result['user'] == None
+        assert result['password'] == None
+        assert result['fullpath'] == '/'
+        assert result['path'] == '/'
+        assert result['query'] == None
+        assert result['url'] == 'http://hostname/'
 
-        assert script.parse_url('http://hostname:40////') == (
-            'http',
-            'hostname',
-            40,
-            None,
-            None,
-            '/',
-            'http://hostname:40/',
-        )
+        result = script.parse_url('hostname')
+        assert result['schema'] == 'http'
+        assert result['host'] == 'hostname'
+        assert result['port'] == None
+        assert result['user'] == None
+        assert result['password'] == None
+        assert result['fullpath'] == None
+        assert result['path'] == None
+        assert result['query'] == None
+        assert result['url'] == 'http://hostname'
 
-        assert script.parse_url('http://hostname:40/test.php') == (
-            'http',
-            'hostname',
-            40,
-            None,
-            None,
-            '/test.php',
-            'http://hostname:40/test.php',
-        )
+        result = script.parse_url('http://hostname////')
+        assert result['schema'] == 'http'
+        assert result['host'] == 'hostname'
+        assert result['port'] == None
+        assert result['user'] == None
+        assert result['password'] == None
+        assert result['fullpath'] == '/'
+        assert result['path'] == '/'
+        assert result['query'] == None
+        assert result['url'] == 'http://hostname/'
 
-        assert script.parse_url('HTTP://user@hostname/test.py') == (
-            'http',
-            'hostname',
-            None,
-            'user',
-            None,
-            '/test.py',
-            'http://user@hostname/test.py',
-        )
+        result = script.parse_url('http://hostname:40////')
+        assert result['schema'] == 'http'
+        assert result['host'] == 'hostname'
+        assert result['port'] == 40
+        assert result['user'] == None
+        assert result['password'] == None
+        assert result['fullpath'] == '/'
+        assert result['path'] == '/'
+        assert result['query'] == None
+        assert result['url'] == 'http://hostname:40/'
 
-        assert script.parse_url(
-            'HTTPS://user:password@otherhost/full///path/name/') == (
-            'https',
-            'otherhost',
-             None,
-            'user',
-            'password',
-            '/full/path/name',
-            'https://user:password@otherhost/full/path/name',
+        result = script.parse_url('HTTP://HoStNaMe:40/test.php')
+        assert result['schema'] == 'http'
+        assert result['host'] == 'hostname'
+        assert result['port'] == 40
+        assert result['user'] == None
+        assert result['password'] == None
+        assert result['fullpath'] == '/test.php'
+        assert result['path'] == '/'
+        assert result['query'] == 'test.php'
+        assert result['url'] == 'http://hostname:40/test.php'
+
+        result = script.parse_url('HTTPS://user@hostname/test.py')
+        assert result['schema'] == 'https'
+        assert result['host'] == 'hostname'
+        assert result['port'] == None
+        assert result['user'] == 'user'
+        assert result['password'] == None
+        assert result['fullpath'] == '/test.py'
+        assert result['path'] == '/'
+        assert result['query'] == 'test.py'
+        assert result['url'] == 'https://user@hostname/test.py'
+
+        result = script.parse_url('  HTTPS://///user@@@hostname///test.py  ')
+        assert result['schema'] == 'https'
+        assert result['host'] == 'hostname'
+        assert result['port'] == None
+        assert result['user'] == 'user'
+        assert result['password'] == None
+        assert result['fullpath'] == '/test.py'
+        assert result['path'] == '/'
+        assert result['query'] == 'test.py'
+        assert result['url'] == 'https://user@hostname/test.py'
+
+        result = script.parse_url(
+            'HTTPS://user:password@otherHost/full///path/name/',
         )
+        assert result['schema'] == 'https'
+        assert result['host'] == 'otherhost'
+        assert result['port'] == None
+        assert result['user'] == 'user'
+        assert result['password'] == 'password'
+        assert result['fullpath'] == '/full/path/name/'
+        assert result['path'] == '/full/path/name/'
+        assert result['query'] == None
+        assert result['url'] == 'https://user:password@otherhost/full/path/name/'
+
+        # Handle garbage
+        assert script.parse_url(None) == None
+
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
