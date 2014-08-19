@@ -112,6 +112,7 @@ from os.path import isdir
 from os.path import isfile
 from os.path import join
 from os.path import dirname
+from os.path import abspath
 from os.path import basename
 from os.path import normpath
 from os.path import splitext
@@ -1559,6 +1560,8 @@ class ScriptBase(object):
                  '/full/path/to/file.mkv': {
                      'basename': 'file.mkv',
                      'dirname': '/full/path/to',
+                     # identify the filename (without applied extension)
+                     'filename': 'file',
                      # always tolower() applied to:
                      'extension': mkv,
 
@@ -1653,7 +1656,7 @@ class ScriptBase(object):
 
         if isfile(search_dir):
             fname = basename(search_dir)
-            dname = dirname(search_dir)
+            dname = abspath(dirname(search_dir))
             filtered = False
             if regex_filter:
                 filtered = True
@@ -1710,6 +1713,7 @@ class ScriptBase(object):
                 'basename': fname,
                 'dirname': dname,
                 'extension': splitext(basename(fname))[1].lower(),
+                'filename': splitext(basename(fname))[0],
                 }
             }
             if fullstats:

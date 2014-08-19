@@ -210,6 +210,12 @@ class TestScriptBase(TestBase):
         open(join(SEARCH_DIR,'file.txt'), 'w').close()
         open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
         open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
+        open(join(SEARCH_DIR,'NOEXTENSION'), 'w').close()
+
+        files = script.get_files(
+            search_dir=SEARCH_DIR,
+        )
+        assert len(files) == 7
 
         # Search File
         files = script.get_files(
