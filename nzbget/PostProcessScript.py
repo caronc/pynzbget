@@ -164,6 +164,16 @@ from ScriptBase import SCRIPT_MODE
 from ScriptBase import NZBGET_BOOL_FALSE
 from Utils import os_path_split as split
 
+# Obfuscated Expression
+OBFUSCATED_PATH_RE = re.compile(
+    '^[a-z0-9]+$',
+    re.IGNORECASE,
+)
+OBFUSCATED_FILE_RE = re.compile(
+    '^[a-z0-9]+\.[a-z0-9]+$',
+    re.IGNORECASE,
+)
+
 class TOTAL_STATUS(object):
     """Cumulative (Total) Status of NZB Processing
     """
@@ -587,23 +597,27 @@ class PostProcessScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Obfuscation Handling
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def deobfuscate(self, filename):
+    def deobfuscate(self, filename, ref_dir=None, ref_nzbfile=None):
         """attempts to detect and update
         """
 
-        if filename[0:len(self.directory):] == self.directory:
-            new_name = filename[len(self.directory)+1:]
+        if ref_dir is None:
+            ref_dir = self.directory
+
+        if ref_nzbfile is None:
+            ref_nzbfile = self.nzbfilename
+
+        if filename[0:len(ref_dir):] == ref_dir:
+            new_name = filename[len(ref_dir)+1:]
             self.logger.debug('Deobfuscate - Stripped filename down to: %s' % new_name)
         else:
             new_name = filename
 
         parts = split(new_name)
-        self.logger.debug('Deobfuscate - split path: %s' % str(parts))
-
         part_removed = 0
         for x in range(0, len(parts)-1):
             fn = parts[x]
-            if fn.find('.') == -1 and fn.find('_') == -1 and fn.find(' ') == -1:
+            if OBFUSCATED_PATH_RE.match(fn):
                 self.logger.info(
                     'Detected obfuscated directory name %s,' % fn + \
                     ' removing from path',
@@ -611,8 +625,7 @@ class PostProcessScript(ScriptBase):
                 parts[x] = None
                 part_removed += 1
 
-        fn = splitext(parts[len(parts)-1])[0]
-        if fn.find('.')==-1 and fn.find('_')==-1 and fn.find(' ')==-1:
+        if OBFUSCATED_FILE_RE.match(basename(filename)):
             self.logger.info(
                 'Detected obfuscated filename %s,' % basename(filename) + \
                 ' removing from path')
@@ -624,81 +637,88 @@ class PostProcessScript(ScriptBase):
             for x in range(0, len(parts)):
                 if parts[x] != None:
                     new_name = join(new_name, parts[x])
-        else:
+            return new_name
 
-            # Check out NZB-Filename
-            fn = splitext(basename(self.nzbfilename))[0]
-            if fn.find('.')==-1 and fn.find('_')==-1 and fn.find(' ')==-1:
-                if len(self.nzbheaders):
-                    self.logger.info(
-                        'All file path parts are obfuscated, using obfuscated ' + \
-                        'NZB-Headers',
-                    )
+        # If we reach here, we have a completely deobfuscated file
 
-                    # Fetch category
-                    category = self.nzb_get('category', '')\
-                        .split(' ')[0].tolower()
-                    subcategory = self.nzb_get('category', '')\
-                        .split(' ')[-1].tolower()
+        # Check out NZB-Filename
+        if len(self.nzb_items()):
+            self.logger.info(
+                'All file path parts are obfuscated, using obfuscated ' + \
+                'NZB-Headers',
+            )
 
-                    if self.nzb_get('name'):
-                        # We can pick from the nzb headers
-                        nzb_name = self.nzb_get('name')
-                        new_name = join(self.directory, '%s%s' %(
-                            re.replace('[\s]+','.', nzb_name),
-                            splitext(basename(new_name))[1],
-                        ))
+            # Fetch category
+            category = self.nzb_get('category', '')\
+                .split(' ')[0].lower()
+            subcategory = self.nzb_get('category', '')\
+                .split(' ')[-1].lower()
 
-                    elif category[0:5] == 'movie' and \
-                            self.nzb_get('propername'):
-                        nzb_name = self.nzb_get('propername')
-
-                        if self.nzb_get('movieyear'):
-                            nzb_name += '(%s)' % self.nzb_get('movieyear')
-
-                        new_name = join(self.directory, '%s%s' %(
-                            re.replace('[\s]+','.', nzb_name),
-                            splitext(basename(new_name))[1],
-                        ))
-
-                    elif category == 'tv' and \
-                            self.nzb_get('propername'):
-                        nzb_name = self.nzb_get('propername')
-                        if self.nzb_get('episodename'):
-                            nzb_name += '-%s' % \
-                                    self.nzb_get('episodename')
-
-                        if subcategory == 'hd':
-                            nzb_name += '-HDTV'
-
-                        new_name = join(self.directory, '%s%s' %(
-                            re.replace('[\s]+','.', nzb_name),
-                            splitext(basename(new_name))[1],
-                        ))
-
-                    elif self.nzb_get('propername'):
-                        nzb_name = self.nzb_get('propername')
-                        new_name = join(self.directory, '%s%s' %(
-                            re.replace('[\s]+','.', nzb_name),
-                            splitext(basename(new_name))[1],
-                        ))
-
-                    else:
-                        self.logger.info('Deobfuscation is not possible')
-                        return None
-                else:
-                    self.logger.info('Deobfuscation is not possible')
-                    return None
-            else:
-                self.logger.info(
-                    'All file path parts are obfuscated, using NZB-Name',
-                )
-                new_name = join(self.directory,'%s%s' % (
-                    splitext(basename(self.nzbfilename))[0],
+            if self.nzb_get('name'):
+                # We can pick from the nzb headers
+                nzb_name = self.nzb_get('name')
+                new_name = join(ref_dir, '%s%s' %(
+                    re.sub('[\s]+','.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
-            self.logger.debug('Deobfuscate - Generated filename: %s' % new_name)
 
+            elif category[0:5] == 'movie' and \
+                    self.nzb_get('propername'):
+                nzb_name = self.nzb_get('propername')
+
+                if self.nzb_get('movieyear'):
+                    nzb_name += '(%s)' % self.nzb_get('movieyear')
+
+                new_name = join(ref_dir, '%s%s' %(
+                    re.sub('[\s]+','.', nzb_name),
+                    splitext(basename(new_name))[1],
+                ))
+
+            elif category == 'tv' and \
+                    self.nzb_get('propername'):
+                nzb_name = self.nzb_get('propername')
+                if self.nzb_get('episodename'):
+                    nzb_name += '-%s' % \
+                            self.nzb_get('episodename')
+
+                if subcategory == 'hd':
+                    nzb_name += '-HDTV'
+
+                new_name = join(ref_dir, '%s%s' %(
+                    re.sub('[\s]+','.', nzb_name),
+                    splitext(basename(new_name))[1],
+                ))
+
+            elif self.nzb_get('propername'):
+                nzb_name = self.nzb_get('propername')
+                new_name = join(ref_dir, '%s%s' %(
+                    re.sub('[\s]+','.', nzb_name),
+                    splitext(basename(filename))[1],
+                ))
+            else:
+                # No possible
+                new_name = ''
+
+        if new_name:
+            self.logger.debug('Deobfuscate - Generated filename: %s' % new_name)
+            return new_name
+
+        # we're running out of new names :)... try the NZB-FileName
+        if ref_nzbfile and not OBFUSCATED_FILE_RE.match(basename(ref_nzbfile)):
+            self.logger.info(
+                'All file path parts are obfuscated, using NZB-FileName',
+            )
+            new_name = join(ref_dir, '%s%s' %(
+                re.sub('[\s]+','.',
+                       splitext(basename(ref_nzbfile))[0]),
+                splitext(basename(filename))[1],
+            ))
+
+        else:
+            self.logger.info('Deobfuscation is not possible')
+            return filename
+
+        self.logger.debug('Deobfuscate - Generated filename: %s' % new_name)
         return new_name
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

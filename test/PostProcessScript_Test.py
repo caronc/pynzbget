@@ -790,8 +790,25 @@ class TestPostProcessScript(TestBase):
         good_filename = script.deobfuscate(
             filename=evil_filename,
         )
+        assert basename(good_filename) == \
+                'A.Great.Movie.1983.DVDRip.x264-AWESOME.mkv'
+
+        # Same test, but if we didn't have the NZB-Name
+        script.nzb_unset('name')
+        good_filename = script.deobfuscate(
+            filename=evil_filename,
+        )
+        assert basename(good_filename) == \
+                'A.Great.Movie(1983).mkv'
+
+        # If we don't have the ProperName, it gets even more scarse
+        script.nzb_unset('propername')
+        good_filename = script.deobfuscate(
+            filename=evil_filename,
+        )
         assert splitext(basename(good_filename))[0] == \
                splitext(basename(NZBFILENAME))[0]
+
         del script
 
         # cleanup
