@@ -40,6 +40,9 @@ The following are some of the functionality that is built in for you:
                 as if the expected configuration variables you specified
                 are present.
 
+ * health_check() - Checks the status of the retrieved content, currently
+                this is only useful during Post-Processing
+
  * push()     - pushes a variables to the NZBGet server
 
 
