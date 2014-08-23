@@ -32,6 +32,7 @@ from ScriptBase import NZBGET_MSG_PREFIX
 from ScriptBase import SHR_ENVIRO_GUESS_ID
 from ScriptBase import SHR_ENVIRO_DNZB_ID
 from ScriptBase import EXIT_CODE
+from ScriptBase import Health
 
 from PostProcessScript import PostProcessScript
 from PostProcessScript import POSTPROC_ENVIRO_ID
@@ -57,10 +58,11 @@ NZBFILENAME_SHOW_A = join(TEMP_DIRECTORY, 'A.Great.TV.Show.nzb')
 NZBFILENAME_SHOW_B = join(TEMP_DIRECTORY, 'Another.Great.TV.Show.nzb')
 CATEGORY = 'movie'
 TOTALSTATUS = TOTAL_STATUS.SUCCESS
-STATUS = SCRIPT_STATUS.SUCCESS
-SCRIPTSTATUS = 'SUCCESS/ALL'
+SCRIPTSTATUS = SCRIPT_STATUS.SUCCESS
+STATUS = 'SUCCESS/ALL'
 PARSTATUS = PAR_STATUS.SUCCESS
 UNPACKSTATUS = UNPACK_STATUS.SUCCESS
+VERSION = 13
 
 SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
@@ -172,6 +174,7 @@ class TestPostProcessScript(TestBase):
         # Create some environment variables
         os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
+        os.environ['%sVERSION' % SYS_ENVIRO_ID] = str(VERSION)
         os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID] = DIRECTORY
         os.environ['%sNZBNAME' % POSTPROC_ENVIRO_ID] = NZBNAME
         os.environ['%sNZBFILENAME' % POSTPROC_ENVIRO_ID] = NZBFILENAME
@@ -196,6 +199,7 @@ class TestPostProcessScript(TestBase):
         if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sTEMPDIR' % SYS_ENVIRO_ID]
+        del os.environ['%sVERSION' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
         del os.environ['%sNZBNAME' % POSTPROC_ENVIRO_ID]
         del os.environ['%sNZBFILENAME' % POSTPROC_ENVIRO_ID]
@@ -242,12 +246,13 @@ class TestPostProcessScript(TestBase):
         assert script.nzbfilename == NZBFILENAME
         assert script.category == CATEGORY
         assert script.totalstatus == TOTALSTATUS
-        assert script.status == STATUS
+        assert str(script.status) == STATUS
         assert script.scriptstatus == SCRIPTSTATUS
         assert script.parstatus == PARSTATUS
         assert script.unpackstatus == UNPACKSTATUS
 
         assert script.system['TEMPDIR'] == TEMP_DIRECTORY
+        assert script.system['VERSION'] == str(VERSION)
         assert script.system['DIRECTORY'] == DIRECTORY
         assert script.system['NZBNAME'] == NZBNAME
         assert script.system['NZBFILENAME'] == NZBFILENAME
@@ -259,6 +264,7 @@ class TestPostProcessScript(TestBase):
         assert script.system['UNPACKSTATUS'] == UNPACKSTATUS
 
         assert script.get('TEMPDIR') == TEMP_DIRECTORY
+        assert script.get('VERSION') == str(VERSION)
         assert script.get('DIRECTORY') == DIRECTORY
         assert script.get('NZBNAME') == NZBNAME
         assert script.get('NZBFILENAME') == NZBFILENAME
@@ -314,8 +320,8 @@ class TestPostProcessScript(TestBase):
         nzbfilename = join(directory, basename(NZBFILENAME))
         category = '%s2' % CATEGORY
         totalstatus = TOTAL_STATUS.DELETED
-        status = SCRIPT_STATUS.FAILURE
-        scriptstatus = 'FAILURE/UNPACK'
+        scriptstatus = SCRIPT_STATUS.FAILURE
+        status = 'FAILURE/UNPACK'
         parstatus = PAR_STATUS.FAILURE
         unpackstatus = UNPACK_STATUS.FAILURE
 
@@ -341,7 +347,7 @@ class TestPostProcessScript(TestBase):
         assert script.nzbfilename == nzbfilename
         assert script.category == category
         assert script.totalstatus == totalstatus
-        assert script.status == status
+        assert str(script.status) == status
         assert script.scriptstatus == scriptstatus
         assert script.parstatus == parstatus
         assert script.unpackstatus == unpackstatus
@@ -542,6 +548,55 @@ class TestPostProcessScript(TestBase):
         del os.environ['%sVALUE_A' % CFG_ENVIRO_ID]
         del os.environ['%sVALUE_B' % CFG_ENVIRO_ID]
         del os.environ['%sVALUE_C' % CFG_ENVIRO_ID]
+
+    def test_health_check(self):
+        """Test that wrapper for healthcheck is working correctly
+        """
+        # This will fail because it's looking for the SCRIPTDIR
+        # variable defined with NZBGet v11
+        # a NZB Logger set to False uses stderr
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
+        assert script.health_check() == True
+        assert script.health_check(
+            is_unpacked=False, has_archive=False) == True
+
+        assert script.health_check(is_unpacked=False) == True
+        assert script.health_check(has_archive=True) == False
+
+        script.version = 11
+        assert script.health_check() == True
+        assert script.health_check(
+            is_unpacked=False, has_archive=False) == True
+
+        assert script.health_check(is_unpacked=False) == True
+        assert script.health_check(has_archive=True) == True
+        del script
+
+        os.environ['%sSTATUS' % POSTPROC_ENVIRO_ID] = '%s/%s' % (
+            Health.FAILURE,
+            Health.DEFAULT_SUB,
+        )
+        # NZBGet v11 support
+        os.environ['%sPARSTATUS' % POSTPROC_ENVIRO_ID] = \
+                str(PAR_STATUS.FAILURE)
+        os.environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID] = \
+                str(UNPACK_STATUS.FAILURE)
+
+        script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
+        assert script.health_check() == False
+        assert script.health_check(
+            is_unpacked=False, has_archive=False) == True
+
+        assert script.health_check(is_unpacked=False) == True
+        assert script.health_check(has_archive=True) == False
+
+        script.version = 11
+        assert script.health_check() == False
+        assert script.health_check(
+            is_unpacked=False, has_archive=False) == True
+
+        assert script.health_check(is_unpacked=False) == True
+        assert script.health_check(has_archive=True) == False
 
     def test_file_listings_as_string(self):
 

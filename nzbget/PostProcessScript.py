@@ -160,6 +160,7 @@ from os.path import abspath
 
 # Relative Includes
 from ScriptBase import ScriptBase
+from ScriptBase import Health
 from ScriptBase import SCRIPT_MODE
 from ScriptBase import NZBGET_BOOL_FALSE
 from Utils import os_path_split as split
@@ -363,11 +364,11 @@ class PostProcessScript(ScriptBase):
         # For the complete list see description of method history in RPC API
         # reference: http://nzbget.net/RPC_API_reference
         if status is None:
-            self.status = environ.get(
+            self.status = Health(environ.get(
                 '%sSTATUS' % POSTPROC_ENVIRO_ID,
-            )
+            ))
         else:
-            self.status = status
+            self.status = Health(status)
 
         # self.scriptstatus
         # Summary status of the scripts executed before the current one
@@ -435,10 +436,6 @@ class PostProcessScript(ScriptBase):
         if not isinstance(self.totalstatus, basestring):
             self.totalstatus = TOTAL_STATUS.SUCCESS
 
-        # Status
-        if not isinstance(self.status, basestring):
-            self.status = 'SUCCESS/ALL'
-
         # Par Status
         if not isinstance(self.parstatus, int):
             try:
@@ -481,10 +478,10 @@ class PostProcessScript(ScriptBase):
             environ['%sTOTALSTATUS' % POSTPROC_ENVIRO_ID] = \
                 self.totalstatus
 
-        self.system['STATUS'] = self.status
+        self.system['STATUS'] = str(self.status)
         if self.status is not None:
             environ['%sSTATUS' % POSTPROC_ENVIRO_ID] = \
-                self.status
+                str(self.status)
 
         self.system['SCRIPTSTATUS'] = self.scriptstatus
         if self.scriptstatus is not None:
@@ -527,16 +524,15 @@ class PostProcessScript(ScriptBase):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Sanity
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def postprocess_sanity_check(self, *args, **kargs):
-        """Sanity checking to ensure this really is a post_process script
+    def postprocess_sanity_check(self, *args, **kwargs):
+        """Sanity checking to ensure this really is a Post-Process Script
         """
         return ('%sDIRECTORY' % POSTPROC_ENVIRO_ID in environ)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Validatation
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def postprocess_validate(self, keys=None, min_version=11,
-                 download_okay=True, *args, **kargs):
+    def postprocess_validate(self, keys=None, min_version=11, *args, **kwargs):
         """validate against environment variables
         """
         is_okay = super(PostProcessScript, self)._validate(
@@ -544,24 +540,6 @@ class PostProcessScript(ScriptBase):
             min_version=min_version,
             download_okay=True,
         )
-
-        if download_okay:
-            # We need to be sure the download is okay before continuing
-            if self.parstatus == PAR_STATUS.FAILURE:
-                self.logger.error(
-                    "par-checking the content of the retreived data",
-                )
-                is_okay = False
-            if self.unpackstatus == UNPACK_STATUS.FAILURE:
-                self.logger.error(
-                    "unpacking the content of the retreived data",
-                )
-                is_okay = False
-
-            if self.status.split('/')[0] not in [ 'SUCCESS', 'WARNING' ]:
-                self.logger.error("Bad system status set: %s" % self.status)
-                is_okay = False
-
 
         if min_version >= 13:
             required_opts = set((
@@ -581,9 +559,42 @@ class PostProcessScript(ScriptBase):
         return is_okay
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Health Check
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def postprocess_health_check(self, is_unpacked=True, has_archive=False,
+                                 *args, **kwargs):
+        """Similar to validate, except some scripts don't need to
+        out right fail if the download health is bad. Some might just
+        return silently, others may try to correct the health
+        """
+
+        is_okay = super(PostProcessScript, self)\
+                ._health_check(*args, **kwargs)
+
+        if self.version < 13:
+            # We need to be sure the download is okay before continuing
+            # using depricated values in newer version
+            if self.parstatus == PAR_STATUS.FAILURE:
+                if is_unpacked:
+                    is_okay = False
+
+            if self.unpackstatus == UNPACK_STATUS.FAILURE:
+                if is_unpacked:
+                    is_okay = False
+
+        else:
+            if is_unpacked and not self.status.is_unpacked:
+                is_okay = False
+
+            if has_archive and not self.status.has_archive:
+                is_okay = False
+
+        return is_okay
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def postprocess_get_files(self, search_dir=None, *args, **kargs):
+    def postprocess_get_files(self, search_dir=None, *args, **kwargs):
         """a wrapper to the get_files() function defined in the inherited class
            the only difference is the search_dir automatically uses the
            defined download `directory` as a default (if not specified).
@@ -592,7 +603,7 @@ class PostProcessScript(ScriptBase):
             search_dir = self.directory
 
         return super(PostProcessScript, self)._get_files(
-            search_dir=search_dir, *args, **kargs)
+            search_dir=search_dir, *args, **kwargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Obfuscation Handling

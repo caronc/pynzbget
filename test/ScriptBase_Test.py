@@ -25,6 +25,7 @@ from ScriptBase import ScriptBase
 from ScriptBase import SYS_ENVIRO_ID
 from ScriptBase import EXIT_CODE
 from ScriptBase import CFG_ENVIRO_ID
+from ScriptBase import Health
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
@@ -515,31 +516,33 @@ class TestScriptBase(TestBase):
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
-        assert script.parse_bool('Yes') == True
-        assert script.parse_bool('YES') == True
-        assert script.parse_bool('No') == False
-        assert script.parse_bool('NO') == False
-        assert script.parse_bool('TrUE') == True
-        assert script.parse_bool('tRUe') == True
-        assert script.parse_bool('FAlse') == False
-        assert script.parse_bool('F') == False
-        assert script.parse_bool('T') == True
-        assert script.parse_bool('0') == False
-        assert script.parse_bool('1') == True
-        assert script.parse_bool('True') == True
-        assert script.parse_bool('Yes') == True
-        assert script.parse_bool(1) == True
-        assert script.parse_bool(0) == False
-        assert script.parse_bool(True) == True
-        assert script.parse_bool(False) == False
+        assert script.parse_bool('Yes', None) == True
+        assert script.parse_bool('YES', None) == True
+        assert script.parse_bool('Always', None) == True
+        assert script.parse_bool('No', None) == False
+        assert script.parse_bool('NO', None) == False
+        assert script.parse_bool('NEVER', None) == False
+        assert script.parse_bool('TrUE', None) == True
+        assert script.parse_bool('tRUe', None) == True
+        assert script.parse_bool('FAlse', None) == False
+        assert script.parse_bool('F', None) == False
+        assert script.parse_bool('T', None) == True
+        assert script.parse_bool('0', None) == False
+        assert script.parse_bool('1', None) == True
+        assert script.parse_bool('True', None) == True
+        assert script.parse_bool('Yes', None) == True
+        assert script.parse_bool(1, None) == True
+        assert script.parse_bool(0, None) == False
+        assert script.parse_bool(True, None) == True
+        assert script.parse_bool(False, None) == False
 
         # only the int of 0 will return False since the function
         # casts this to a boolean
-        assert script.parse_bool(2) == True
+        assert script.parse_bool(2, None) == True
         # An empty list is still false
-        assert script.parse_bool([]) == False
+        assert script.parse_bool([], None) == False
         # But a list that contains something is True
-        assert script.parse_bool(['value',]) == True
+        assert script.parse_bool(['value',], None) == True
 
         # Use Default (which is False)
         assert script.parse_bool('OhYeah') == False
@@ -646,3 +649,35 @@ class TestScriptBase(TestBase):
         for k, v in keypair.items():
             assert k in all_items
             assert script.get(k) == v
+
+    def test_health(self):
+        """ Test Health Checks
+        """
+        h = Health('%s/ALL' % Health.SUCCESS)
+        assert h == (Health.SUCCESS, 'ALL')
+        assert h.has_archive == False
+        assert h.is_unpacked == True
+        h = Health(('SUccESS', 'all'))
+        assert h == (Health.SUCCESS, 'ALL')
+        assert h.has_archive == False
+        assert h.is_unpacked == True
+        h = Health(Health.SUCCESS)
+        assert h == (Health.SUCCESS, Health.DEFAULT_SUB)
+        assert h.has_archive == False
+        assert h.is_unpacked == True
+        h = Health('BADKEYWORD')
+        assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
+        assert h.has_archive == True
+        assert h.is_unpacked == True
+        h = Health(Health.WARNING)
+        assert h == (Health.WARNING, Health.DEFAULT_SUB)
+        assert h.has_archive == True
+        assert h.is_unpacked == False
+        h = Health(Health.DELETED)
+        assert h == (Health.DELETED, Health.DEFAULT_SUB)
+        assert h.has_archive == False
+        assert h.is_unpacked == False
+        h = Health('')
+        assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
+        h = Health(None)
+        assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
