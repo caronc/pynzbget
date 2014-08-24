@@ -318,6 +318,11 @@ class TestScriptBase(TestBase):
         files = script.get_files(SEARCH_DIR)
         assert len(files) == 8
 
+        # A list of directories should scan the same content, minus stuff at
+        # the root
+        files = script.get_files([ join(SEARCH_DIR, re.split('/', _dir)[0]) for _dir in subdirs ])
+        assert len(files) == 7
+
     def test_parse_url(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
@@ -508,10 +513,17 @@ class TestScriptBase(TestBase):
         )
         assert len(results) == 5
         assert '/absolute/path' in results
-        assert 'another/absolute/path' in results
-        assert 'another/absolute/path' in results
+        assert '/another/absolute/path' in results
+        assert 'another/relative/path' in results
         assert '/' in results
         assert 'relative/path/here' in results
+
+        results = script.parse_path_list(
+            '/home/username/News/TVShows, /home/username/News/Movies',
+        )
+        assert len(results) == 2
+        assert '/home/username/News/TVShows' in results
+        assert '/home/username/News/Movies' in results
 
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
