@@ -495,10 +495,9 @@ VALID_KEY_RE = re.compile('[^a-zA-Z0-9_.-]')
 
 # delimiters used to separate values when content is passed in by string
 # This is useful when turning a string into a list
-STRING_DELIMITERS = r'[%s\[\]\;,\s]+' % \
-        ESCAPED_PATH_SEPARATOR
+STRING_DELIMITERS = r'[\[\]\;,\s]+'
 
-# For speparating paths
+# For separating paths
 PATH_DELIMITERS = r'([%s]+[%s;\|,\s]+|[;\|,\s%s]+[%s]+)' % (
         ESCAPED_NUX_PATH_SEPARATOR,
         ESCAPED_NUX_PATH_SEPARATOR,
