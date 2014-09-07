@@ -445,9 +445,10 @@ class TestScriptBase(TestBase):
 
         # Now 2 lists with lots of duplicates and other delimiters
         results = script.parse_list('.mkv,.avi,.divx,.xvid,' + \
-                '.mov,.wmv,.mp4,.mpg:.mpeg,.vob,,/',
+                '.mov,.wmv,.mp4,.mpg .mpeg,.vob,,/',
                 '.mkv,.avi,.divx,.xvid,' + \
-                '.mov        :.wmv,.mp4//.mpg,.mpeg,.vob,.iso')
+                '.mov        .wmv,.mp4//.mpg,.mpeg,.vob,.iso')
+        print results
         assert results == [
             '.divx', '.iso', '.mkv', '.mov', '.mpg',
             '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4',

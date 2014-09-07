@@ -495,7 +495,7 @@ VALID_KEY_RE = re.compile('[^a-zA-Z0-9_.-]')
 
 # delimiters used to separate values when content is passed in by string
 # This is useful when turning a string into a list
-STRING_DELIMITERS = r'[%s\[\]\:;,\s]+' % \
+STRING_DELIMITERS = r'[%s\[\]\;,\s]+' % \
         ESCAPED_PATH_SEPARATOR
 
 # For speparating paths
@@ -1020,14 +1020,14 @@ class ScriptBase(object):
                 self.logger.debug('NZBParse - Exception %s' % str(e))
 
         except Exception, e:
-                self.logger.error(
-                    'NZBParse - NZB-File is corrupt: %s' % nzbfile,
-                )
-                self.logger.debug(
-                    'NZBParse - %s Unhandled Exception %s' % (
-                        str(e),
-                        LXML_TYPE,
-                ))
+            self.logger.error(
+                'NZBParse - NZB-File is corrupt: %s' % nzbfile,
+            )
+            self.logger.debug(
+                'NZBParse - %s Unhandled Exception %s' % (
+                str(e),
+                LXML_TYPE,
+            ))
 
         return results
 
@@ -2151,7 +2151,7 @@ class ScriptBase(object):
             ['.mkv', '.iso', '.avi', '.mp4']
 
         The parsing is very forgiving and accepts spaces, slashes, comma's
-        semicolons, colons, and pipes as delimiters
+        semicolons, and pipes as delimiters
         """
 
         result = []
