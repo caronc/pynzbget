@@ -323,6 +323,29 @@ class TestScriptBase(TestBase):
         files = script.get_files([ join(SEARCH_DIR, re.split('/', _dir)[0]) for _dir in subdirs ])
         assert len(files) == 7
 
+    def test_file_listings_ignored_directories(self):
+        from ScriptBase import SKIP_DIRECTORIES
+
+        # Create some bad directories
+        for _dir in SKIP_DIRECTORIES:
+            makedirs(join(SEARCH_DIR, _dir))
+            open(join(SEARCH_DIR, _dir, 'ignore_me.mkv'), 'w').close()
+
+        # Create some temporary files to work with
+        makedirs(join(SEARCH_DIR, 'good_dir'))
+        open(join(SEARCH_DIR,'good_file1.mkv'), 'w').close()
+        open(join(SEARCH_DIR,'good_file2.mkv'), 'w').close()
+        open(join(SEARCH_DIR,'good_dir', 'good_file3.mkv'), 'w').close()
+
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+        results = script.get_files(search_dir=SEARCH_DIR)
+        assert len(results) == 3
+        assert join(SEARCH_DIR, 'good_file1.mkv') in results.keys()
+        assert join(SEARCH_DIR, 'good_file2.mkv') in results.keys()
+        assert join(SEARCH_DIR, 'good_dir', 'good_file3.mkv') in \
+                results.keys()
+
     def test_parse_url(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)

@@ -191,6 +191,14 @@ from urllib import unquote
 NZBGET_BOOL_TRUE = 'yes'
 NZBGET_BOOL_FALSE = 'no'
 
+# The following directories will never be recursively looked
+# into when using get_files()
+SKIP_DIRECTORIES = (
+    # OS X Meta Directories
+    '.DS_Store',
+    '.AppleDouble',
+)
+
 class EXIT_CODE(object):
     """List of exit codes for post processing
     """
@@ -1016,7 +1024,11 @@ class ScriptBase(object):
                 self.logger.error(
                     'NZBParse - NZB-File is corrupt: %s' % nzbfile,
                 )
-                self.logger.debug('NZBParse - Exception %s' % str(e))
+                self.logger.debug(
+                    'NZBParse - %s Exception %s' % (
+                    LXML_TYPE,
+                    str(e),
+                ))
 
         except Exception, e:
             self.logger.error(
@@ -1809,7 +1821,7 @@ class ScriptBase(object):
     def _get_files(self, search_dir, regex_filter=None, prefix_filter=None,
                     suffix_filter=None, fullstats=False,
                    followlinks=False, min_depth=None, max_depth=None,
-                  case_sensitive=False):
+                  case_sensitive=False, skip_directories=SKIP_DIRECTORIES):
         """Returns a dict object of the files found in the download
            directory. You can additionally pass in filters as a list or
            string) to filter the results returned.
@@ -1854,6 +1866,7 @@ class ScriptBase(object):
                     min_depth=min_depth,
                     max_depth=max_depth,
                     case_sensitive=case_sensitive,
+                    skip_directories=skip_directories,
                 ).items())
             return files
 
@@ -2005,6 +2018,12 @@ class ScriptBase(object):
             if max_depth and max_depth < current_depth:
                 continue
             if min_depth and min_depth > current_depth:
+                continue
+            # Ignore Directory Handling
+            if skip_directories and basename(dname) in SKIP_DIRECTORIES:
+                self.logger.vdebug(
+                    'Skipping directory %s' % basename(dname),
+                )
                 continue
 
             self.logger.vdebug('CUR depth %d (MAX=%s, MIN=%s)' % \
