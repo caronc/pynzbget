@@ -1,25 +1,31 @@
-Metadata-Version: 1.0
-Name: nzbget
+Metadata-Version: 1.1
+Name: pynzbget
 Version: 0.2.1
-Summary: A framework for NZBGet scripting simplifying deployment and development
-Home-page: http://github.com/caronc/pynzbget
 Author: Chris Caron
-Author-email: lead2gold@gmail.com
+Author-email: lead2gold at gmail com
+Home-page: http://github.com/caronc/nzbget
+Download-url: http://github.com/caronc/pynzbget/download/nzbget-0.2.1.tar.gz
+Summary: A framework for NZBGet scripting simplifying deployment and development
 License: GPLv3
-Download-URL: http://github.com/caronc/pynzbget/download/nzbget-0.2.1.tar.gz
-Description: 
-        This is a framework to greatly easy the development and deployment
-        of NZBGet scripts.
+Description: This is a framework to greatly easy the development and deployment of NZBGet scripts.
         
-        The following packages are not required, but add to it's functionality:
-          - sqlite3
-          - lxml
+        The following packages are not required, but add additional functionality if present:
+           - sqlite3
+           - lxml
         
+        This script provides the following for NZBGet script developers:
+          - NZB File Parsing
+          - Recursive Directory Scanning
+          - Communication to and from the NZBGet Server
+          - API access
+          - Built in logging
+          - Common SQLLite database access for Script sharing
+          - Health Checks and validation built are in.
+        
+        For more information on NZBGet, visit http://nzbget.net
+Keywords: nzbget, scripting
 Platform: Posix; MacOS X; Windows
-Programming Language :: Python :: 2 :: Only
 Classifier: Development Status :: 4 - Beta
-Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)
-Classifier: Operating System :: OS Independent
-Classifier: Topic :: Internet
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python :: 2 :: Only
 Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
