@@ -15,9 +15,10 @@ Description:
         sqlite3, lxml
         
 Platform: Posix; MacOS X; Windows
-Classifier: Development Status :: 5 - Production/Stable
+Programming Language :: Python :: 2 :: Only
+Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)
 Classifier: Operating System :: OS Independent
 Classifier: Topic :: Internet
-Classifier: Topic :: NZBGet :: Scripting
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
