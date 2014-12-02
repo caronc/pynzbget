@@ -217,36 +217,12 @@ class TestScriptBase(TestBase):
             search_dir=SEARCH_DIR,
         )
         assert len(files) == 7
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            print '%s, %s ' % (v['extension'], type(v['extension']))
-            assert isinstance(v['extension'], unicode)
 
         # Search File
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
         )
-
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
-
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
@@ -259,13 +235,6 @@ class TestScriptBase(TestBase):
             suffix_filter='.mkv',
         )
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
@@ -273,13 +242,6 @@ class TestScriptBase(TestBase):
             prefix_filter='fi',
         )
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
@@ -287,13 +249,6 @@ class TestScriptBase(TestBase):
             prefix_filter='file',
         )
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         # Absolute match
         files = script.get_files(
@@ -302,26 +257,12 @@ class TestScriptBase(TestBase):
             prefix_filter='file.mkv',
         )
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
             regex_filter='^file\.mkv$',
         )
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
@@ -330,13 +271,6 @@ class TestScriptBase(TestBase):
             regex_filter='^file\.mkv$',
         )
         assert len(files) == 1
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
     def test_file_listings_with_depth(self):
 
@@ -369,15 +303,6 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         results = script.get_files(search_dir=SEARCH_DIR, max_depth=2)
         assert len(results) == 2
-        # Ensure all entries are unicode
-        for k, v in results.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
-
-
         assert join(SEARCH_DIR, 'depth2', 'file.002') in results.keys()
         assert join(SEARCH_DIR, 'file.001') in results.keys()
 
@@ -385,40 +310,17 @@ class TestScriptBase(TestBase):
         # are the same:
         results = script.get_files(search_dir=[SEARCH_DIR, ], max_depth=2)
         assert len(results) == 2
-        # Ensure all entries are unicode
-        for k, v in results.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
-
-
         assert join(SEARCH_DIR, 'depth2', 'file.002') in results.keys()
         assert join(SEARCH_DIR, 'file.001') in results.keys()
 
         # This should fetch them all
         files = script.get_files(SEARCH_DIR)
         assert len(files) == 8
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
         # A list of directories should scan the same content, minus stuff at
         # the root
         files = script.get_files([ join(SEARCH_DIR, re.split('/', _dir)[0]) for _dir in subdirs ])
         assert len(files) == 7
-        # Ensure all entries are unicode
-        for k, v in files.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
 
     def test_file_listings_ignored_directories(self):
         from ScriptBase import SKIP_DIRECTORIES
@@ -438,14 +340,6 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
         results = script.get_files(search_dir=SEARCH_DIR)
         assert len(results) == 3
-        # Ensure all entries are unicode
-        for k, v in results.items():
-            assert isinstance(k, unicode)
-            assert isinstance(v['filename'], unicode)
-            assert isinstance(v['dirname'], unicode)
-            assert isinstance(v['basename'], unicode)
-            assert isinstance(v['extension'], unicode)
-
         assert join(SEARCH_DIR, 'good_file1.mkv') in results.keys()
         assert join(SEARCH_DIR, 'good_file2.mkv') in results.keys()
         assert join(SEARCH_DIR, 'good_dir', 'good_file3.mkv') in \
