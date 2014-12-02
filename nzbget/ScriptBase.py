@@ -32,9 +32,23 @@ functionality such as:
                 put here as well so that it can be retrieved by another
                 script.
 
- * get_api()  - Retreive a simple API/RPC object built from the global
-                variables NZBGet passes into an external program when
-                called.
+ * unset()    - This allows you to unset values set by set() and get() as well
+                as ones set by push().
+
+ * nzb_set()  - Similar to the set() function identified above except it is
+                used to build an nzb meta hash table which can be later pushed
+                to the server using push_dnzb().
+
+ * add_nzb()  - Using the built in API/RPC NZBGet supports, this allows you to
+                specify a path to an NZBFile which you want to enqueue for
+                downloading.
+
+ * nzb_get()  - Retieves NZB Meta information previously stored.
+
+ * nzb_unset()- Removes a variable previously set completely.
+
+ * get_logs() - Using the built in API/RPC NZBGet supports, this retrieves and
+                returns the latest logs.
 
  * get_files()- list all files in a specified directory as well as fetching
                 their details such as filesize, modified date, etc in an
@@ -72,6 +86,13 @@ functionality such as:
                   why redo grunt work if it's already done for you?
                   if no previous guess content was pushed, then an
                   empty dictionary is returned.
+ * push_dnzb()  - You can push all nzb meta information onbtained to the
+                  NZBGet server as DNZB_ meta tags.
+
+ * pull_dnzb()  - Pull all DNZB_ meta tags issued by the server and return
+                  their values in a dictionary. if no DNZB_ (NZB Meta
+                  information) was found, then an empty dictionary is returned
+                  instead.
 
 Ideally, you'll write your script using this class as your base wrapper
 requiring you to only define a main() function and call run().
