@@ -121,9 +121,6 @@ from logging import Logger
 from datetime import datetime
 from Utils import tidy_path
 
-# Relative Includes
-from NZBGetAPI import NZBGetAPI
-
 from Logger import VERBOSE_DEBUG
 from Logger import VERY_VERBOSE_DEBUG
 from Logger import init_logger
@@ -189,6 +186,14 @@ from os import stat
 from urlparse import urlparse
 from urllib import quote
 from urllib import unquote
+
+from base64 import standard_b64encode
+try:
+    # Python 2
+    from xmlrpclib import ServerProxy
+except ImportError:
+    # Python 3
+    from xmlrpc.client import ServerProxy
 
 # Some booleans that are read to and from nzbget
 NZBGET_BOOL_TRUE = u'yes'
@@ -590,6 +595,10 @@ class ScriptBase(object):
 
         # Initialize the default character set
         self.charset = None
+
+        # API by default is not configured; it is set up when a call to
+        # an api function is made.
+        self.api = None
 
         # Extra debug modes used from command line; it gets to be
         # too noisy if you pass this into nzbget but if you really
@@ -1785,35 +1794,95 @@ class ScriptBase(object):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # API Factory
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def get_api(self):
-        """This function can be used to return a XML-RCP server
-        object using the server variables defined
+    def api_connect(self, user=None, password=None,
+                    host=None, port=None, reset=False):
+        """Configures an API connection
         """
+        if reset:
+            # Reset
+            self.api = None
 
-        # System Options required for RPC calls to work
-        required_opts = set((
-            'CONTROLIP',
-            'CONTROLPORT',
-            'CONTROLUSERNAME',
-            'CONTROLPASSWORD',
-        ))
-        # Fetch standard RCP information to simplify future commands
-        if set(self.system) & required_opts != required_opts:
-            # Not enough options to extract RCP information
-            return None
+        # If we're already connected; then there is nothing more to do
+        if self.api is not None:
+            return True
 
         # if we reach here, we have enough data to build an RCP connection
-        host = self.system['CONTROLIP']
+        if host is None:
+            host = self.system['CONTROLIP']
+
         if host == "0.0.0.0":
             host = "127.0.0.1"
 
-        # Return API Controller
-        return NZBGetAPI(
-            self.system['CONTROLUSERNAME'],
-            self.system['CONTROLPASSWORD'],
+        #Build URL
+        xmlrpc_url = 'http://'
+
+        if user is None:
+            user = self.get('ControlUsername', '')
+        if password is None:
+            password = self.get('ControlPassword', '')
+        if port is None:
+            port = self.get('ControlPort', '6789')
+
+        if user and password:
+            xmlrpc_url += '%s:%s@' % (user, password)
+
+        xmlrpc_url += '%s:%s/xmlrpc' % ( \
             host,
-            self.system['CONTROLPORT'],
+            str(port),
         )
+
+        # Establish a connection to the server
+        try:
+            self.api = ServerProxy(xmlrpc_url)
+        except:
+            return False
+
+        return True
+
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Retrieve System Logs
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def get_logs(self):
+        """
+        Returns log entries (via the API)
+        """
+        if not self.api_connect():
+            # Could not connect
+            return None
+
+        try:
+            logs = self.proxy.postqueue(10000)[0]['Log']
+        except KeyError:
+            # No logs
+            return None
+
+        # Return log listings
+        return logs
+
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Add NZB File to Queue
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def add_nzb(self, filename):
+        """Simply add's an NZB file to NZBGet (via the API)
+        """
+        if not self.api_connect():
+            # Could not connect
+            return False
+
+        try:
+            f = open(filename, "r")
+        except:
+            return False
+
+        content = f.read()
+        f.close()
+        b64content = standard_b64encode(content)
+        try:
+            return self.api.append(filename, 'software', False, b64content)
+        except:
+            return False
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval

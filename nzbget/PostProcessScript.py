@@ -606,6 +606,80 @@ class PostProcessScript(ScriptBase):
             search_dir=search_dir, *args, **kwargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # Retrieve Statistics
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def get_statistics(self, nzbid=None):
+        """
+        Returns the download statistics (via the API)
+
+        The result is returned in an easy to interpret dictionary like so
+        {
+            'download_size_mb': 10.32,
+            'download_time_sec': 40.0,
+            'download_avg': 2.0,
+            'download_avg_unit': 'GB/s',
+
+            'par_scan_time_sec': 12.32,
+            'par_repair_time_sec': 12.32,
+            'unpack_time_sec': 12.32,
+            'total_time_sec': 120.32,
+            'verification_time_sec': 12.32,
+        }
+
+        If an error occurs, then 'None' is returned.
+        """
+
+        if not self._connect():
+            return None
+
+        if nzbid is None:
+            try:
+                nzbid = int(self.get('nzbID'))
+            except (AttributeError, TypeError):
+                return None
+
+        try:
+            group = [ x for x in self.api.listgroups(0) \
+                     if x['NZBID'] == nzbid ][0]
+        except IndexError:
+            return None
+
+        # Calculate statistics based on retrieved results
+        dl_size = float(group['DownloadedSizeMB'])
+        dl_time = float(group['DownloadTimeSec'])
+        dl_avg_speed_unit = 'MB/s'
+
+        if dl_time > 0.0:
+            dl_avg_speed = (dl_size/dl_time)
+            if dl_avg_speed < 1.0:
+                # Convert to KB/s
+                dl_avg_speed_unit = 'KB/s'
+                dl_avg_speed *= 1024.0
+            elif dl_avg_speed > 1000.0:
+                # Convert to GB/s
+                dl_avg_speed_unit = 'GB/s'
+                dl_avg_speed /= 1024.0
+
+        unpack_time = int(group['UnpackTimeSec'])
+        par_scan_time = int(group['ParTimeSec'])
+        par_repair_time = int(group['RepairTimeSec'])
+        postprocess_time = int(group['PostTotalTimeSec'])
+
+        return {
+            'download_size_mb': dl_size,
+            'download_time_sec': dl_time,
+            'download_avg': dl_avg_speed,
+            'download_avg_unit': dl_avg_speed_unit,
+
+            'par_scan_time_sec': par_scan_time,
+            'par_repair_time_sec': par_repair_time,
+            'unpack_time_sec': unpack_time,
+            'postprocess_time': postprocess_time,
+            'verification_time_sec': par_scan_time + par_repair_time,
+            'total_time_sec': postprocess_time + int(group['DownloadTimeSec']),
+        }
+
+    # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Obfuscation Handling
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def deobfuscate(self, filename, ref_dir=None, ref_nzbfile=None):
