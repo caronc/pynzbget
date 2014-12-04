@@ -1153,7 +1153,7 @@ class ScriptBase(object):
         parsed = urlparse('http://%s' % host)
 
         # Parse results
-        result['host'] = parsed[1].strip().lower()
+        result['host'] = parsed[1].strip()
         result['fullpath'] = quote(unquote(tidy_path(parsed[2].strip())))
         try:
             # Handle trailing slashes removed by tidy_path

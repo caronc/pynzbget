@@ -406,14 +406,14 @@ class TestScriptBase(TestBase):
 
         result = script.parse_url('HTTP://HoStNaMe:40/test.php')
         assert result['schema'] == 'http'
-        assert result['host'] == 'hostname'
+        assert result['host'] == 'HoStNaMe'
         assert result['port'] == 40
         assert result['user'] == None
         assert result['password'] == None
         assert result['fullpath'] == '/test.php'
         assert result['path'] == '/'
         assert result['query'] == 'test.php'
-        assert result['url'] == 'http://hostname:40/test.php'
+        assert result['url'] == 'http://HoStNaMe:40/test.php'
 
         result = script.parse_url('HTTPS://user@hostname/test.py')
         assert result['schema'] == 'https'
@@ -441,14 +441,14 @@ class TestScriptBase(TestBase):
             'HTTPS://user:password@otherHost/full///path/name/',
         )
         assert result['schema'] == 'https'
-        assert result['host'] == 'otherhost'
+        assert result['host'] == 'otherHost'
         assert result['port'] == None
         assert result['user'] == 'user'
         assert result['password'] == 'password'
         assert result['fullpath'] == '/full/path/name/'
         assert result['path'] == '/full/path/name/'
         assert result['query'] == None
-        assert result['url'] == 'https://user:password@otherhost/full/path/name/'
+        assert result['url'] == 'https://user:password@otherHost/full/path/name/'
 
         # Handle garbage
         assert script.parse_url(None) == None
