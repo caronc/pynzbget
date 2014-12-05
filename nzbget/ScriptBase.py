@@ -1000,6 +1000,17 @@ class ScriptBase(object):
                 max_depth=1,
             )
 
+            nzb_dir = self.get('NZBDir', None)
+            if nzb_dir and abspath(nzb_dir) != abspath(dirname(nzbfile)):
+                _filenames = dict(
+                    _filenames.items() + self.get_files(
+                        search_dir=abspath(nzb_dir),
+                        regex_filter=file_regex,
+                        fullstats=True,
+                        max_depth=1,
+                    ).items(),
+                )
+
             if len(_filenames):
                 # sort our results by access time
                 _files = sorted (
@@ -1829,7 +1840,7 @@ class ScriptBase(object):
 
         # if we reach here, we have enough data to build an RCP connection
         if host is None:
-            host = self.system['CONTROLIP']
+            host = self.system.get('ControlIP', '127.0.0.1')
 
         if host == "0.0.0.0":
             host = "127.0.0.1"
@@ -1855,7 +1866,9 @@ class ScriptBase(object):
         # Establish a connection to the server
         try:
             self.api = ServerProxy(xmlrpc_url)
+            self.logger.vdebug('API connected @ %s' % xmlrpc_url)
         except:
+            self.logger.vdebug('API connection failed @ %s' % xmlrpc_url)
             return False
 
         return True
@@ -1864,7 +1877,7 @@ class ScriptBase(object):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Retrieve System Logs
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def get_logs(self):
+    def get_logs(self, max_lines=1000, reverse=False):
         """
         Returns log entries (via the API)
         """
@@ -1873,14 +1886,18 @@ class ScriptBase(object):
             return None
 
         try:
-            logs = self.proxy.postqueue(10000)[0]['Log']
-        except KeyError:
+            logs = self.api.postqueue(10000)
+            logs = logs[0]['Log']
+        except (IndexError, KeyError):
             # No logs
-            return None
+            return []
 
-        # Return log listings
-        return logs
-
+        # Return a simple ordered list of strings
+        return sorted([ '%s [%s] - %s' % (
+            datetime.fromtimestamp(int(entry['Time']))\
+                    .strftime('%Y-%m-%d %H:%M:%S'),
+            entry['Kind'], entry['Text'].strip(),
+        ) for entry in logs ], reverse=reverse)[:max_lines]
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Add NZB File to Queue
@@ -2429,7 +2446,7 @@ class ScriptBase(object):
             return self.script_mode
 
         if len(self.script_dict):
-            self.logger.debug('Detecting possible script mode from: %s' % \
+            self.logger.vdebug('Detecting possible script mode from: %s' % \
                          ', '.join(self.script_dict.keys()))
 
         if len(self.script_dict.keys()):
@@ -2439,11 +2456,11 @@ class ScriptBase(object):
                     if getattr(self, '%s_%s' % (k, 'sanity_check'))():
                         self.script_mode = k
                         if self.script_mode != SCRIPT_MODE.NONE:
-                            self.logger.info(
+                            self.logger.vdebug(
                                 'Script Mode: %s' % self.script_mode.upper())
                             return self.script_mode
 
-        self.logger.info('Script Mode: STANDALONE')
+        self.logger.vdebug('Script Mode: STANDALONE')
         self.script_mode = SCRIPT_MODE.NONE
 
         return self.script_mode
