@@ -12,4 +12,4 @@ after_success:
   - coveralls
 
 # run tests
-script: nosetests
+script: coverage run --source=nzbget nosetests
