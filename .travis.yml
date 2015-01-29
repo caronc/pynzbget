@@ -5,6 +5,7 @@ python:
 
 install:
   - pip install .
+  - pip install -r requirements.txt --use-mirrors
 
 # run tests
 script: nosetests
