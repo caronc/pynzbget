@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/caronc/pynzbget.svg?branch=master)](https://travis-ci.org/caronc/pynzbget)
+[![Build Status](https://travis-ci.org/caronc/pynzbget.svg?branch=master)](https://travis-ci.org/caronc/pynzbget)[![Coverage Status](https://coveralls.io/repos/caronc/pynzbget/badge.svg)](https://coveralls.io/r/caronc/pynzbget)
 Description
 =================
 This provides a python framework to design NZBGet scripts with. The intent
