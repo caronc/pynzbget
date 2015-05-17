@@ -2155,13 +2155,34 @@ class ScriptBase(object):
                 }
             }
             if fullstats:
-                stat_obj = stat(search_dir)
-                _file[search_dir]['modified'] = \
-                    datetime.fromtimestamp(stat_obj[ST_MTIME])
-                _file[search_dir]['accessed'] = \
-                    datetime.fromtimestamp(stat_obj[ST_ATIME])
-                _file[search_dir]['created'] = \
-                    datetime.fromtimestamp(stat_obj[ST_CTIME])
+                # Extend file information
+                try:
+                    stat_obj = stat(search_dir)
+                except OSError:
+                    del _files[search_dir]
+                    self.logger.warning(
+                        'The file %s became inaccessible' % fname,
+                    )
+                    return {}
+                try:
+                    _file[search_dir]['modified'] = \
+                        datetime.fromtimestamp(stat_obj[ST_MTIME])
+                except ValueError:
+                    _file[search_dir]['modified'] = \
+                        datetime(1980, 1, 1, 0, 0, 0, 0)
+                try:
+                    _file[search_dir]['accessed'] = \
+                        datetime.fromtimestamp(stat_obj[ST_ATIME])
+                except ValueError:
+                    _file[search_dir]['accessed'] = \
+                        datetime(1980, 1, 1, 0, 0, 0, 0)
+                try:
+                    _file[search_dir]['created'] = \
+                        datetime.fromtimestamp(stat_obj[ST_CTIME])
+                except ValueError:
+                    _file[search_dir]['created'] = \
+                        datetime(1980, 1, 1, 0, 0, 0, 0)
+
                 _file[search_dir]['filesize'] = stat_obj[ST_SIZE]
             return _file
 
