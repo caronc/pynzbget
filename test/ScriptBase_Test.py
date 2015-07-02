@@ -20,6 +20,7 @@ import re
 from os.path import dirname
 from os.path import join
 sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
+from urllib import unquote
 
 from ScriptBase import ScriptBase
 from ScriptBase import SYS_ENVIRO_ID
@@ -359,6 +360,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == None
         assert result['query'] == None
         assert result['url'] == 'http://hostname'
+        assert result['qsd'] == {}
 
         result = script.parse_url('http://hostname/')
         assert result['schema'] == 'http'
@@ -370,6 +372,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/'
         assert result['query'] == None
         assert result['url'] == 'http://hostname/'
+        assert result['qsd'] == {}
 
         result = script.parse_url('hostname')
         assert result['schema'] == 'http'
@@ -381,6 +384,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == None
         assert result['query'] == None
         assert result['url'] == 'http://hostname'
+        assert result['qsd'] == {}
 
         result = script.parse_url('http://hostname////')
         assert result['schema'] == 'http'
@@ -392,6 +396,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/'
         assert result['query'] == None
         assert result['url'] == 'http://hostname/'
+        assert result['qsd'] == {}
 
         result = script.parse_url('http://hostname:40////')
         assert result['schema'] == 'http'
@@ -403,6 +408,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/'
         assert result['query'] == None
         assert result['url'] == 'http://hostname:40/'
+        assert result['qsd'] == {}
 
         result = script.parse_url('HTTP://HoStNaMe:40/test.php')
         assert result['schema'] == 'http'
@@ -414,6 +420,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/'
         assert result['query'] == 'test.php'
         assert result['url'] == 'http://HoStNaMe:40/test.php'
+        assert result['qsd'] == {}
 
         result = script.parse_url('HTTPS://user@hostname/test.py')
         assert result['schema'] == 'https'
@@ -425,6 +432,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/'
         assert result['query'] == 'test.py'
         assert result['url'] == 'https://user@hostname/test.py'
+        assert result['qsd'] == {}
 
         result = script.parse_url('  HTTPS://///user@@@hostname///test.py  ')
         assert result['schema'] == 'https'
@@ -436,6 +444,7 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/'
         assert result['query'] == 'test.py'
         assert result['url'] == 'https://user@hostname/test.py'
+        assert result['qsd'] == {}
 
         result = script.parse_url(
             'HTTPS://user:password@otherHost/full///path/name/',
@@ -449,9 +458,31 @@ class TestScriptBase(TestBase):
         assert result['path'] == '/full/path/name/'
         assert result['query'] == None
         assert result['url'] == 'https://user:password@otherHost/full/path/name/'
+        assert result['qsd'] == {}
 
         # Handle garbage
         assert script.parse_url(None) == None
+
+        result = script.parse_url(
+            'mailto://user:password@otherHost/lead2gold@gmail.com' + \
+            '?from=test@test.com&name=Chris%20Caron&format=text'
+        )
+        assert result['schema'] == 'mailto'
+        assert result['host'] == 'otherHost'
+        assert result['port'] == None
+        assert result['user'] == 'user'
+        assert result['password'] == 'password'
+        assert unquote(result['fullpath']) == '/lead2gold@gmail.com'
+        assert result['path'] == '/'
+        assert unquote(result['query']) == 'lead2gold@gmail.com'
+        assert unquote(result['url']) == 'mailto://user:password@otherHost/lead2gold@gmail.com'
+        assert len(result['qsd']) == 3
+        assert 'name' in result['qsd']
+        assert unquote(result['qsd']['name']) == 'Chris Caron'
+        assert 'from' in result['qsd']
+        assert unquote(result['qsd']['from']) == 'test@test.com'
+        assert 'format' in result['qsd']
+        assert unquote(result['qsd']['format']) == 'text'
 
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
