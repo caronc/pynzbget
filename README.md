@@ -45,10 +45,10 @@ The following are some of the functionality that is built in for you:
  * __health_check()__ - Checks the status of the retrieved content, currently
                 this is only useful during Post-Processing
 
- * __push()__     - pushes a variables to the NZBGet server
+ * __push()__ - pushes a variables to the NZBGet server
 
 
- * __[[set()|API_set]]/get()__- Hash table get/set attributes that can be set in one script
+ * __set()/get()__ - Hash table get/set attributes that can be set in one script
                 and then later retrieved from another. get() can also
                 be used to fetch content that was previously pushed using
                 the push() tool. You no longer need to work with environment
