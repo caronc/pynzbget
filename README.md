@@ -5,7 +5,7 @@ Description
 This provides a python framework to design NZBGet scripts with. The intent
 was to greatly simplify the development and debugging process. It was
 initially designed to work with NZBGet v13 but was made to be compatible
-with versions 12 and 11 as well.
+with versions 12 and 11 as well. Naturally it works with all newer versions as well (v14, v15, v16, etc).
 
 * It contains a built in meta tag parser to extract content from NZB-Files.
    _Note: This can only happen if lxml is installed on your system_.
