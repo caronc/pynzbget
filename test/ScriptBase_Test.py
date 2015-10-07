@@ -578,6 +578,23 @@ class TestScriptBase(TestBase):
         assert '/home/username/News/TVShows' in results
         assert '/home/username/News/Movies' in results
 
+    def test_parse_path_list03(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+
+        # A simple single array entry (As str)
+        results = script.parse_path_list(
+            '\\\\ht-pc\\htpc_5tb\\Media\\TV, ' +\
+            '\\\\ht-pc\\htpc_5tb\\Media\\Movies, ' +\
+            '\\\\ht-pc\\htpc_2tb\\Media\\TV, ' +\
+            '\\\\ht-pc\\htpc_2tb\\Media\\Movies',
+        )
+        assert len(results) == 4
+        assert '\\\\ht-pc\\htpc_5tb\\Media\\TV' in results
+        assert '\\\\ht-pc\\htpc_5tb\\Media\\Movies' in results
+        assert '\\\\ht-pc\\htpc_2tb\\Media\\TV' in results
+        assert '\\\\ht-pc\\htpc_2tb\\Media\\Movies' in results
+
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
