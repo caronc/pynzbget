@@ -598,6 +598,10 @@ class TestScriptBase(TestBase):
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+        assert script.parse_bool('Enabled', None) == True
+        assert script.parse_bool('Disabled', None) == False
+        assert script.parse_bool('Allow', None) == True
+        assert script.parse_bool('Deny', None) == False
         assert script.parse_bool('Yes', None) == True
         assert script.parse_bool('YES', None) == True
         assert script.parse_bool('Always', None) == True
