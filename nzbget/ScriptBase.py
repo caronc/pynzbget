@@ -2552,7 +2552,8 @@ class ScriptBase(object):
                 cleaned = self._path_win_re.sub('|\\1', cleaned)
                 cleaned = self._path_winnw_re.sub('|\\1', cleaned)
                 cleaned = self._path_win_drive_re.sub('|\\1:\\2', cleaned)
-                result += cleaned.split('|')
+                print cleaned
+                result += re.split('[,|]+', cleaned)
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
@@ -2561,7 +2562,7 @@ class ScriptBase(object):
                         cleaned = self._path_win_re.sub('|\\1', cleaned)
                         cleaned = self._path_winnw_re.sub('|\\1', cleaned)
                         cleaned = self._path_win_drive_re.sub('|\\1:\\2', cleaned)
-                        result += cleaned.split('|')
+                        result += re.split('[,|]+', cleaned)
 
                     # A list inside a list? - use recursion
                     elif isinstance(_arg, (list, tuple)):

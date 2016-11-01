@@ -595,6 +595,18 @@ class TestScriptBase(TestBase):
         assert '\\\\ht-pc\\htpc_2tb\\Media\\TV' in results
         assert '\\\\ht-pc\\htpc_2tb\\Media\\Movies' in results
 
+    def test_parse_path_list04(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+
+        # comma is a delimiter
+        results = script.parse_path_list('path1, path2 ,path3,path4')
+        assert len(results) == 4
+        assert 'path1' in results
+        assert 'path2' in results
+        assert 'path3' in results
+        assert 'path4' in results
+
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
