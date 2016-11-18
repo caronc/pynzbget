@@ -19,6 +19,7 @@ import sys
 import re
 from os.path import dirname
 from os.path import join
+from os.path import isfile
 sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 from urllib import unquote
 
@@ -35,6 +36,8 @@ from Logger import VERY_VERBOSE_DEBUG
 
 from shutil import rmtree
 from os import makedirs
+from threading import Thread, Lock
+from time import sleep
 
 import StringIO
 
@@ -779,3 +782,274 @@ class TestScriptBase(TestBase):
         assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
         h = Health(None)
         assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
+
+    def test_pid_file_control_01(self):
+        """
+        A Simple test that shows how multiple calls
+        to is_unique_instance will not tamper with
+        the PID-File or the process
+        """
+
+        # Define a simple script
+        class SleepScript(ScriptBase):
+            """
+            A Simple sleeping script we'll thread for testing
+            pid file generation
+            """
+            def main(self, *args, **kwargs):
+
+                # Acquire lock
+                self.lock.acquire()
+
+                if not self.is_unique_instance(die_on_fail=False):
+                    self.rlock.release()
+                    self.lock.acquire()
+                    return False
+
+                if not self.is_unique_instance(die_on_fail=False):
+                    self.rlock.release()
+                    self.lock.acquire()
+                    return False
+
+                self.rlock.release()
+                self.lock.acquire()
+                return None
+
+
+        def threaded_script(script):
+            script._return_code = script.run()
+            return
+
+        # Script reference
+        script = SleepScript(logger=False, debug=VERY_VERBOSE_DEBUG)
+        script.lock = Lock()
+        script.rlock = Lock()
+        script._return_code = None
+
+        # Start locked
+        script.lock.acquire()
+        script.rlock.acquire()
+
+        # Create our thread
+        thread = Thread(target=threaded_script, args=(script, ))
+        thread.start()
+
+        # Let our script have control and await our turn
+        script.lock.release()
+        script.rlock.acquire()
+
+        # Wait for our script to come close to exiting
+        try:
+            assert isfile(script.pidfile)
+
+        except:
+            # handle locks if we have a failure
+            script.rlock.release()
+            script.lock.release()
+            thread.join()
+            raise
+
+        # Now let the threads exit gracefully
+        script.lock.release()
+        thread.join()
+
+        # PID file tidys up nicely
+        assert not isfile(script.pidfile)
+        assert script._return_code == EXIT_CODE.NONE
+
+    def test_pid_file_control_02(self):
+        """
+        If the PID-File is pulled from under the process then
+        it is treated as no longer being a unique process.
+
+        We do things a little complicated when it isn't really nessisary.
+        Hence this test uses threads to show it's possible. The main thing
+        we're testing here however is that when we're done, we tidy up our
+        own PID-File automatically.
+        """
+
+        # Define a simple script
+        class SleepScript(ScriptBase):
+            """
+            A Simple sleeping script we'll thread for testing
+            pid file generation
+            """
+            def main(self, *args, **kwargs):
+
+                # Acquire lock
+                self.lock.acquire()
+
+                if not self.is_unique_instance(die_on_fail=False):
+                    self.lock.acquire()
+                    self.rlock.release()
+                    return False
+
+                # We want to pause here intentionally because
+                # the test script is going to mess with the pid
+                # file information for the lower processing
+                self.rlock.release()
+                self.lock.acquire()
+
+                if not self.is_unique_instance(die_on_fail=False):
+                    return False
+
+                return None
+
+
+        def threaded_script(script):
+            script._return_code = script.run()
+            return
+
+        # Script reference
+        script = SleepScript(logger=False, debug=VERY_VERBOSE_DEBUG)
+        script.lock = Lock()
+        script.rlock = Lock()
+        script._return_code = None
+
+        # Start locked
+        script.lock.acquire()
+        script.rlock.acquire()
+
+        # Create our thread
+        thread = Thread(target=threaded_script, args=(script, ))
+        thread.start()
+
+        # Let our script have control and await our turn
+        script.lock.release()
+
+        script.rlock.acquire()
+        # Wait for our script to come close to exiting
+        try:
+            assert isfile(script.pidfile)
+
+        except:
+            # handle locks if we have a failure
+            script.lock.release()
+            thread.join()
+            raise
+
+        # Remove this pidfile; this yanks the carpet from under it
+        # causing it to treat the process as no longer being unique
+        os.unlink(script.pidfile)
+
+        script.lock.release()
+        # Now let the threads exit gracefully
+        thread.join()
+
+        # PID file tidys up nicely
+        assert not isfile(script.pidfile)
+        assert script._return_code == EXIT_CODE.FAILURE
+
+
+    def test_pid_file_control_03(self):
+        """
+        This is the same as test_pid_file_control_02, we're basically
+        going to change the modification time of the pid file which
+        causes the script to no longer treat the process as unique
+
+        We do things a little complicated when it isn't really nessisary.
+        Hence this test uses threads to show it's possible. The main thing
+        we're testing here however is that when there is a failure, the
+        base script keeps the PID-File around if it's been tampered with.
+        """
+
+        # Define a simple script
+        class SleepScript(ScriptBase):
+            """
+            A Simple sleeping script we'll thread for testing
+            pid file generation
+            """
+            def main(self, *args, **kwargs):
+
+                # Acquire lock
+                self.lock.acquire()
+
+                if not self.is_unique_instance(die_on_fail=False):
+                    self.lock.acquire()
+                    self.rlock.release()
+                    return False
+
+                # We want to pause here intentionally because
+                # the test script is going to mess with the pid
+                # file information for the lower processing
+                self.rlock.release()
+                self.lock.acquire()
+
+                if not self.is_unique_instance(die_on_fail=False):
+                    return False
+
+                return None
+
+
+        def threaded_script(script):
+            script._return_code = script.run()
+            return
+
+        # Script reference
+        script = SleepScript(logger=False, debug=VERY_VERBOSE_DEBUG)
+        script.lock = Lock()
+        script.rlock = Lock()
+        script._return_code = None
+
+        # Start locked
+        script.lock.acquire()
+        script.rlock.acquire()
+
+        # Create our thread
+        thread = Thread(target=threaded_script, args=(script, ))
+        thread.start()
+
+        # Let our script have control and await our turn
+        script.lock.release()
+
+        script.rlock.acquire()
+        # Wait for our script to come close to exiting
+        try:
+            assert isfile(script.pidfile)
+
+        except:
+            # handle locks if we have a failure
+            script.lock.release()
+            thread.join()
+            raise
+
+        # At least 1 second has to elapse so the changed modification
+        # time will show through
+        sleep(1)
+
+        # touch our pid file (causes the modification time to shift)
+        # thus becoming different then what we are currently set to
+        with open(script.pidfile, 'a'):
+            os.utime(script.pidfile, None)
+
+        script.lock.release()
+        # Now let the threads exit gracefully
+        thread.join()
+
+        # PID file tidys up nicely
+        assert not isfile(script.pidfile)
+        assert script._return_code == EXIT_CODE.FAILURE
+
+
+    def test_pid_file_control_04(self):
+        """
+        If our PID is different then what was written in the
+        PID-File, this also causes us to abort
+        """
+
+        # Script reference
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+        assert script.pidfile is None
+        assert script.is_unique_instance(die_on_fail=False) is True
+        assert script.is_unique_instance(die_on_fail=False) is True
+        assert script.is_unique_instance(die_on_fail=False) is True
+        assert isfile(script.pidfile)
+
+        # Change our PID so it won't match what is in the
+        # PID-File; this should trigger a failure
+        script.pid = 0
+
+        assert script.is_unique_instance(die_on_fail=False) is False
+
+        # PID-File should still be present!!
+        assert isfile(script.pidfile)

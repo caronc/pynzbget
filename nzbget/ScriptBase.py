@@ -716,6 +716,11 @@ class ScriptBase(object):
         # The pidfile is initialized if we call is_unique_instance()
         self.pidfile = None
 
+        # We record the timestamp of our pid file after it's created
+        # so that if it's missing, or has a different time stamp associated
+        # with it, we can assume someone is mucking about; we will close
+        self.pidfile_tstamp = None
+
         # version detection
         try:
             self.version = '%s.' % self.system.get('VERSION')
@@ -884,11 +889,22 @@ class ScriptBase(object):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Signal Handling
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        if os_name == 'nt':
-            signal.signal(signal.SIGBREAK, self.signal_quit)
-        else:
-            signal.signal(signal.SIGINT, self.signal_quit)
+        try:
+            if os_name == 'nt':
+                signal.signal(signal.SIGBREAK, self.signal_quit)
+            else:
+                signal.signal(signal.SIGCHLD, self.signal_quit)
+
+            if signal.getsignal(signal.SIGINT) == signal.default_int_handler:
+                # only handle if there isn't already a handler, e.g. for Pdb.
+                signal.signal(signal.SIGINT, self.signal_quit)
+
             signal.signal(signal.SIGTERM, self.signal_quit)
+
+        except ValueError:
+            # This can occur if calling the script from within a thread
+            # we just gracefully move on if this happens
+            pass
 
     def is_unique_instance(self, pidfile=None, die_on_fail=True):
         """
@@ -914,18 +930,52 @@ class ScriptBase(object):
         if pidfile is not None:
             self.pidfile = pidfile
 
-        # PID Directory
-        piddir = join(self.tempdir, '.run')
-
         if not self.pidfile:
            self.pidfile = join(self.tempdir, '.run', '%s-%s.pid' % (
                __name__, self.script_mode,
            ))
 
+        if self.pidfile_tstamp is not None:
+            # PID-File already created and running; test
+            try:
+                pidfile_tstamp = datetime\
+                    .fromtimestamp(stat(self.pidfile)[ST_MTIME])
+
+            except (IndexError, ValueError, OSError):
+                self.logger.warning(
+                    'Detected PID-File tampering (missing/bad).',
+                )
+
+                # Reset class pidfile information and do not touch
+                # PID-File as there is a chance it is no longer
+                # ours
+                self.pidfile_tstamp = None
+
+                if die_on_fail:
+                    raise NZBGetExitException
+                return False
+
+            if pidfile_tstamp != self.pidfile_tstamp:
+                self.logger.warning(
+                    'Detected PID-File tampering (changed timestamp).',
+                )
+
+                # Reset class pidfile information and do not touch
+                # PID-File as there is a chance it is no longer
+                # ours
+                self.pidfile_tstamp = None
+
+                if die_on_fail:
+                    raise NZBGetExitException
+                return False
+
         self.logger.debug('Testing for PID-File: %s (die_on_fail=%s)' % (
             self.pidfile,
             die_on_fail and "True" or "False",
         ))
+
+        # PID Directory
+        piddir = dirname(self.pidfile)
 
         # An NZBGet Mode means we should work out of a writeable directory
         if not isdir(piddir):
@@ -949,11 +999,16 @@ class ScriptBase(object):
                 self.logger.debug(
                     'PID-File identifies PID %d (our PID is %d):' % (
                     pid,
-                    self.pidfile,
+                    self.pid,
                 ))
 
-            except (ValueError, TypeError):
+            except (ValueError, TypeError), e:
                 # Bad data
+                self.logger.debug(
+                    'PID-File - Access Exception %s' % str(e))
+
+                self.logger.info(
+                        'Removed (dead) PID-File: %s' % self.pidfile)
                 try:
                     unlink(self.pidfile)
                     self.logger.info(
@@ -961,12 +1016,23 @@ class ScriptBase(object):
                 except:
                     self.logger.warning(
                         'Failed to removed (dead) PID-File: %s' % self.pidfile)
-                    pass
+
+                    # It probably isn't ours
+                    self.pidfile_tstamp = None
+
+                    if die_on_fail:
+                        raise NZBGetExitException
+
+                    return False
 
             except (IOError, OSError):
                 # Can't access content
                 self.logger.warning(
                    'Can not access PID-File: %s' % self.pidfile)
+
+                # It probably isn't ours
+                self.pidfile_tstamp = None
+
                 if die_on_fail:
                     raise NZBGetExitException
                 return False
@@ -977,6 +1043,7 @@ class ScriptBase(object):
                        'Process is already running in ' +
                         'another instance (pid=%d)' % pid,
                     )
+
                     # We're done
                     if die_on_fail:
                         raise NZBGetExitException
@@ -988,6 +1055,7 @@ class ScriptBase(object):
         # Write our PIDFile
         try:
            fp = open(self.pidfile, "w")
+
         except:
             self.logger.warning('Could not open PID-File for writing.')
             if die_on_fail:
@@ -995,7 +1063,7 @@ class ScriptBase(object):
             return False
 
         try:
-           fp.write("%d" % self.pid)
+           fp.write("%s" % str(self.pid))
         except:
             self.logger.warning('Could not write PID into PID-File.')
             fp.close()
@@ -1007,6 +1075,26 @@ class ScriptBase(object):
             fp.close()
         except:
             self.logger.warning('Could not close PID-File.')
+            if die_on_fail:
+                raise NZBGetExitException
+            return False
+
+        # We now want to get the modify time of our pid file
+        try:
+            self.pidfile_tstamp = datetime\
+                .fromtimestamp(stat(self.pidfile)[ST_MTIME])
+
+        except (IndexError, ValueError, OSError):
+            self.logger.warning(
+                'Could not exctract PID-File creation.',
+            )
+
+            try:
+                # Cleanup
+                unlink(self.pidfile)
+            except:
+                pass
+
             if die_on_fail:
                 raise NZBGetExitException
             return False
@@ -2645,6 +2733,8 @@ class ScriptBase(object):
                 'changing response to a failure (%d).' % (EXIT_CODE.FAILURE),
             )
             exit_code = EXIT_CODE.FAILURE
+        self.logger.debug(
+           'Exiting with return code: %d' % exit_code)
         return exit_code
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
