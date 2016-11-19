@@ -124,6 +124,9 @@ The following are some of the functionality that is built in for you:
  * __deobfuscate()__ - Take a filename and return it in a deobfuscated to the
                    best of its ability. (_PostProcessScript_ only)
 
+ * __is_unique_instance()__ - Allows you to ensure your instance of your script is
+                  unique. This is useful for Scheduled scripts which can be
+                  called and then run concurrently with NZBGet.
 How To Use
 ==========
 * Developers are only required to define a class that inherits the NZBGet class
