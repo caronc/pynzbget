@@ -349,7 +349,7 @@ class TestScriptBase(TestBase):
         assert join(SEARCH_DIR, 'good_dir', 'good_file3.mkv') in \
                 results.keys()
 
-    def test_parse_url(self):
+    def test_parse_url01(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
@@ -486,6 +486,27 @@ class TestScriptBase(TestBase):
         assert unquote(result['qsd']['from']) == 'test@test.com'
         assert 'format' in result['qsd']
         assert unquote(result['qsd']['format']) == 'text'
+
+        # Test Passwords with question marks ?; not supported
+        result = script.parse_url(
+            'http://user:pass.with.?question@host'
+        )
+        assert result is None
+        result = script.parse_url(
+            'http://user@host?pass=pass.with.?question'
+        )
+
+        assert result['schema'] == 'http'
+        assert result['host'] == 'host'
+        assert result['port'] == None
+        assert result['user'] == 'user'
+        assert result['password'] == 'pass.with.?question'
+        assert result['fullpath'] is None
+        assert result['path'] is None
+        assert result['query'] is None
+        assert unquote(result['url']) == 'http://user:pass.with.?question@host'
+        assert len(result['qsd']) == 1
+        assert unquote(result['qsd']['pass']) == 'pass.with.?question'
 
     def test_parse_list(self):
         # a NZB Logger set to False uses stderr
