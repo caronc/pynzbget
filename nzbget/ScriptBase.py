@@ -153,6 +153,9 @@ from datetime import datetime
 from Utils import tidy_path
 from urllib import unquote
 
+import traceback
+from sys import exc_info
+
 from Logger import VERBOSE_DEBUG
 from Logger import VERY_VERBOSE_DEBUG
 from Logger import init_logger
@@ -266,6 +269,20 @@ EXIT_CODES = (
    EXIT_CODE.FAILURE,
    EXIT_CODE.NONE,
 )
+
+class NZBGetDuplicateMode(object):
+    """Defines Duplicate Mode. This is used when Adding NZB-Files directly
+    """
+    # This is default duplicate mode. Only nzb-files with higher scores
+    # (when already downloaded) are considered.
+    SCORE = u'SCORE'
+
+    # All NZB-Files regardless of their scores are downloaded
+    ALL  = 'ALL'
+
+    # Force download and disable all duplicate checks.
+    FORCE = 'FORCE'
+
 
 class NZBGetExitException(Exception):
     def __init__(self, code=EXIT_CODE.NONE):
@@ -2296,25 +2313,74 @@ class ScriptBase(object):
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Add NZB File to Queue
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def add_nzb(self, filename):
+    def add_nzb(self, filename, content=None, category=None,
+                priority=PRIORITY.NORMAL):
         """Simply add's an NZB file to NZBGet (via the API)
         """
         if not self.api_connect():
             # Could not connect
             return None
 
-        try:
-            f = open(filename, "r")
-        except:
-            return False
+        # Defaults
+        add_to_top = False
+        add_paused = True
+        dup_key = ''
+        dup_score = 0
+        dup_mode = NZBGetDuplicateMode.FORCE
 
-        content = f.read()
-        f.close()
+        if content is None:
+            # Verify content is an NZB-File
+            if not self.parse_nzbfile(filename):
+                self.logger.debug('API:NZB-File Could not parse: %s' % filename)
+                return False
+
+            try:
+                f = open(filename, "r")
+
+            except:
+                self.logger.debug('API:NZB-File Could not open: %s' % filename)
+                return False
+
+            try:
+                content = f.read()
+
+            except:
+                self.logger.debug('API:NZB-File Could not read: %s' % filename)
+                return False
+
+            f.close()
+
+        # Encode content
         b64content = standard_b64encode(content)
         try:
-            return self.api.append(filename, 'software', False, b64content)
+            return self.api.append(
+                filename,
+                b64content,
+                category,
+                priority,
+                add_to_top,
+                add_paused,
+                dup_key,
+                dup_score,
+                dup_mode,
+            )
+
         except:
+            # Try to capture error
+            exc_type, exc_value, exc_traceback = exc_info()
+            lines = traceback.format_exception(
+                     exc_type, exc_value, exc_traceback)
+            if self.script_mode != SCRIPT_MODE.NONE:
+                # NZBGet Mode enabled
+                for line in lines:
+                    self.logger.error(line)
+            else:
+                # Display error as is
+                self.logger.error('API:NZB-File append() Exception:\n%s' % \
+                    ''.join('  ' + line for line in lines))
+
             return False
+        return True
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # File Retrieval
@@ -2700,9 +2766,6 @@ class ScriptBase(object):
         """The intent is this is the script you run from within your script
         after overloading the main() function of your class
         """
-        import traceback
-        from sys import exc_info
-
         # Default
         main_function = self.main
 
