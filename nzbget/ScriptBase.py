@@ -2,7 +2,7 @@
 #
 # A base scripting class for NZBGet
 #
-# Copyright (C) 2014-2015 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -59,6 +59,10 @@ functionality such as:
  * parse_nzbfile() - Parse an NZB-File and extract all of its meta
                      information from it. lxml must be installed on your
                      system for this to work correctly
+
+ * parse_nzbcontent() - Parse meta information from the specified NZB Content
+                     lxml must be installed on your system for this to work
+                     correctly.
 
  * parse_url()  - Parse a URL and extract the protocol, user, pass,
                   remote directory and hostname from the string.
@@ -125,6 +129,7 @@ Additionally all exception handling is wrapped to make debugging easier.
 
 import re
 from tempfile import gettempdir
+from tempfile import mkstemp
 from os import environ
 from os import makedirs
 from os import chdir
@@ -164,6 +169,7 @@ from Logger import destroy_logger
 from Utils import ESCAPED_PATH_SEPARATOR
 from Utils import ESCAPED_WIN_PATH_SEPARATOR
 from Utils import ESCAPED_NUX_PATH_SEPARATOR
+from Utils import unescape_xml
 
 import signal
 
@@ -1436,6 +1442,45 @@ class ScriptBase(object):
 
         return results
 
+    def parse_nzbcontent(self, nzbcontent):
+        """
+        Parses nzb-content (extracted from within an NZB-File)
+
+        This script first writes the contents of the NZB to a new file
+        so that we can parse it using the parse_nzbfile() which already
+        manages all the built in support for the several XML parsers
+        out there.
+
+        """
+        # Temporarily write content to a temporary file
+        fname = mkstemp(
+            suffix='.tmp.nzb', dir=self.tempdir, text=True,
+        )
+
+        try:
+            fd = open(fname)
+        except:
+            return {}
+
+        try:
+            fd.write(nzbcontent)
+
+        finally:
+            fd.close()
+
+        results = self.parse_nzbfile(fname)
+
+        try:
+            unlink(fname)
+        except:
+            if verbose:
+                self.logger.warning(
+                    'Failed to removed (temporary) NZB-File: %s' % \
+                    fname)
+
+        return results
+
+
     def parse_url(self, url, default_schema='http', qsd_auth=True):
         """A function that greatly simplifies the parsing of a url
         specified by the end user.
@@ -2323,16 +2368,16 @@ class ScriptBase(object):
 
         # Defaults
         add_to_top = False
-        add_paused = True
+        add_paused = False
         dup_key = ''
         dup_score = 0
         dup_mode = NZBGetDuplicateMode.FORCE
 
         if content is None:
-            # Verify content is an NZB-File
-            if not self.parse_nzbfile(filename):
-                self.logger.debug('API:NZB-File Could not parse: %s' % filename)
-                return False
+            if not category:
+                # Verify content is an NZB-File
+                meta = self.parse_nzbfile(filename)
+                category = unescape_xml(meta.get('CATEGORY', '').strip())
 
             try:
                 f = open(filename, "r")
@@ -2350,8 +2395,15 @@ class ScriptBase(object):
 
             f.close()
 
+        elif not category:
+            # We have content already loaded; We need to convert it into an
+            # XML object for parsing
+            meta = self.parse_nzbcontent(content)
+            category = unescape_xml(meta.get('CATEGORY', '').strip())
+
         # Encode content
         b64content = standard_b64encode(content)
+
         try:
             return self.api.append(
                 filename,
