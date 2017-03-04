@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.3.1'
+version = '0.3.2'
 
 f = open('README.md','r')
 LONG_DESCRIPTION = f.read()
@@ -23,7 +23,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
     ],
-    keywords='nzbget,framework,scripts',
+    keywords='nzbget,framework,scripts,nzb',
     author='Chris Caron',
     author_email='lead2gold@gmail.com',
     url='http://github.com/caronc/pynzbget',
