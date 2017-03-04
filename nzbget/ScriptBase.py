@@ -157,6 +157,7 @@ from logging import Logger
 from datetime import datetime
 from Utils import tidy_path
 from urllib import unquote
+import ssl
 
 import traceback
 from sys import exc_info
@@ -235,6 +236,7 @@ from base64 import standard_b64encode
 try:
     # Python 2
     from xmlrpclib import ServerProxy
+    from xmlrpclib import SafeTransport
 except ImportError:
     # Python 3
     from xmlrpc.client import ServerProxy
@@ -2307,13 +2309,46 @@ class ScriptBase(object):
             str(port),
         )
 
-        # Establish a connection to the server
+        # Establish a connection to the server; since most NZBGet secure
+        # servers can't verified since they're hosted internally, we set
+        # the CERT_NONE flag.
+
+        # Future TODO: make this an option for those who want to verify
+        # the host.
         try:
-            self.api = ServerProxy(xmlrpc_url)
+            # Python >= 2.7.9
+            context = ssl._create_unverified_context()
+            try:
+                self.api = ServerProxy(
+                    xmlrpc_url,
+                    verbose=False,
+                    use_datetime=True,
+                    context=context,
+                )
+            except:
+                self.logger.debug('API connection failed @ %s' % xmlrpc_url)
+                return False
+
+        except AttributeError:
+            # Python < 2.7.9
+            transport = SafeTransport(
+                use_datetime=True,
+                context=context,
+            )
+
+            try:
+                self.api = ServerProxy(
+                    xmlrpc_url,
+                    verbose=False,
+                    use_datetime=True,
+                    transport=transport,
+                )
+
+            except:
+                self.logger.debug('API connection failed @ %s' % xmlrpc_url)
+                return False
+
             self.logger.debug('API connected @ %s' % xmlrpc_url)
-        except:
-            self.logger.debug('API connection failed @ %s' % xmlrpc_url)
-            return False
 
         return True
 
