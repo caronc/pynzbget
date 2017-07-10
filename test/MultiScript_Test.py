@@ -2,7 +2,7 @@
 #
 # A Test Suite (for nose) for the MultiScripts
 #
-# Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -15,18 +15,21 @@
 # GNU Lesser General Public License for more details.
 #
 import os
-from PostProcessScript import PostProcessScript
-from PostProcessScript import POSTPROC_ENVIRO_ID
-from ScanScript import ScanScript
-from ScanScript import SCAN_ENVIRO_ID
-from SchedulerScript import SchedulerScript
-from SchedulerScript import SCHEDULER_ENVIRO_ID
-from ScriptBase import SCRIPT_MODE
-from ScriptBase import EXIT_CODE
-from ScriptBase import SYS_ENVIRO_ID
+
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
-from Logger import VERY_VERBOSE_DEBUG
+
+from nzbget.PostProcessScript import PostProcessScript
+from nzbget.PostProcessScript import POSTPROC_ENVIRO_ID
+from nzbget.ScanScript import ScanScript
+from nzbget.ScanScript import SCAN_ENVIRO_ID
+from nzbget.SchedulerScript import SchedulerScript
+from nzbget.SchedulerScript import SCHEDULER_ENVIRO_ID
+from nzbget.ScriptBase import SCRIPT_MODE
+from nzbget.ScriptBase import EXIT_CODE
+from nzbget.ScriptBase import SYS_ENVIRO_ID
+from nzbget.Logger import VERY_VERBOSE_DEBUG
+
 
 class TestPostProcessScript(TestBase):
     def setUp(self):
@@ -144,7 +147,6 @@ class TestPostProcessScript(TestBase):
         del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
         del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
-
 
     def test_dual_script03(self):
         """
@@ -322,6 +324,7 @@ class TestPostProcessScript(TestBase):
         class TestDualScript(SchedulerScript, PostProcessScript):
             def postprocess_main(self, *args, **kwargs):
                 return None
+
             def scheduler_main(self, *args, **kwargs):
                 return False
         script = TestDualScript(

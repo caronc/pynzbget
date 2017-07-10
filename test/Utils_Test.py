@@ -2,7 +2,7 @@
 #
 # A Test Suite (for nose) for an SQLite 3 wrapper Class written for NZBGet
 #
-# Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,7 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 from Utils import os_path_split
 from Utils import tidy_path
 from TestBase import TestBase
+
 
 class TestUtils(TestBase):
     def setUp(self):
@@ -49,13 +50,13 @@ class TestUtils(TestBase):
             'nix',
             'pathname',
         ]
-        assert os_path_split('') == [ ]
-        assert os_path_split('/') == [ '', ]
-        assert os_path_split('\\') == [ '', ]
+        assert os_path_split('') == []
+        assert os_path_split('/') == ['', ]
+        assert os_path_split('\\') == ['', ]
 
         # Weird Paths are fixed
-        assert os_path_split('///////////') == [ '', ]
-        assert os_path_split('\\\\\\\\\\') == [ '', ]
+        assert os_path_split('///////////') == ['', ]
+        assert os_path_split('\\\\\\\\\\') == ['', ]
 
         # Trailing slashes are removed
         assert os_path_split('relative/nix/pathname/') == [
@@ -63,6 +64,7 @@ class TestUtils(TestBase):
             'nix',
             'pathname',
         ]
+
     def test_tidy_path(self):
 
         # No Change
@@ -82,4 +84,4 @@ class TestUtils(TestBase):
 
         # Network Paths
         assert tidy_path('\\\\network\\\\path\\ ') == \
-                '\\\\network\\path'
+            '\\\\network\\path'

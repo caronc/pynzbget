@@ -2,7 +2,7 @@
 #
 # A Test Suite (for nose) for an SQLite 3 wrapper Class written for NZBGet
 #
-# Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -14,24 +14,22 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
-import sys
-from os import unlink
-from os.path import dirname
-from os.path import join
-sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
-
-from Database import Database
-from Database import Category
-from Database import NZBGET_DATABASE_VERSION
-from Logger import VERY_VERBOSE_DEBUG
-
-# Temporary Directory
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
+from os import unlink
+from os.path import join
+
+from nzbget.Database import Database
+from nzbget.Database import Category
+from nzbget.Database import NZBGET_DATABASE_VERSION
+from nzbget.Logger import VERY_VERBOSE_DEBUG
+
+# Temporary Directory
 DATABASE = join(TEMP_DIRECTORY, 'nzbget_test.db')
 
 KEY = 'The.Perfect.Name.nzb'
+
 
 class TestDatabase(TestBase):
     def tearDown(self):
@@ -123,7 +121,6 @@ class TestDatabase(TestBase):
         assert db.get('MY_KEY') == 'MY_VALUE'
         assert db.get('MY_KEY', category=Category.NZB) == 'ANOTHER_VALUE'
 
-
     def test_key_purges01(self):
 
         db = Database(
@@ -160,5 +157,5 @@ class TestDatabase(TestBase):
 
         # purge entries (0 = all)
         db.prune(0)
-        assert db.get('MY_KEY') == None
-        assert db.get('MY_OTHER_KEY') == None
+        assert db.get('MY_KEY') is None
+        assert db.get('MY_OTHER_KEY') is None

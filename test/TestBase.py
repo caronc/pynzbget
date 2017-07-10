@@ -2,7 +2,7 @@
 #
 # A base testing class/library to help set some common testing vars
 #
-# Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -25,14 +25,15 @@ sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 from os import makedirs
 from shutil import rmtree
 
-from ScriptBase import SYS_OPTS_RE
-from ScriptBase import CFG_OPTS_RE
-from ScriptBase import SHR_OPTS_RE
+from nzbget.ScriptBase import SYS_OPTS_RE
+from nzbget.ScriptBase import CFG_OPTS_RE
+from nzbget.ScriptBase import SHR_OPTS_RE
 
 TEMP_DIRECTORY = join(
     gettempdir(),
     'nzbget-test-%s' % getuser(),
 )
+
 
 class TestBase(object):
     def setUp(self):

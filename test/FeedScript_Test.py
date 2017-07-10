@@ -2,7 +2,7 @@
 #
 # A Test Suite (for nose) for the FeedScript Class
 #
-# Copyright (C) 2014-2015 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -15,26 +15,22 @@
 # GNU Lesser General Public License for more details.
 #
 import os
-import sys
-from os.path import dirname
-from os.path import join
-sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
-
-from ScriptBase import CFG_ENVIRO_ID
-from ScriptBase import SYS_ENVIRO_ID
-
-from FeedScript import FeedScript
-from FeedScript import FEED_ENVIRO_ID
-from FeedScript import FEED_ENVIRO_ID
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
-from Logger import VERY_VERBOSE_DEBUG
+from nzbget.ScriptBase import CFG_ENVIRO_ID
+from nzbget.ScriptBase import SYS_ENVIRO_ID
+
+from nzbget.FeedScript import FeedScript
+from nzbget.FeedScript import FEED_ENVIRO_ID
+
+from nzbget.Logger import VERY_VERBOSE_DEBUG
 
 # Some constants to work with
 FEEDID = "1"
 FEED_FILENAME = 'MyTest.nzb'
+
 
 class TestFeedScript(TestBase):
     def setUp(self):
@@ -119,19 +115,19 @@ class TestFeedScript(TestBase):
         VALUE = 'MY_VALUE'
 
         # Value does not exist yet
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
         assert script.get(KEY, 'Default') == 'Default'
-        assert script.set(KEY, VALUE) == True
+        assert script.set(KEY, VALUE) is True
         assert script.get(KEY, 'Default') == VALUE
 
     def test_config_varable_init(self):
         valid_entries = {
-            'MY_CONFIG_ENTRY' : 'Option A',
-            'ENTRY_WITH_234_NUMBERS' : 'Option B',
-            '123443' : 'Option C',
+            'MY_CONFIG_ENTRY': 'Option A',
+            'ENTRY_WITH_234_NUMBERS': 'Option B',
+            '123443': 'Option C',
         }
         invalid_entries = {
-            'CONFIG_ENtry_skipped' : 'Option',
+            'CONFIG_ENtry_skipped': 'Option',
             'CONFIG_ENtry_$#': 'Option',
             # Empty
             '': 'Option',

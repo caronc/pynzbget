@@ -15,21 +15,18 @@
 # GNU Lesser General Public License for more details.
 #
 import os
-import sys
-from os.path import dirname
 from os.path import join
-sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 
-from ScriptBase import SYS_ENVIRO_ID
-from ScriptBase import TEST_COMMAND
-from ScriptBase import EXIT_CODE
-from ScriptBase import SCRIPT_MODE
-
-from PostProcessScript import PostProcessScript
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
-from Logger import VERY_VERBOSE_DEBUG
+from nzbget.ScriptBase import SYS_ENVIRO_ID
+from nzbget.ScriptBase import TEST_COMMAND
+from nzbget.ScriptBase import EXIT_CODE
+from nzbget.ScriptBase import SCRIPT_MODE
+from nzbget.PostProcessScript import PostProcessScript
+
+from nzbget.Logger import VERY_VERBOSE_DEBUG
 
 # Some constants to work with
 DIRECTORY = TEMP_DIRECTORY

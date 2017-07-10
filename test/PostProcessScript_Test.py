@@ -2,7 +2,7 @@
 #
 # A Test Suite (for nose) for the PostProcessScript Class
 #
-# Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -19,32 +19,29 @@ import sys
 import re
 from os import makedirs
 from os.path import basename
-from os.path import dirname
 from os.path import join
 from os.path import splitext
-sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
-
-from ScriptBase import CFG_ENVIRO_ID
-from ScriptBase import SYS_ENVIRO_ID
-from ScriptBase import SHR_ENVIRO_ID
-from ScriptBase import PUSH_ENVIRO_ID
-from ScriptBase import NZBGET_MSG_PREFIX
-from ScriptBase import SHR_ENVIRO_GUESS_ID
-from ScriptBase import SHR_ENVIRO_DNZB_ID
-from ScriptBase import EXIT_CODE
-from ScriptBase import Health
-
-from PostProcessScript import PostProcessScript
-from PostProcessScript import POSTPROC_ENVIRO_ID
-from PostProcessScript import SCRIPT_STATUS
-from PostProcessScript import TOTAL_STATUS
-from PostProcessScript import PAR_STATUS
-from PostProcessScript import UNPACK_STATUS
-
-from Logger import VERY_VERBOSE_DEBUG
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
+
+from nzbget.ScriptBase import CFG_ENVIRO_ID
+from nzbget.ScriptBase import SYS_ENVIRO_ID
+from nzbget.ScriptBase import PUSH_ENVIRO_ID
+from nzbget.ScriptBase import NZBGET_MSG_PREFIX
+from nzbget.ScriptBase import SHR_ENVIRO_GUESS_ID
+from nzbget.ScriptBase import EXIT_CODE
+from nzbget.ScriptBase import Health
+
+from nzbget.PostProcessScript import PostProcessScript
+from nzbget.PostProcessScript import POSTPROC_ENVIRO_ID
+from nzbget.PostProcessScript import SCRIPT_STATUS
+from nzbget.PostProcessScript import TOTAL_STATUS
+from nzbget.PostProcessScript import PAR_STATUS
+from nzbget.PostProcessScript import UNPACK_STATUS
+
+from nzbget.Logger import VERY_VERBOSE_DEBUG
+
 
 import StringIO
 
@@ -68,6 +65,7 @@ SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
 # For validation
 SCRIPTDIR = join(TEMP_DIRECTORY, 'scripts')
+
 
 class TestPostProcessScript(TestBase):
     def setUp(self):
@@ -234,7 +232,6 @@ class TestPostProcessScript(TestBase):
         script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.run() == EXIT_CODE.FAILURE
 
-
     def test_environment_varable_init(self):
         """
         Testing NZBGet Script initialization using environment variables
@@ -326,20 +323,20 @@ class TestPostProcessScript(TestBase):
         unpackstatus = UNPACK_STATUS.FAILURE
 
         script = PostProcessScript(
-           logger=False,
-           debug=VERY_VERBOSE_DEBUG,
+            logger=False,
+            debug=VERY_VERBOSE_DEBUG,
 
-           directory=directory,
-           nzbname=nzbname,
-           nzbfilename=nzbfilename,
-           category=category,
-           totalstatus=totalstatus,
-           status=status,
-           scriptstatus=scriptstatus,
+            directory=directory,
+            nzbname=nzbname,
+            nzbfilename=nzbfilename,
+            category=category,
+            totalstatus=totalstatus,
+            status=status,
+            scriptstatus=scriptstatus,
 
-           # v11 Support
-           parstatus=parstatus,
-           unpackstatus=unpackstatus,
+            # v11 Support
+            parstatus=parstatus,
+            unpackstatus=unpackstatus,
         )
 
         assert script.directory == directory
@@ -396,20 +393,19 @@ class TestPostProcessScript(TestBase):
         VALUE = 'MY_VALUE'
 
         # Value doe snot exist yet
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
         assert script.get(KEY, 'Default') == 'Default'
-        assert script.set(KEY, VALUE) == True
+        assert script.set(KEY, VALUE) is True
         assert script.get(KEY, 'Default') == VALUE
-
 
     def test_config_varable_init(self):
         valid_entries = {
-            'MY_CONFIG_ENTRY' : 'Option A',
-            'ENTRY_WITH_234_NUMBERS' : 'Option B',
-            '123443' : 'Option C',
+            'MY_CONFIG_ENTRY': 'Option A',
+            'ENTRY_WITH_234_NUMBERS': 'Option B',
+            '123443': 'Option C',
         }
         invalid_entries = {
-            'CONFIG_ENtry_skipped' : 'Option',
+            'CONFIG_ENtry_skipped': 'Option',
             'CONFIG_ENtry_$#': 'Option',
             # Empty
             '': 'Option',
@@ -493,7 +489,7 @@ class TestPostProcessScript(TestBase):
         VALUE = 'MY_VALUE'
 
         # Value doe snot exist yet
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
@@ -556,20 +552,20 @@ class TestPostProcessScript(TestBase):
         # variable defined with NZBGet v11
         # a NZB Logger set to False uses stderr
         script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
-        assert script.health_check() == True
+        assert script.health_check() is True
         assert script.health_check(
-            is_unpacked=False, has_archive=False) == True
+            is_unpacked=False, has_archive=False) is True
 
-        assert script.health_check(is_unpacked=False) == True
-        assert script.health_check(has_archive=True) == False
+        assert script.health_check(is_unpacked=False) is True
+        assert script.health_check(has_archive=True) is False
 
         script.version = 11
-        assert script.health_check() == True
+        assert script.health_check() is True
         assert script.health_check(
-            is_unpacked=False, has_archive=False) == True
+            is_unpacked=False, has_archive=False) is True
 
-        assert script.health_check(is_unpacked=False) == True
-        assert script.health_check(has_archive=True) == True
+        assert script.health_check(is_unpacked=False) is True
+        assert script.health_check(has_archive=True) is True
         del script
 
         os.environ['%sSTATUS' % POSTPROC_ENVIRO_ID] = '%s/%s' % (
@@ -578,25 +574,25 @@ class TestPostProcessScript(TestBase):
         )
         # NZBGet v11 support
         os.environ['%sPARSTATUS' % POSTPROC_ENVIRO_ID] = \
-                str(PAR_STATUS.FAILURE)
+            str(PAR_STATUS.FAILURE)
         os.environ['%sUNPACKSTATUS' % POSTPROC_ENVIRO_ID] = \
-                str(UNPACK_STATUS.FAILURE)
+            str(UNPACK_STATUS.FAILURE)
 
         script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
-        assert script.health_check() == False
+        assert script.health_check() is False
         assert script.health_check(
-            is_unpacked=False, has_archive=False) == True
+            is_unpacked=False, has_archive=False) is True
 
-        assert script.health_check(is_unpacked=False) == True
-        assert script.health_check(has_archive=True) == False
+        assert script.health_check(is_unpacked=False) is True
+        assert script.health_check(has_archive=True) is False
 
         script.version = 11
-        assert script.health_check() == False
+        assert script.health_check() is False
         assert script.health_check(
-            is_unpacked=False, has_archive=False) == True
+            is_unpacked=False, has_archive=False) is True
 
-        assert script.health_check(is_unpacked=False) == True
-        assert script.health_check(has_archive=True) == False
+        assert script.health_check(is_unpacked=False) is True
+        assert script.health_check(has_archive=True) is False
 
     def test_file_listings_as_string(self):
 
@@ -605,12 +601,12 @@ class TestPostProcessScript(TestBase):
         assert script.get_files(search_dir=SEARCH_DIR) == {}
 
         # Create some temporary files to work with
-        open(join(SEARCH_DIR,'file.mkv'), 'w').close()
-        open(join(SEARCH_DIR,'file.par2'), 'w').close()
-        open(join(SEARCH_DIR,'file.PAR2'), 'w').close()
-        open(join(SEARCH_DIR,'file.txt'), 'w').close()
-        open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
-        open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
+        open(join(SEARCH_DIR, 'file.mkv'), 'w').close()
+        open(join(SEARCH_DIR, 'file.par2'), 'w').close()
+        open(join(SEARCH_DIR, 'file.PAR2'), 'w').close()
+        open(join(SEARCH_DIR, 'file.txt'), 'w').close()
+        open(join(SEARCH_DIR, 'sample.mp4'), 'w').close()
+        open(join(SEARCH_DIR, 'sound.mp3'), 'w').close()
 
         script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         files = script.get_files(search_dir=SEARCH_DIR)
@@ -704,12 +700,12 @@ class TestPostProcessScript(TestBase):
         assert script.get_files(search_dir=[SEARCH_DIR, ]) == {}
 
         # Create some temporary files to work with
-        open(join(SEARCH_DIR,'file.mkv'), 'w').close()
-        open(join(SEARCH_DIR,'file.par2'), 'w').close()
-        open(join(SEARCH_DIR,'file.PAR2'), 'w').close()
-        open(join(SEARCH_DIR,'file.txt'), 'w').close()
-        open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
-        open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
+        open(join(SEARCH_DIR, 'file.mkv'), 'w').close()
+        open(join(SEARCH_DIR, 'file.par2'), 'w').close()
+        open(join(SEARCH_DIR, 'file.PAR2'), 'w').close()
+        open(join(SEARCH_DIR, 'file.txt'), 'w').close()
+        open(join(SEARCH_DIR, 'sample.mp4'), 'w').close()
+        open(join(SEARCH_DIR, 'sound.mp3'), 'w').close()
 
         # Test Filters
         files = script.get_files(
@@ -753,7 +749,7 @@ class TestPostProcessScript(TestBase):
 
         files = script.get_files(
             search_dir=[SEARCH_DIR, ],
-            suffix_filter=('.par2','.PAR2'),
+            suffix_filter=('.par2', '.PAR2'),
         )
         assert len(files) == 2
 
@@ -771,7 +767,7 @@ class TestPostProcessScript(TestBase):
 
         # Duplicates should merge
         files = script.get_files(
-            search_dir=[SEARCH_DIR, SEARCH_DIR, SEARCH_DIR ],
+            search_dir=[SEARCH_DIR, SEARCH_DIR, SEARCH_DIR],
             prefix_filter=('sound, file',),
         )
         assert len(files) == 5
@@ -826,27 +822,29 @@ class TestPostProcessScript(TestBase):
         assert len(script.parse_nzbfile(NZBFILENAME_SHOW_A)) == 5
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['LETTER'] == 'B'
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['PROPERNAME'] == \
-                'A Great TV Show'
+            'A Great TV Show'
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['NAME'] == \
-                'A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME'
+            'A.Great.TV.Show.S04E06.720p.HDTV.x264-AWESOME'
         assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['EPISODENAME'] == \
-                'An Amazing Episode Name'
-        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['CATEGORY'] == 'TV > HD'
+            'An Amazing Episode Name'
+        assert script.parse_nzbfile(NZBFILENAME_SHOW_A)['CATEGORY'] == \
+            'TV > HD'
 
         assert len(script.parse_nzbfile(NZBFILENAME)) == 5
         assert script.parse_nzbfile(NZBFILENAME)['LETTER'] == 'A'
-        assert script.parse_nzbfile(NZBFILENAME)['CATEGORY'] == 'Movies > SD'
+        assert script.parse_nzbfile(NZBFILENAME)['CATEGORY'] == \
+            'Movies > SD'
         assert script.parse_nzbfile(NZBFILENAME)['PROPERNAME'] == \
-                'A Great Movie'
+            'A Great Movie'
         assert script.parse_nzbfile(NZBFILENAME)['NAME'] == \
-                'A.Great.Movie.1983.DVDRip.x264-AWESOME'
+            'A.Great.Movie.1983.DVDRip.x264-AWESOME'
         assert script.parse_nzbfile(NZBFILENAME)['MOVIEYEAR'] == '1983'
         evil_filename = join(obsfucated_dir, 'ajklada3adaadfafdkl.mkv')
         good_filename = script.deobfuscate(
             filename=evil_filename,
         )
         assert basename(good_filename) == \
-                'A.Great.Movie.1983.DVDRip.x264-AWESOME.mkv'
+            'A.Great.Movie.1983.DVDRip.x264-AWESOME.mkv'
 
         # Same test, but if we didn't have the NZB-Name
         script.nzb_unset('name')
@@ -854,7 +852,7 @@ class TestPostProcessScript(TestBase):
             filename=evil_filename,
         )
         assert basename(good_filename) == \
-                'A.Great.Movie(1983).mkv'
+            'A.Great.Movie(1983).mkv'
 
         # If we don't have the ProperName, it gets even more scarse
         script.nzb_unset('propername')
@@ -862,7 +860,7 @@ class TestPostProcessScript(TestBase):
             filename=evil_filename,
         )
         assert splitext(basename(good_filename))[0] == \
-               splitext(basename(NZBFILENAME))[0]
+            splitext(basename(NZBFILENAME))[0]
 
         del script
 
@@ -882,7 +880,7 @@ class TestPostProcessScript(TestBase):
 
         guess_dict = {
             'type': 'movie',
-            'title':'A Great Title',
+            'title': 'A Great Title',
             'year': 1998,
             'screenSize': '720p',
             'format': 'HD-DVD',
@@ -912,7 +910,7 @@ class TestPostProcessScript(TestBase):
             SHR_ENVIRO_GUESS_ID,
             k.upper(),
             str(guess_dict[k]),
-        ) for k in guess_keys ]
+        ) for k in guess_keys]
 
         output = re.split('[\r\n]+', output)
         for _str in output:

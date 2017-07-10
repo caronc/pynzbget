@@ -2,7 +2,7 @@
 #
 # A Test Suite (for nose) for the ScriptBase Class
 #
-# Copyright (C) 2014 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -17,22 +17,19 @@
 import os
 import sys
 import re
-from os.path import dirname
 from os.path import join
 from os.path import isfile
-sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
 from urllib import unquote
-
-from ScriptBase import ScriptBase
-from ScriptBase import SYS_ENVIRO_ID
-from ScriptBase import EXIT_CODE
-from ScriptBase import CFG_ENVIRO_ID
-from ScriptBase import Health
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
-from Logger import VERY_VERBOSE_DEBUG
+from nzbget.ScriptBase import ScriptBase
+from nzbget.ScriptBase import SYS_ENVIRO_ID
+from nzbget.ScriptBase import EXIT_CODE
+from nzbget.ScriptBase import CFG_ENVIRO_ID
+from nzbget.ScriptBase import Health
+from nzbget.Logger import VERY_VERBOSE_DEBUG
 
 from shutil import rmtree
 from os import makedirs
@@ -42,6 +39,7 @@ from time import sleep
 import StringIO
 
 SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
+
 
 class TestScriptBase(TestBase):
     def setUp(self):
@@ -97,21 +95,21 @@ class TestScriptBase(TestBase):
         ADJUSTED_VALUE = 'MY_NEW_NZBVALUE'
 
         # Value does not exist yet
-        assert script.nzb_get(KEY) == None
+        assert script.nzb_get(KEY) is None
         assert script.nzb_get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
         assert script.nzb_get(KEYL, ADJUSTED_VALUE) == ADJUSTED_VALUE
-        assert script.nzb_set(KEY, VALUE) == True
+        assert script.nzb_set(KEY, VALUE) is True
         assert script.nzb_get(KEY, ADJUSTED_VALUE) == VALUE
         assert script.nzb_get(KEYL, ADJUSTED_VALUE) == VALUE
-        assert script.nzb_unset(KEYL) == True
+        assert script.nzb_unset(KEYL) is True
         assert script.nzb_get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
 
         # Reset with content
-        assert script.nzb_set(KEY, ADJUSTED_VALUE) == True
+        assert script.nzb_set(KEY, ADJUSTED_VALUE) is True
         assert script.nzb_get(KEY, VALUE) == ADJUSTED_VALUE
 
         # Same as nzb_unset
-        assert script.nzb_set(KEY, None) == True
+        assert script.nzb_set(KEY, None) is True
         assert script.nzb_get(KEY, VALUE) == VALUE
 
     def test_set_and_get(self):
@@ -123,29 +121,29 @@ class TestScriptBase(TestBase):
         ADJUSTED_VALUE = 'MY_NEW_VALUE'
 
         # Value does not exist yet
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
         assert script.get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
-        assert script.set(KEY, VALUE) == True
+        assert script.set(KEY, VALUE) is True
         assert script.get(KEY, ADJUSTED_VALUE) == VALUE
 
         # Remove a variable
-        assert script.unset(KEY) == True
+        assert script.unset(KEY) is True
         # we'll get the default value now since the key wasn't
         # found.
         assert script.get(KEY, ADJUSTED_VALUE) == ADJUSTED_VALUE
 
         # Reset our value but be careful not to set the environment
         # or set the database
-        assert script.set(KEY, VALUE, use_env=False, use_db=False) == True
+        assert script.set(KEY, VALUE, use_env=False, use_db=False) is True
 
         # observe content is not carried over
         script = ScriptBase(
             logger=False, debug=VERY_VERBOSE_DEBUG, database_key='test')
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
 
         # The below line will include environment variables when
         # preforming the set and not the database
-        assert script.set(KEY, VALUE, use_db=False) == True
+        assert script.set(KEY, VALUE, use_db=False) is True
         # If we destroy our instance
         del script
 
@@ -154,11 +152,11 @@ class TestScriptBase(TestBase):
         script = ScriptBase(
             logger=False, debug=VERY_VERBOSE_DEBUG, database_key='test')
         assert script.get(KEY) == VALUE
-        assert script.unset(KEY) == True
+        assert script.unset(KEY) is True
 
         # Now we set the database by just the database and not
         # the environment variable
-        assert script.set(KEY, ADJUSTED_VALUE, use_env=False) == True
+        assert script.set(KEY, ADJUSTED_VALUE, use_env=False) is True
 
         # Destroy the instance
         del script
@@ -167,7 +165,7 @@ class TestScriptBase(TestBase):
         # We can still retrieve our adjusted value
         assert script.get(KEY) == ADJUSTED_VALUE
         # But not if we don't reference the database
-        assert script.get(KEY, use_db=False) == None
+        assert script.get(KEY, use_db=False) is None
 
         # if we don't set a database key, then there is no way for a
         # database connection to be established since we have no
@@ -182,7 +180,7 @@ class TestScriptBase(TestBase):
         # a connection to the database.
 
         # If we set a key...
-        assert script.set(KEY, VALUE, use_env=False) == True
+        assert script.set(KEY, VALUE, use_env=False) is True
 
         # We can check that it was set
         assert script.get(KEY) == VALUE
@@ -200,7 +198,7 @@ class TestScriptBase(TestBase):
         # But we won't get anything under a different container
         script = ScriptBase(
             logger=False, debug=VERY_VERBOSE_DEBUG, database_key='ugh!')
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
 
     def test_file_listings_with_file(self):
 
@@ -209,13 +207,13 @@ class TestScriptBase(TestBase):
         assert script.get_files(search_dir=[SEARCH_DIR, ]) == {}
 
         # Create some temporary files to work with
-        open(join(SEARCH_DIR,'file.mkv'), 'w').close()
-        open(join(SEARCH_DIR,'file.par2'), 'w').close()
-        open(join(SEARCH_DIR,'file.PAR2'), 'w').close()
-        open(join(SEARCH_DIR,'file.txt'), 'w').close()
-        open(join(SEARCH_DIR,'sample.mp4'), 'w').close()
-        open(join(SEARCH_DIR,'sound.mp3'), 'w').close()
-        open(join(SEARCH_DIR,'NOEXTENSION'), 'w').close()
+        open(join(SEARCH_DIR, 'file.mkv'), 'w').close()
+        open(join(SEARCH_DIR, 'file.par2'), 'w').close()
+        open(join(SEARCH_DIR, 'file.PAR2'), 'w').close()
+        open(join(SEARCH_DIR, 'file.txt'), 'w').close()
+        open(join(SEARCH_DIR, 'sample.mp4'), 'w').close()
+        open(join(SEARCH_DIR, 'sound.mp3'), 'w').close()
+        open(join(SEARCH_DIR, 'NOEXTENSION'), 'w').close()
 
         files = script.get_files(
             search_dir=SEARCH_DIR,
@@ -288,13 +286,13 @@ class TestScriptBase(TestBase):
             makedirs(join(SEARCH_DIR, _dir))
 
         # Create some temporary files to work with
-        open(join(SEARCH_DIR,'file.001'), 'w').close()
+        open(join(SEARCH_DIR, 'file.001'), 'w').close()
         open(join(SEARCH_DIR, 'depth2_c', 'depth3_c',
                   'depth4_c', 'depth5_c', 'depth6_c', 'file.006'), 'w').close()
         open(join(SEARCH_DIR, 'depth2', 'depth3', 'depth4',
                   'depth5', 'file.005'), 'w').close()
         open(join(SEARCH_DIR, 'depth2_a', 'depth3_a', 'depth4_a',
-                  'depth5_a','file.005'), 'w').close()
+                  'depth5_a', 'file.005'), 'w').close()
         open(join(SEARCH_DIR, 'depth2_b', 'depth3_b', 'depth4_b',
                   'depth5_b', 'file.005'), 'w').close()
         open(join(SEARCH_DIR, 'depth2', 'depth3', 'depth4',
@@ -323,11 +321,12 @@ class TestScriptBase(TestBase):
 
         # A list of directories should scan the same content, minus stuff at
         # the root
-        files = script.get_files([ join(SEARCH_DIR, re.split('/', _dir)[0]) for _dir in subdirs ])
+        files = script.get_files(
+            [join(SEARCH_DIR, re.split('/', _dir)[0]) for _dir in subdirs])
         assert len(files) == 7
 
     def test_file_listings_ignored_directories(self):
-        from ScriptBase import SKIP_DIRECTORIES
+        from nzbget.ScriptBase import SKIP_DIRECTORIES
 
         # Create some bad directories
         for _dir in SKIP_DIRECTORIES:
@@ -336,9 +335,9 @@ class TestScriptBase(TestBase):
 
         # Create some temporary files to work with
         makedirs(join(SEARCH_DIR, 'good_dir'))
-        open(join(SEARCH_DIR,'good_file1.mkv'), 'w').close()
-        open(join(SEARCH_DIR,'good_file2.mkv'), 'w').close()
-        open(join(SEARCH_DIR,'good_dir', 'good_file3.mkv'), 'w').close()
+        open(join(SEARCH_DIR, 'good_file1.mkv'), 'w').close()
+        open(join(SEARCH_DIR, 'good_file2.mkv'), 'w').close()
+        open(join(SEARCH_DIR, 'good_dir', 'good_file3.mkv'), 'w').close()
 
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
@@ -347,7 +346,7 @@ class TestScriptBase(TestBase):
         assert join(SEARCH_DIR, 'good_file1.mkv') in results.keys()
         assert join(SEARCH_DIR, 'good_file2.mkv') in results.keys()
         assert join(SEARCH_DIR, 'good_dir', 'good_file3.mkv') in \
-                results.keys()
+            results.keys()
 
     def test_parse_url01(self):
         # a NZB Logger set to False uses stderr
@@ -356,48 +355,48 @@ class TestScriptBase(TestBase):
         result = script.parse_url('http://hostname')
         assert result['schema'] == 'http'
         assert result['host'] == 'hostname'
-        assert result['port'] == None
-        assert result['user'] == None
-        assert result['password'] == None
-        assert result['fullpath'] == None
-        assert result['path'] == None
-        assert result['query'] == None
+        assert result['port'] is None
+        assert result['user'] is None
+        assert result['password'] is None
+        assert result['fullpath'] is None
+        assert result['path'] is None
+        assert result['query'] is None
         assert result['url'] == 'http://hostname'
         assert result['qsd'] == {}
 
         result = script.parse_url('http://hostname/')
         assert result['schema'] == 'http'
         assert result['host'] == 'hostname'
-        assert result['port'] == None
-        assert result['user'] == None
-        assert result['password'] == None
+        assert result['port'] is None
+        assert result['user'] is None
+        assert result['password'] is None
         assert result['fullpath'] == '/'
         assert result['path'] == '/'
-        assert result['query'] == None
+        assert result['query'] is None
         assert result['url'] == 'http://hostname/'
         assert result['qsd'] == {}
 
         result = script.parse_url('hostname')
         assert result['schema'] == 'http'
         assert result['host'] == 'hostname'
-        assert result['port'] == None
-        assert result['user'] == None
-        assert result['password'] == None
-        assert result['fullpath'] == None
-        assert result['path'] == None
-        assert result['query'] == None
+        assert result['port'] is None
+        assert result['user'] is None
+        assert result['password'] is None
+        assert result['fullpath'] is None
+        assert result['path'] is None
+        assert result['query'] is None
         assert result['url'] == 'http://hostname'
         assert result['qsd'] == {}
 
         result = script.parse_url('http://hostname////')
         assert result['schema'] == 'http'
         assert result['host'] == 'hostname'
-        assert result['port'] == None
-        assert result['user'] == None
-        assert result['password'] == None
+        assert result['port'] is None
+        assert result['user'] is None
+        assert result['password'] is None
         assert result['fullpath'] == '/'
         assert result['path'] == '/'
-        assert result['query'] == None
+        assert result['query'] is None
         assert result['url'] == 'http://hostname/'
         assert result['qsd'] == {}
 
@@ -405,11 +404,11 @@ class TestScriptBase(TestBase):
         assert result['schema'] == 'http'
         assert result['host'] == 'hostname'
         assert result['port'] == 40
-        assert result['user'] == None
-        assert result['password'] == None
+        assert result['user'] is None
+        assert result['password'] is None
         assert result['fullpath'] == '/'
         assert result['path'] == '/'
-        assert result['query'] == None
+        assert result['query'] is None
         assert result['url'] == 'http://hostname:40/'
         assert result['qsd'] == {}
 
@@ -417,8 +416,8 @@ class TestScriptBase(TestBase):
         assert result['schema'] == 'http'
         assert result['host'] == 'HoStNaMe'
         assert result['port'] == 40
-        assert result['user'] == None
-        assert result['password'] == None
+        assert result['user'] is None
+        assert result['password'] is None
         assert result['fullpath'] == '/test.php'
         assert result['path'] == '/'
         assert result['query'] == 'test.php'
@@ -428,9 +427,9 @@ class TestScriptBase(TestBase):
         result = script.parse_url('HTTPS://user@hostname/test.py')
         assert result['schema'] == 'https'
         assert result['host'] == 'hostname'
-        assert result['port'] == None
+        assert result['port'] is None
         assert result['user'] == 'user'
-        assert result['password'] == None
+        assert result['password'] is None
         assert result['fullpath'] == '/test.py'
         assert result['path'] == '/'
         assert result['query'] == 'test.py'
@@ -440,9 +439,9 @@ class TestScriptBase(TestBase):
         result = script.parse_url('  HTTPS://///user@@@hostname///test.py  ')
         assert result['schema'] == 'https'
         assert result['host'] == 'hostname'
-        assert result['port'] == None
+        assert result['port'] is None
         assert result['user'] == 'user'
-        assert result['password'] == None
+        assert result['password'] is None
         assert result['fullpath'] == '/test.py'
         assert result['path'] == '/'
         assert result['query'] == 'test.py'
@@ -454,31 +453,33 @@ class TestScriptBase(TestBase):
         )
         assert result['schema'] == 'https'
         assert result['host'] == 'otherHost'
-        assert result['port'] == None
+        assert result['port'] is None
         assert result['user'] == 'user'
         assert result['password'] == 'password'
         assert result['fullpath'] == '/full/path/name/'
         assert result['path'] == '/full/path/name/'
-        assert result['query'] == None
-        assert result['url'] == 'https://user:password@otherHost/full/path/name/'
+        assert result['query'] is None
+        assert result['url'] == \
+            'https://user:password@otherHost/full/path/name/'
         assert result['qsd'] == {}
 
         # Handle garbage
-        assert script.parse_url(None) == None
+        assert script.parse_url(None) is None
 
         result = script.parse_url(
-            'mailto://user:password@otherHost/lead2gold@gmail.com' + \
+            'mailto://user:password@otherHost/lead2gold@gmail.com' +
             '?from=test@test.com&name=Chris%20Caron&format=text'
         )
         assert result['schema'] == 'mailto'
         assert result['host'] == 'otherHost'
-        assert result['port'] == None
+        assert result['port'] is None
         assert result['user'] == 'user'
         assert result['password'] == 'password'
         assert unquote(result['fullpath']) == '/lead2gold@gmail.com'
         assert result['path'] == '/'
         assert unquote(result['query']) == 'lead2gold@gmail.com'
-        assert unquote(result['url']) == 'mailto://user:password@otherHost/lead2gold@gmail.com'
+        assert unquote(result['url']) == \
+            'mailto://user:password@otherHost/lead2gold@gmail.com'
         assert len(result['qsd']) == 3
         assert 'name' in result['qsd']
         assert unquote(result['qsd']['name']) == 'Chris Caron'
@@ -498,7 +499,7 @@ class TestScriptBase(TestBase):
 
         assert result['schema'] == 'http'
         assert result['host'] == 'host'
-        assert result['port'] == None
+        assert result['port'] is None
         assert result['user'] == 'user'
         assert result['password'] == 'pass.with.?question'
         assert result['fullpath'] is None
@@ -513,18 +514,18 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         # A simple single array entry (As str)
-        results = script.parse_list('.mkv,.avi,.divx,.xvid,' + \
-                '.mov,.wmv,.mp4,.mpg,.mpeg,.vob,.iso')
+        results = script.parse_list('.mkv,.avi,.divx,.xvid,' +
+                                    '.mov,.wmv,.mp4,.mpg,.mpeg,.vob,.iso')
         assert results == [
             '.divx', '.iso', '.mkv', '.mov', '.mpg',
             '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4',
         ]
 
         # Now 2 lists with lots of duplicates and other delimiters
-        results = script.parse_list('.mkv,.avi,.divx,.xvid,' + \
-                '.mov,.wmv,.mp4,.mpg .mpeg,.vob,,; ;',
-                '.mkv,.avi,.divx,.xvid,' + \
-                '.mov        .wmv,.mp4;.mpg,.mpeg,.vob,.iso')
+        results = script.parse_list(
+            '.mkv,.avi,.divx,.xvid,.mov,.wmv,.mp4,.mpg .mpeg,.vob,,; ;',
+            '.mkv,.avi,.divx,.xvid,' +
+            '.mov        .wmv,.mp4;.mpg,.mpeg,.vob,.iso')
         assert results == [
             '.divx', '.iso', '.mkv', '.mov', '.mpg',
             '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4',
@@ -533,7 +534,7 @@ class TestScriptBase(TestBase):
         # Now a list with extras we want to add as strings
         # empty entries are removed
         results = script.parse_list([
-            '.divx', '.iso', '.mkv', '.mov','', '  ',
+            '.divx', '.iso', '.mkv', '.mov', '', '  ',
             '.avi', '.mpeg', '.vob', '.xvid', '.mp4',
         ],
             '.mov,.wmv,.mp4,.mpg',
@@ -552,13 +553,13 @@ class TestScriptBase(TestBase):
             'C:\\test path with space\\and more spaces\\',
             'D:\\weird path\\more spaces\\ ',
             'D:\\weird path\\more spaces\\ G:\\save E:\\\\save_dir',
-            'D:\\weird path\\more spaces\\ ', # Duplicate is removed
-            '  D:\\\\weird path\\more spaces\\\\ ', # Duplicate is removed
+            'D:\\weird path\\more spaces\\ ',  # Duplicate is removed
+            '  D:\\\\weird path\\more spaces\\\\ ',  # Duplicate is removed
             'relative path\\\\\\with\\crap\\\\ second_path\\more spaces\\ ',
             # Windows Network Paths
             '\\\\a\\network\\path\\\\ \\\\\\another\\nw\\\\path\\\\         ',
             # lists supported too
-            [ 'relative path\\in\\list', 'second_path\\more spaces\\\\' ],
+            ['relative path\\in\\list', 'second_path\\more spaces\\\\'],
             # Unsupported and ignored types
             None, 1, 4.3, True, False, -4000,
         )
@@ -583,7 +584,7 @@ class TestScriptBase(TestBase):
             # 3 paths identified below
             '//absolute/path /another///absolute//path/// /',
             # A whole slew of duplicates and list inside list
-            '/', [ '/', '/', '//', '//////', [ '/', '' ], ],
+            '/', ['/', '/', '//', '//////', ['/', ''], ],
             'relative/path/here',
             'relative/path/here/',
             'another/relative////path///',
@@ -608,9 +609,9 @@ class TestScriptBase(TestBase):
 
         # A simple single array entry (As str)
         results = script.parse_path_list(
-            '\\\\ht-pc\\htpc_5tb\\Media\\TV, ' +\
-            '\\\\ht-pc\\htpc_5tb\\Media\\Movies, ' +\
-            '\\\\ht-pc\\htpc_2tb\\Media\\TV, ' +\
+            '\\\\ht-pc\\htpc_5tb\\Media\\TV, ' +
+            '\\\\ht-pc\\htpc_5tb\\Media\\Movies, ' +
+            '\\\\ht-pc\\htpc_2tb\\Media\\TV, ' +
             '\\\\ht-pc\\htpc_2tb\\Media\\Movies',
         )
         assert len(results) == 4
@@ -634,42 +635,42 @@ class TestScriptBase(TestBase):
     def test_parse_bool(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
-        assert script.parse_bool('Enabled', None) == True
-        assert script.parse_bool('Disabled', None) == False
-        assert script.parse_bool('Allow', None) == True
-        assert script.parse_bool('Deny', None) == False
-        assert script.parse_bool('Yes', None) == True
-        assert script.parse_bool('YES', None) == True
-        assert script.parse_bool('Always', None) == True
-        assert script.parse_bool('No', None) == False
-        assert script.parse_bool('NO', None) == False
-        assert script.parse_bool('NEVER', None) == False
-        assert script.parse_bool('TrUE', None) == True
-        assert script.parse_bool('tRUe', None) == True
-        assert script.parse_bool('FAlse', None) == False
-        assert script.parse_bool('F', None) == False
-        assert script.parse_bool('T', None) == True
-        assert script.parse_bool('0', None) == False
-        assert script.parse_bool('1', None) == True
-        assert script.parse_bool('True', None) == True
-        assert script.parse_bool('Yes', None) == True
-        assert script.parse_bool(1, None) == True
-        assert script.parse_bool(0, None) == False
-        assert script.parse_bool(True, None) == True
-        assert script.parse_bool(False, None) == False
+        assert script.parse_bool('Enabled', None) is True
+        assert script.parse_bool('Disabled', None) is False
+        assert script.parse_bool('Allow', None) is True
+        assert script.parse_bool('Deny', None) is False
+        assert script.parse_bool('Yes', None) is True
+        assert script.parse_bool('YES', None) is True
+        assert script.parse_bool('Always', None) is True
+        assert script.parse_bool('No', None) is False
+        assert script.parse_bool('NO', None) is False
+        assert script.parse_bool('NEVER', None) is False
+        assert script.parse_bool('TrUE', None) is True
+        assert script.parse_bool('tRUe', None) is True
+        assert script.parse_bool('FAlse', None) is False
+        assert script.parse_bool('F', None) is False
+        assert script.parse_bool('T', None) is True
+        assert script.parse_bool('0', None) is False
+        assert script.parse_bool('1', None) is True
+        assert script.parse_bool('True', None) is True
+        assert script.parse_bool('Yes', None) is True
+        assert script.parse_bool(1, None) is True
+        assert script.parse_bool(0, None) is False
+        assert script.parse_bool(True, None) is True
+        assert script.parse_bool(False, None) is False
 
         # only the int of 0 will return False since the function
         # casts this to a boolean
-        assert script.parse_bool(2, None) == True
+        assert script.parse_bool(2, None) is True
         # An empty list is still false
-        assert script.parse_bool([], None) == False
+        assert script.parse_bool([], None) is False
         # But a list that contains something is True
-        assert script.parse_bool(['value',], None) == True
+        assert script.parse_bool(['value', ], None) is True
 
         # Use Default (which is False)
-        assert script.parse_bool('OhYeah') == False
+        assert script.parse_bool('OhYeah') is False
         # Adjust Default and get a different result
-        assert script.parse_bool('OhYeah', True) == True
+        assert script.parse_bool('OhYeah', True) is True
 
     def test_guesses(self):
         # a NZB Logger set to False uses stderr
@@ -677,7 +678,7 @@ class TestScriptBase(TestBase):
 
         guess_dict = {
             'type': 'movie',
-            'title':'A Great Title',
+            'title': 'A Great Title',
             'year': 1998,
             'screenSize': '720p',
             'format': 'HD-DVD',
@@ -717,7 +718,7 @@ class TestScriptBase(TestBase):
         VALUE = 'MY_VALUE'
 
         # Value doe snot exist yet
-        assert script.get(KEY) == None
+        assert script.get(KEY) is None
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
@@ -741,9 +742,9 @@ class TestScriptBase(TestBase):
     def test_validate(self):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
-        assert script.validate('TEMPDIR') == True
+        assert script.validate('TEMPDIR') is True
         # allow lowercase and mixed characters too
-        assert script.validate('TempDir') == True
+        assert script.validate('TempDir') is True
 
     def test_items(self):
         """see if we can retreive all our set variables using the items()
@@ -777,28 +778,28 @@ class TestScriptBase(TestBase):
         """
         h = Health('%s/ALL' % Health.SUCCESS)
         assert h == (Health.SUCCESS, 'ALL')
-        assert h.has_archive == False
-        assert h.is_unpacked == True
+        assert h.has_archive is False
+        assert h.is_unpacked is True
         h = Health(('SUccESS', 'all'))
         assert h == (Health.SUCCESS, 'ALL')
-        assert h.has_archive == False
-        assert h.is_unpacked == True
+        assert h.has_archive is False
+        assert h.is_unpacked is True
         h = Health(Health.SUCCESS)
         assert h == (Health.SUCCESS, Health.DEFAULT_SUB)
-        assert h.has_archive == False
-        assert h.is_unpacked == True
+        assert h.has_archive is False
+        assert h.is_unpacked is True
         h = Health('BADKEYWORD')
         assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
-        assert h.has_archive == True
-        assert h.is_unpacked == True
+        assert h.has_archive is True
+        assert h.is_unpacked is True
         h = Health(Health.WARNING)
         assert h == (Health.WARNING, Health.DEFAULT_SUB)
-        assert h.has_archive == True
-        assert h.is_unpacked == False
+        assert h.has_archive is True
+        assert h.is_unpacked is False
         h = Health(Health.DELETED)
         assert h == (Health.DELETED, Health.DEFAULT_SUB)
-        assert h.has_archive == False
-        assert h.is_unpacked == False
+        assert h.has_archive is False
+        assert h.is_unpacked is False
         h = Health('')
         assert h == (Health.UNDEFINED, Health.DEFAULT_SUB)
         h = Health(None)
@@ -835,7 +836,6 @@ class TestScriptBase(TestBase):
                 self.rlock.release()
                 self.lock.acquire()
                 return None
-
 
         def threaded_script(script):
             script._return_code = script.run()
@@ -916,7 +916,6 @@ class TestScriptBase(TestBase):
 
                 return None
 
-
         def threaded_script(script):
             script._return_code = script.run()
             return
@@ -961,7 +960,6 @@ class TestScriptBase(TestBase):
         assert not isfile(script.pidfile)
         assert script._return_code == EXIT_CODE.FAILURE
 
-
     def test_pid_file_control_03(self):
         """
         This is the same as test_pid_file_control_02, we're basically
@@ -1000,7 +998,6 @@ class TestScriptBase(TestBase):
                     return False
 
                 return None
-
 
         def threaded_script(script):
             script._return_code = script.run()
@@ -1050,7 +1047,6 @@ class TestScriptBase(TestBase):
         # PID file tidys up nicely
         assert not isfile(script.pidfile)
         assert script._return_code == EXIT_CODE.FAILURE
-
 
     def test_pid_file_control_04(self):
         """

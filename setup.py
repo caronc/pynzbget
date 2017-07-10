@@ -7,7 +7,7 @@ LONG_DESCRIPTION = f.read()
 f.close()
 
 setup(
-    name='nzbget',
+    name='pynzbget',
     version=version,
     description="Provides a framework for NZBGet script deployment and development",
     long_description=LONG_DESCRIPTION,
@@ -33,4 +33,5 @@ setup(
     install_requires=['setuptools'],
     requires=['lxml', 'sqlite3'],
     packages=find_packages(),
+    python_requires='>=2.6, <3',
 )
