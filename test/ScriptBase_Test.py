@@ -27,6 +27,7 @@ from TestBase import TEMP_DIRECTORY
 from nzbget.ScriptBase import ScriptBase
 from nzbget.ScriptBase import SYS_ENVIRO_ID
 from nzbget.ScriptBase import EXIT_CODE
+from nzbget.ScriptBase import SHELL_EXIT_CODE
 from nzbget.ScriptBase import CFG_ENVIRO_ID
 from nzbget.ScriptBase import Health
 from nzbget.Logger import VERY_VERBOSE_DEBUG
@@ -77,14 +78,14 @@ class TestScriptBase(TestBase):
 
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
-        assert script.run() == EXIT_CODE.SUCCESS
+        assert script.run() == SHELL_EXIT_CODE.SUCCESS
 
         class ScriptExceptionExit(ScriptBase):
             def main(self, *args, **kwargs):
                 raise TypeError
 
         script = ScriptExceptionExit()
-        assert script.run() == EXIT_CODE.FAILURE
+        assert script.run() == SHELL_EXIT_CODE.FAILURE
 
     def test_nzbset_and_nzbget(self):
         # a NZB Logger set to False uses stderr
@@ -876,7 +877,7 @@ class TestScriptBase(TestBase):
 
         # PID file tidys up nicely
         assert not isfile(script.pidfile)
-        assert script._return_code == EXIT_CODE.NONE
+        assert script._return_code == SHELL_EXIT_CODE.NONE
 
     def test_pid_file_control_02(self):
         """
@@ -958,7 +959,7 @@ class TestScriptBase(TestBase):
 
         # PID file tidys up nicely
         assert not isfile(script.pidfile)
-        assert script._return_code == EXIT_CODE.FAILURE
+        assert script._return_code == SHELL_EXIT_CODE.FAILURE
 
     def test_pid_file_control_03(self):
         """
@@ -1046,7 +1047,7 @@ class TestScriptBase(TestBase):
 
         # PID file tidys up nicely
         assert not isfile(script.pidfile)
-        assert script._return_code == EXIT_CODE.FAILURE
+        assert script._return_code == SHELL_EXIT_CODE.FAILURE
 
     def test_pid_file_control_04(self):
         """

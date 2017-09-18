@@ -23,6 +23,7 @@ from TestBase import TEMP_DIRECTORY
 from nzbget.ScriptBase import SYS_ENVIRO_ID
 from nzbget.ScriptBase import TEST_COMMAND
 from nzbget.ScriptBase import EXIT_CODE
+from nzbget.ScriptBase import SHELL_EXIT_CODE
 from nzbget.ScriptBase import SCRIPT_MODE
 from nzbget.PostProcessScript import PostProcessScript
 
@@ -78,8 +79,8 @@ class TestConfigScript(TestBase):
             debug=VERY_VERBOSE_DEBUG,
         )
 
-        assert(obj.run() == EXIT_CODE.SUCCESS)
         assert(obj.script_mode == SCRIPT_MODE.CONFIG_ACTION)
+        assert(obj.run() == EXIT_CODE.SUCCESS)
 
         # Now we try with the lower case version
         class MyTestObj(PostProcessScript):
@@ -110,8 +111,8 @@ class TestConfigScript(TestBase):
             debug=VERY_VERBOSE_DEBUG,
         )
 
-        assert(obj.run() == EXIT_CODE.SUCCESS)
         assert(obj.script_mode == SCRIPT_MODE.NONE)
+        assert(obj.run() == SHELL_EXIT_CODE.SUCCESS)
 
         # If the environment variable doesn't exist at all
         # Then for sure we don't run either test function
@@ -139,5 +140,5 @@ class TestConfigScript(TestBase):
             debug=VERY_VERBOSE_DEBUG,
         )
 
-        assert(obj.run() == EXIT_CODE.SUCCESS)
         assert(obj.script_mode == SCRIPT_MODE.NONE)
+        assert(obj.run() == SHELL_EXIT_CODE.SUCCESS)
