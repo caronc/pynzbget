@@ -662,7 +662,7 @@ CFG_ENVIRO_ID = u'NZBPO_'
 SHR_ENVIRO_ID = u'NZBR_'
 
 # SABnzbd Support
-SAB_ENVIRO_ID =u'SAB_'
+SAB_ENVIRO_ID = u'SAB_'
 
 # Environment ID used when calling tests commands from NZBGet
 """
@@ -2349,8 +2349,7 @@ class ScriptBase(object):
             is_okay = False
 
         if self.script_mode == SCRIPT_MODE.NONE:
-            # Nothing more to process if not utilizaing
-            # NZBGet environment
+            # Nothing more to process if not utilizing the correct environment
             return is_okay
 
         if min_version > self.version:

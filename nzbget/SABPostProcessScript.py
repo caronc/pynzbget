@@ -229,6 +229,8 @@ class SABPostProcessScript(ScriptBase):
             self.status = environ.get(
                 '%sPP_STATUS' % SAB_ENVIRO_ID,
             )
+        else:
+            self.status = status
 
         try:
             self.status = int(self.status)
@@ -344,13 +346,12 @@ class SABPostProcessScript(ScriptBase):
         is_okay = super(SABPostProcessScript, self)._validate(
             keys=keys,
             min_version=min_version,
-            download_okay=True,
         )
 
         if min_version >= 2:
             required_opts = set((
                 'COMPLETE_DIR',
-                'STATUS',
+                'PP_STATUS',
                 'VERSION',
             ))
             found_opts = set(self.system) & required_opts
