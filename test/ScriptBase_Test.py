@@ -1071,3 +1071,36 @@ class TestScriptBase(TestBase):
 
         # PID-File should still be present!!
         assert isfile(script.pidfile)
+
+    def test_parse_regex(self):
+        # a NZB Logger set to False uses stderr
+        script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
+
+        # An invalid regular expression (bracket has no close)
+        results = script.parse_regex('(.*\.mkv, ', simple=False)
+        assert(len(results) == 0)
+
+        results = script.parse_regex('.*\.mkv, .*\.avi,', simple=False)
+        assert(len(results) == 2)
+
+        # Now we'll scan our match and we should be okay
+        assert(next((True for x in results
+                     if x.match('test.mkv')), False) is True)
+
+        # We're case sensitive too!
+        assert(next((True for x in results
+                     if x.match('test.MKV')), False) is True)
+
+        assert(next((True for x in results
+                     if x.match('test.aVi')), False) is True)
+
+        # We don't match against other things not specified in our regular
+        # expression
+        assert(next((True for x in results
+                     if x.match('test.iso')), False) is False)
+
+        # The simple mode (is the default) and allows us to create our
+        # regular expression easier using the old linux/windows commands
+        # like ?? and *
+        results = script.parse_regex('*.mkv, *.avi')
+        assert(len(results) == 2)
