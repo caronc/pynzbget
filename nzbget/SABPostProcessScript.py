@@ -476,7 +476,7 @@ class SABPostProcessScript(ScriptBase):
             fn = parts[x]
             if OBFUSCATED_PATH_RE.match(fn):
                 self.logger.info(
-                    'Detected obfuscated directory name %s,' % fn + \
+                    'Detected obfuscated directory name %s,' % fn +
                     ' removing from path',
                 )
                 parts[x] = None
@@ -484,7 +484,7 @@ class SABPostProcessScript(ScriptBase):
 
         if OBFUSCATED_FILE_RE.match(basename(filename)):
             self.logger.info(
-                'Detected obfuscated filename %s,' % basename(filename) + \
+                'Detected obfuscated filename %s,' % basename(filename) +
                 ' removing from path')
             parts[len(parts)-1] = '-' + splitext(filename)[1]
             part_removed += 1
@@ -501,7 +501,7 @@ class SABPostProcessScript(ScriptBase):
         # Check out NZB-Filename
         if len(self.nzb_items()):
             self.logger.info(
-                'All file path parts are obfuscated, using obfuscated ' + \
+                'All file path parts are obfuscated, using obfuscated ' +
                 'NZB-Headers',
             )
 
