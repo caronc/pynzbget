@@ -17,6 +17,8 @@
 import os
 from os import makedirs
 from os.path import basename
+from os.path import dirname
+from os.path import isfile
 from os.path import join
 
 from TestBase import TestBase
@@ -270,3 +272,27 @@ class TestSABPostProcessScript(TestBase):
         del os.environ['%sVALUE_A' % SAB_ENVIRO_ID]
         del os.environ['%sVALUE_B' % SAB_ENVIRO_ID]
         del os.environ['%sVALUE_C' % SAB_ENVIRO_ID]
+
+    def test_gzipped_nzbfiles(self):
+        """
+        Test gziped nzbfiles
+        """
+        os.environ['%sORIG_NZB_GZ' % SAB_ENVIRO_ID] = join(
+            dirname(__file__), 'var', 'plain.nzb.gz')
+
+        # Create our object
+        script = SABPostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
+
+        # We have a temporary file now
+        tmp_file = script._sab_temp_nzb
+        assert(isfile(tmp_file) is True)
+
+        # Running our script will just return zero
+        assert(script.run() == 0)
+
+        # But not after we exit, our tmp_file would have been cleaned up
+        assert(isfile(tmp_file) is False)
+
+        # We should be able to uncompress this file
+
+        del os.environ['%sORIG_NZB_GZ' % SAB_ENVIRO_ID]
