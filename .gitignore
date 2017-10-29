@@ -1,2 +1,9 @@
 *.pyc
 *.pyo
+
+# pypi
+.cache
+build
+dist
+*.egg-info
+
