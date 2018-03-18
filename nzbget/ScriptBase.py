@@ -2471,9 +2471,11 @@ class ScriptBase(object):
 
         # Future TODO: make this an option for those who want to verify
         # the host.
+        context = hasattr(ssl, '_create_unverified_context') \
+                and ssl._create_unverified_context() or None
+
         try:
             # Python >= 2.7.9
-            context = ssl._create_unverified_context()
             try:
                 self.api = ServerProxy(
                     xmlrpc_url,
@@ -2481,27 +2483,39 @@ class ScriptBase(object):
                     use_datetime=True,
                     context=context,
                 )
-            except:
-                self.logger.debug('API connection failed @ %s' % xmlrpc_url)
+            except Exception as e:
+                self.logger.debug(
+                    'API connection failed @ %s' % xmlrpc_url)
+                self.logger.debug('Failure Reason: %s' % str(e))
                 return False
 
         except AttributeError:
             # Python < 2.7.9
-            transport = SafeTransport(
-                use_datetime=True,
-                context=None,
-            )
-
             try:
                 self.api = ServerProxy(
                     xmlrpc_url,
                     verbose=False,
                     use_datetime=True,
-                    transport=transport,
+                    transport=SafeTransport(
+                        use_datetime=True,
+                        context=context,
+                    ),
                 )
+            except TypeError:
+                # One last try for the Python 2.6 users to Python v2.7.4
+                try:
+                    ServerProxy(xmlrpc_url)
 
-            except:
-                self.logger.debug('API connection failed @ %s' % xmlrpc_url)
+                except Exception as e:
+                    self.logger.debug(
+                        'Legacy API connection failed @ %s' % xmlrpc_url)
+                    self.logger.debug('Failure Reason: %s' % str(e))
+                    return False
+
+            except Exception as e:
+                self.logger.debug(
+                    'Fallback API connection failed @ %s' % xmlrpc_url)
+                self.logger.debug('Failure Reason: %s' % str(e))
                 return False
 
             self.logger.debug('API connected @ %s' % xmlrpc_url)
