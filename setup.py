@@ -1,18 +1,13 @@
 from setuptools import setup, find_packages
 
-version = '0.6.1'
-
-f = open('README.md','r')
-LONG_DESCRIPTION = f.read()
-f.close()
-
 setup(
     name='pynzbget',
-    version=version,
+    version='0.6.2',
     description="Provides a framework for NZBGet script deployment and development",
-    long_description=LONG_DESCRIPTION,
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: OS Independent',
