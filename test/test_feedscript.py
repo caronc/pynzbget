@@ -33,23 +33,23 @@ FEED_FILENAME = 'MyTest.nzb'
 
 
 class TestFeedScript(TestBase):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestFeedScript, self).setUp()
+        super(TestFeedScript, self).setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sFEEDID' % FEED_ENVIRO_ID] = FEEDID
         os.environ['%sFILENAME' % FEED_ENVIRO_ID] = FEED_FILENAME
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         del os.environ['%sFEEDID' % FEED_ENVIRO_ID]
         del os.environ['%sFILENAME' % FEED_ENVIRO_ID]
 
         # common
-        super(TestFeedScript, self).tearDown()
+        super(TestFeedScript, self).teardown_method()
 
     def test_environment_varable_init(self):
         """

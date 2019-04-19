@@ -32,9 +32,9 @@ from nzbget.Logger import VERY_VERBOSE_DEBUG
 
 
 class TestPostProcessScript(TestBase):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestPostProcessScript, self).setUp()
+        super(TestPostProcessScript, self).setup_method()
 
         if '%sDESTDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
@@ -43,7 +43,7 @@ class TestPostProcessScript(TestBase):
         if '%sDIRECTORY' % POSTPROC_ENVIRO_ID in os.environ:
             del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         if '%sDESTDIR' % SYS_ENVIRO_ID in os.environ:
@@ -52,6 +52,9 @@ class TestPostProcessScript(TestBase):
             del os.environ['%sDIRECTORY' % SCAN_ENVIRO_ID]
         if '%sDIRECTORY' % POSTPROC_ENVIRO_ID in os.environ:
             del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
+
+        # common
+        super(TestPostProcessScript, self).teardown_method()
 
     def test_dual_script01(self):
         """

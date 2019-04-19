@@ -1,0 +1,14 @@
+[run]
+disable_warnings = no-data-collected
+branch = True
+source =
+    nzbget
+
+[paths]
+source =
+   nzbget
+   .tox/*/lib/python*/site-packages/nzbget
+   .tox/pypy/site-packages/nzbget
+
+[report]
+show_missing = True

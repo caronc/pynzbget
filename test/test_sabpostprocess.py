@@ -48,9 +48,9 @@ STATUS = str(PP_STATUS.SUCCESS)
 
 
 class TestSABPostProcessScript(TestBase):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestSABPostProcessScript, self).setUp()
+        super(TestSABPostProcessScript, self).setup_method()
 
         # Create NZBFILE
         _f = open(NZBFILENAME, 'w')
@@ -86,7 +86,7 @@ class TestSABPostProcessScript(TestBase):
             pass
         makedirs(SEARCH_DIR)
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         del os.environ['%sTEMPDIR' % SAB_ENVIRO_ID]
@@ -105,7 +105,7 @@ class TestSABPostProcessScript(TestBase):
             pass
 
         # common
-        super(TestSABPostProcessScript, self).tearDown()
+        super(TestSABPostProcessScript, self).teardown_method()
 
     def test_main_returns(self):
         # a NZB Logger set to False uses stderr

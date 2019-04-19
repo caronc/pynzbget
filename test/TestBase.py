@@ -15,13 +15,9 @@
 # GNU Lesser General Public License for more details.
 
 import os
-import sys
 from getpass import getuser
 from tempfile import gettempdir
 from os.path import join
-from os.path import dirname
-sys.path.insert(0, join(dirname(dirname(__file__)), 'nzbget'))
-
 from os import makedirs
 from shutil import rmtree
 
@@ -36,7 +32,7 @@ TEMP_DIRECTORY = join(
 
 
 class TestBase(object):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
         try:
             rmtree(TEMP_DIRECTORY)
@@ -44,7 +40,7 @@ class TestBase(object):
             pass
         makedirs(TEMP_DIRECTORY, 0700)
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Clean out System Environment
         for k in os.environ.keys():
@@ -58,8 +54,6 @@ class TestBase(object):
                 del os.environ[k]
                 continue
 
-    def cleanup(self):
-        """Remove the database"""
         try:
             rmtree(TEMP_DIRECTORY)
         except:

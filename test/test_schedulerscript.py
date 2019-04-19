@@ -34,9 +34,9 @@ TASK_TIME = '00:00,00:15'
 
 
 class TestSchedulerScript(TestBase):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestSchedulerScript, self).setUp()
+        super(TestSchedulerScript, self).setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -46,7 +46,7 @@ class TestSchedulerScript(TestBase):
         os.environ['%s%s%s_TIME' % (
             SCHEDULER_ENVIRO_ID, TASK_ENVIRO_ID, TASKID)] = TASK_TIME
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         del os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID]
@@ -56,7 +56,7 @@ class TestSchedulerScript(TestBase):
             SCHEDULER_ENVIRO_ID, TASK_ENVIRO_ID, TASKID)]
 
         # common
-        super(TestSchedulerScript, self).tearDown()
+        super(TestSchedulerScript, self).teardown_method()
 
     def test_environment_varable_init(self):
         """

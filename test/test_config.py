@@ -39,16 +39,16 @@ VERSION = 18
 
 
 class TestConfigScript(TestBase):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestConfigScript, self).setUp()
+        super(TestConfigScript, self).setup_method()
 
         # Create some environment variables
         os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
         os.environ['%sVERSION' % SYS_ENVIRO_ID] = str(VERSION)
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
@@ -57,7 +57,7 @@ class TestConfigScript(TestBase):
         del os.environ['%sVERSION' % SYS_ENVIRO_ID]
 
         # common
-        super(TestConfigScript, self).tearDown()
+        super(TestConfigScript, self).teardown_method()
 
     def test_action_detection(self):
         """
