@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/caronc/pynzbget.svg?branch=master)](https://travis-ci.org/caronc/pynzbget)
-[![Coverage Status](https://coveralls.io/repos/caronc/pynzbget/badge.svg?branch=master)](https://coveralls.io/r/caronc/pynzbget?branch=master)
+[![CodeCov Status](https://codecov.io/github/caronc/pynzbget/branch/master/graph/badge.svg)](https://codecov.io/github/caronc/pynzbget)
 [![Paypal](https://img.shields.io/badge/paypal-donate-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MHANV39UZNQ5E)
 [![Patreon](https://img.shields.io/badge/patreon-donate-green.svg)](https://www.patreon.com/caronc)<br/>
 

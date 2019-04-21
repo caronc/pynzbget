@@ -15,7 +15,7 @@ script:
   - coverage run -m pytest -vv
 
 after_success:
-  - coverage report --show-missing
+  - codecov
 
 notifications:
   email: false
