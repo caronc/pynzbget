@@ -158,6 +158,10 @@ FEEDID_ENVIRO_ID = 'FEEDID'
 FEED_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % FEED_ENVIRO_ID)
 
 class FeedScript(ScriptBase):
+
+    # Default FEED ID initialization
+    feedid = None
+
     def __init__(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Multi-Script Support

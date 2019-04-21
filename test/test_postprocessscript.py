@@ -68,9 +68,9 @@ SCRIPTDIR = join(TEMP_DIRECTORY, 'scripts')
 
 
 class TestPostProcessScript(TestBase):
-    def setUp(self):
+    def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestPostProcessScript, self).setUp()
+        super(TestPostProcessScript, self).setup_method()
 
         # Create NZBFILE
         _f = open(NZBFILENAME, 'w')
@@ -191,7 +191,7 @@ class TestPostProcessScript(TestBase):
             pass
         makedirs(SEARCH_DIR)
 
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         # Eliminate any variables defined
         if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
@@ -213,7 +213,7 @@ class TestPostProcessScript(TestBase):
             pass
 
         # common
-        super(TestPostProcessScript, self).tearDown()
+        super(TestPostProcessScript, self).teardown_method()
 
     def test_main_returns(self):
         # a NZB Logger set to False uses stderr

@@ -32,7 +32,7 @@ KEY = 'The.Perfect.Name.nzb'
 
 
 class TestDatabase(TestBase):
-    def tearDown(self):
+    def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
         try:
             unlink(DATABASE)
@@ -40,7 +40,7 @@ class TestDatabase(TestBase):
             pass
 
         # common
-        super(TestDatabase, self).tearDown()
+        super(TestDatabase, self).teardown_method()
 
     def test_schema_init(self):
 

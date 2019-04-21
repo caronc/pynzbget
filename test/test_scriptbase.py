@@ -43,9 +43,9 @@ SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
 
 class TestScriptBase(TestBase):
-    def setUp(self):
+    def setup_method(self):
         # common
-        super(TestScriptBase, self).setUp()
+        super(TestScriptBase, self).setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -58,7 +58,7 @@ class TestScriptBase(TestBase):
             pass
         makedirs(SEARCH_DIR)
 
-    def tearDown(self):
+    def teardown_method(self):
         if '%sTEMPDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sTEMPDIR' % SYS_ENVIRO_ID]
         if '%sSCRIPTDIR' % SYS_ENVIRO_ID in os.environ:
@@ -72,7 +72,7 @@ class TestScriptBase(TestBase):
             pass
 
         # common
-        super(TestScriptBase, self).tearDown()
+        super(TestScriptBase, self).teardown_method()
 
     def test_main_returns(self):
 

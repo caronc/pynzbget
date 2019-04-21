@@ -25,14 +25,6 @@ from TestBase import TestBase
 
 
 class TestUtils(TestBase):
-    def setUp(self):
-        """This method is run once before _each_ test method is executed"""
-        super(TestUtils, self).setUp()
-
-    def tearDown(self):
-        """This method is run once after _each_ test method is executed"""
-        super(TestUtils, self).tearDown()
-
     def test_os_path_split(self):
         assert os_path_split('C:\\My Directory\\SubDirectory') == [
             'C:',
