@@ -31,6 +31,7 @@ cpu power by just sharing your results in advance.
 """
 import sqlite3
 import re
+import six
 from datetime import datetime
 from datetime import timedelta
 from os.path import isfile
@@ -130,7 +131,7 @@ class Database(object):
         self.logger = logger
         self.debug = debug
 
-        if isinstance(self.logger, basestring):
+        if isinstance(self.logger, six.string_types):
             # Use Log File
             self.logger = init_logger(
                 name=self.logger_id,
@@ -172,7 +173,7 @@ class Database(object):
                 raise EnvironmentError('Could not prepare database.')
 
         # Keep content clean
-        self.prune()
+        # self.prune()
 
     def __del__(self):
         """Gracefully close any connection to the database on

@@ -148,6 +148,7 @@ from os import environ
 from .ScriptBase import ScriptBase
 from .ScriptBase import NZBGET_BOOL_FALSE
 from .ScriptBase import SCRIPT_MODE
+from .PostProcessScript import POSTPROC_ENVIRO_ID
 
 # Environment variable that prefixes all NZBGET options being passed into
 # scripts with respect to the NZB-File (used in Scan Scripts)
@@ -190,7 +191,8 @@ class SchedulerScript(ScriptBase):
                 self.logger.vvdebug('%s%s=%s' % (SCHEDULER_ENVIRO_ID, k, v))
 
         # Merge Script Configuration With System Config
-        self.system = dict(script_config.items() + self.system.items())
+        script_config.update(self.system)
+        self.system = script_config
 
         # self.taskid
         # This is the Task Identifier passed in from NZBGet
@@ -261,7 +263,6 @@ class SchedulerScript(ScriptBase):
     def scheduler_sanity_check(self, *args, **kargs):
         """Sanity checking to ensure this really is a post_process script
         """
-        from PostProcessScript import POSTPROC_ENVIRO_ID
         return ('%sDIRECTORY' % POSTPROC_ENVIRO_ID not in environ) and \
                ('%sTASKID' % SCHEDULER_ENVIRO_ID in environ)
 

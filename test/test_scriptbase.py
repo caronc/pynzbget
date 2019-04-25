@@ -19,14 +19,19 @@ import sys
 import re
 from os.path import join
 from os.path import isfile
-from urllib import unquote
+try:
+    # Python 2.7
+    from urllib import unquote
+
+except ImportError:
+    # Python 3.x
+    from urllib.parse import unquote
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
 
 from nzbget.ScriptBase import ScriptBase
 from nzbget.ScriptBase import SYS_ENVIRO_ID
-from nzbget.ScriptBase import EXIT_CODE
 from nzbget.ScriptBase import SHELL_EXIT_CODE
 from nzbget.ScriptBase import CFG_ENVIRO_ID
 from nzbget.ScriptBase import Health
@@ -37,7 +42,12 @@ from os import makedirs
 from threading import Thread, Lock
 from time import sleep
 
-import StringIO
+try:
+    # Python v2.7
+    from StringIO import StringIO
+except ImportError:
+    # Python v3.x
+    from io import StringIO
 
 SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
@@ -117,7 +127,7 @@ class TestScriptBase(TestBase):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
-        KEY = 'MY_VAR'
+        KEY = 'MY_VAR_TEST123'
         VALUE = 'MY_VALUE'
         ADJUSTED_VALUE = 'MY_NEW_VALUE'
 
@@ -263,7 +273,7 @@ class TestScriptBase(TestBase):
 
         files = script.get_files(
             search_dir=join(SEARCH_DIR, 'file.mkv'),
-            regex_filter='^file\.mkv$',
+            regex_filter=r'^file\.mkv$',
         )
         assert len(files) == 1
 
@@ -271,7 +281,7 @@ class TestScriptBase(TestBase):
             search_dir=join(SEARCH_DIR, 'file.mkv'),
             suffix_filter='file.mkv',
             prefix_filter='file.mkv',
-            regex_filter='^file\.mkv$',
+            regex_filter=r'^file\.mkv$',
         )
         assert len(files) == 1
 
@@ -517,20 +527,22 @@ class TestScriptBase(TestBase):
         # A simple single array entry (As str)
         results = script.parse_list('.mkv,.avi,.divx,.xvid,' +
                                     '.mov,.wmv,.mp4,.mpg,.mpeg,.vob,.iso')
-        assert results == [
-            '.divx', '.iso', '.mkv', '.mov', '.mpg',
-            '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4',
-        ]
+
+        assert len(results) == 11
+        for x in ['.divx', '.iso', '.mkv', '.mov', '.mpg',
+                  '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4']:
+            assert x in results
 
         # Now 2 lists with lots of duplicates and other delimiters
         results = script.parse_list(
             '.mkv,.avi,.divx,.xvid,.mov,.wmv,.mp4,.mpg .mpeg,.vob,,; ;',
             '.mkv,.avi,.divx,.xvid,' +
             '.mov        .wmv,.mp4;.mpg,.mpeg,.vob,.iso')
-        assert results == [
-            '.divx', '.iso', '.mkv', '.mov', '.mpg',
-            '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4',
-        ]
+
+        assert len(results) == 11
+        for x in ['.divx', '.iso', '.mkv', '.mov', '.mpg',
+                  '.avi', '.mpeg', '.vob', '.xvid', '.wmv', '.mp4']:
+            assert x in results
 
         # Now a list with extras we want to add as strings
         # empty entries are removed
@@ -540,10 +552,11 @@ class TestScriptBase(TestBase):
         ],
             '.mov,.wmv,.mp4,.mpg',
         )
-        assert results == [
-            '.divx', '.wmv', '.iso', '.mkv', '.mov',
-            '.mpg', '.avi', '.vob', '.xvid', '.mpeg', '.mp4',
-        ]
+
+        assert len(results) == 11
+        for x in ['.divx', '.wmv', '.iso', '.mkv', '.mov',
+                  '.mpg', '.avi', '.vob', '.xvid', '.mpeg', '.mp4']:
+            assert x in results
 
     def test_parse_path_list01(self):
         # a NZB Logger set to False uses stderr
@@ -691,7 +704,7 @@ class TestScriptBase(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_guess(guess_dict)
 
         # extract data
@@ -701,12 +714,12 @@ class TestScriptBase(TestBase):
         # return stdout back to how it was
         sys.stdout = stdout
 
-        guess_keys = guess_dict.keys()
+        guess_keys = list(guess_dict.keys())
         guess_keys.remove('BadEntry')
 
-        output = re.split('[\r\n]+', output)
+        output = re.split(r'[\r\n]+', output)
         # Clean "" entry
-        output = filter(bool, output)
+        output = [x for x in filter(bool, output)]
 
         # Pushes are disabled in Standalone mode
         assert len(output) == 0
@@ -715,15 +728,15 @@ class TestScriptBase(TestBase):
         # a NZB Logger set to False uses stderr
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
-        KEY = 'MY_VAR'
+        KEY = 'MY_VAR_TEST987'
         VALUE = 'MY_VALUE'
 
-        # Value doe snot exist yet
+        # Value does not exist yet
         assert script.get(KEY) is None
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push(KEY, VALUE)
 
         # extract data
@@ -733,9 +746,9 @@ class TestScriptBase(TestBase):
         sys.stdout = stdout
 
         # Pushes are disabled in Standalone mode
-        output = re.split('[\r\n]+', output)
+        output = re.split(r'[\r\n]+', output)
         # Clean "" entry
-        output = filter(bool, output)
+        output = [x for x in filter(bool, output)]
 
         assert len(output) == 0
         assert script.get(KEY) == VALUE
@@ -1077,10 +1090,10 @@ class TestScriptBase(TestBase):
         script = ScriptBase(logger=False, debug=VERY_VERBOSE_DEBUG)
 
         # An invalid regular expression (bracket has no close)
-        results = script.parse_regex('(.*\.mkv, ', simple=False)
+        results = script.parse_regex(r'(.*\.mkv, ', simple=False)
         assert(len(results) == 0)
 
-        results = script.parse_regex('.*\.mkv, .*\.avi,', simple=False)
+        results = script.parse_regex(r'.*\.mkv, .*\.avi,', simple=False)
         assert(len(results) == 2)
 
         # Now we'll scan our match and we should be okay

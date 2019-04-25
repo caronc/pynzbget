@@ -117,9 +117,9 @@ class MyPostProcessScript(PostProcessScript):
 
         # Your script configuration files (NZBPP_.*) are here in this
         # dictionary (again without the NZBPP_ prefix):
-        # assume you defined `Debug=no` in the first 10K of your PostProcessScript
-        # NZBGet translates this to `NZBPP_DEBUG` which can be retrieved
-        # as follows:
+        # assume you defined `Debug=no` in the first 10K of your
+        # PostProcessScript NZBGet translates this to `NZBPP_DEBUG` which can
+        # be retrieved as follows:
         print('DEBUG %s' self.get('DEBUG'))
 
         # Returns have been made easy.  Just return:
@@ -148,14 +148,13 @@ if __name__ == "__main__":
 """
 
 import re
+import six
 from os import chdir
 from os import environ
 from os.path import isdir
-from os.path import isfile
 from os.path import join
 from os.path import splitext
 from os.path import basename
-from os.path import dirname
 from os.path import abspath
 
 from socket import error as SocketError
@@ -169,7 +168,6 @@ from .Utils import os_path_split as split
 
 from .PostProcessCommon import OBFUSCATED_PATH_RE
 from .PostProcessCommon import OBFUSCATED_FILE_RE
-from .PostProcessCommon import SCRIPT_STATUS
 from .PostProcessCommon import PAR_STATUS
 from .PostProcessCommon import UNPACK_STATUS
 
@@ -190,12 +188,14 @@ class TOTAL_STATUS(object):
     # "post-process again".
     DELETED = 'DELETED'
 
+
 # Environment variable that prefixes all NZBGET options being passed into
 # scripts with respect to the NZB-File (used in Post Processing Scripts)
 POSTPROC_ENVIRO_ID = 'NZBPP_'
 
 # Precompile Regulare Expression for Speed
 POSTPROC_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % POSTPROC_ENVIRO_ID)
+
 
 class PostProcessScript(ScriptBase):
     """POST PROCESS mode is called after the unpack stage
@@ -233,8 +233,9 @@ class PostProcessScript(ScriptBase):
         unpackstatus = kwargs.get('unpackstatus')
 
         # Fetch/Load Post Process Script Configuration
-        script_config = dict([(POSTPROC_OPTS_RE.match(k).group(1), v.strip()) \
-               for (k, v) in environ.items() if POSTPROC_OPTS_RE.match(k)])
+        script_config = \
+            dict([(POSTPROC_OPTS_RE.match(k).group(1), v.strip())
+                 for (k, v) in environ.items() if POSTPROC_OPTS_RE.match(k)])
 
         if self.vvdebug:
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -244,7 +245,8 @@ class PostProcessScript(ScriptBase):
                 self.logger.vvdebug('%s%s=%s' % (POSTPROC_ENVIRO_ID, k, v))
 
         # Merge Script Configuration With System Config
-        self.system = dict(script_config.items() + self.system.items())
+        script_config.update(self.system)
+        self.system = script_config
 
         # self.directory
         # This is the path to the destination directory for downloaded files.
@@ -374,28 +376,26 @@ class PostProcessScript(ScriptBase):
                 # Initialize information fetched from NZB-File
                 # We intentionally allow existing nzbheaders to over-ride
                 # any found in the nzbfile
-                self.nzbheaders = dict(
-                    self.parse_nzbfile(
-                        self.nzbfilename, check_queued=True)\
-                        .items() + self.pull_dnzb().items(),
-                )
+                self.nzbheaders = \
+                    self.parse_nzbfile(self.nzbfilename, check_queued=True)
+                self.nzbheaders.update(self.pull_dnzb())
 
         if self.directory:
             # absolute path names
             self.directory = abspath(self.directory)
 
         if not (self.directory and isdir(self.directory)):
-            self.logger.debug('Process directory is missing: %s' % \
-                self.directory)
+            self.logger.debug(
+                'Process directory is missing: %s' % self.directory)
         else:
             try:
                 chdir(self.directory)
             except OSError:
-                self.logger.debug('Process directory is not accessible: %s' % \
-                    self.directory)
+                self.logger.debug(
+                    'Process directory is not accessible: %s' % self.directory)
 
         # Total Status
-        if not isinstance(self.totalstatus, basestring):
+        if not isinstance(self.totalstatus, six.string_types):
             self.totalstatus = TOTAL_STATUS.SUCCESS
 
         # Par Status
@@ -469,8 +469,8 @@ class PostProcessScript(ScriptBase):
             # to the database now
             try:
                 self.database_key = \
-                        self.get('NZBID', basename(self.nzbfilename))
-            except AttributeError:
+                    self.get('NZBID', basename(self.nzbfilename))
+            except (TypeError, AttributeError):
                 pass
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -513,8 +513,8 @@ class PostProcessScript(ScriptBase):
             if found_opts != required_opts:
                 missing_opts = list(required_opts ^ found_opts)
                 self.logger.error(
-                    'Validation - (v13) Directives not set: %s' % \
-                      ', '.join(missing_opts),
+                    'Validation - (v13) Directives not set: %s' %
+                    ', '.join(missing_opts),
                 )
                 is_okay = False
 
@@ -531,7 +531,7 @@ class PostProcessScript(ScriptBase):
         """
 
         is_okay = super(PostProcessScript, self)\
-                ._health_check(*args, **kwargs)
+            ._health_check(*args, **kwargs)
 
         if self.version < 13:
             # We need to be sure the download is okay before continuing
@@ -602,8 +602,8 @@ class PostProcessScript(ScriptBase):
                 return None
 
         try:
-            group = [ x for x in self.api.listgroups(0) \
-                     if x['NZBID'] == nzbid ][0]
+            group = \
+                [x for x in self.api.listgroups(0) if x['NZBID'] == nzbid][0]
 
         except SocketError as e:
             self.logger.warning('RCP Connection Failure (%d): %s' % (
@@ -628,7 +628,7 @@ class PostProcessScript(ScriptBase):
         dl_avg_speed_unit = 'MB/s'
 
         if dl_time > 0.0:
-            dl_avg_speed = (dl_size/dl_time)
+            dl_avg_speed = (dl_size / dl_time)
             if dl_avg_speed < 1.0:
                 # Convert to KB/s
                 dl_avg_speed_unit = 'KB/s'
@@ -665,7 +665,8 @@ class PostProcessScript(ScriptBase):
             # General time spent verifying and repairing download (in seconds)
             'par_total_time_sec': par_prepare_time + par_repair_time,
             # Total estimated system time spent handling this download
-            'total_time_sec': postprocess_time + float(group['DownloadTimeSec']),
+            'total_time_sec':
+            postprocess_time + float(group['DownloadTimeSec']),
         }
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -682,18 +683,19 @@ class PostProcessScript(ScriptBase):
             ref_nzbfile = self.nzbfilename
 
         if filename[0:len(ref_dir):] == ref_dir:
-            new_name = filename[len(ref_dir)+1:]
-            self.logger.debug('Deobfuscate - Stripped filename down to: %s' % new_name)
+            new_name = filename[len(ref_dir) + 1:]
+            self.logger.debug(
+                'Deobfuscate - Stripped filename down to: %s' % new_name)
         else:
             new_name = filename
 
         parts = split(new_name)
         part_removed = 0
-        for x in range(0, len(parts)-1):
+        for x in range(0, len(parts) - 1):
             fn = parts[x]
             if OBFUSCATED_PATH_RE.match(fn):
                 self.logger.info(
-                    'Detected obfuscated directory name %s,' % fn + \
+                    'Detected obfuscated directory name %s,' % fn +
                     ' removing from path',
                 )
                 parts[x] = None
@@ -701,15 +703,15 @@ class PostProcessScript(ScriptBase):
 
         if OBFUSCATED_FILE_RE.match(basename(filename)):
             self.logger.info(
-                'Detected obfuscated filename %s,' % basename(filename) + \
+                'Detected obfuscated filename %s,' % basename(filename) +
                 ' removing from path')
-            parts[len(parts)-1] = '-' + splitext(filename)[1]
+            parts[len(parts) - 1] = '-' + splitext(filename)[1]
             part_removed += 1
 
         if part_removed < len(parts):
             new_name = ''
             for x in range(0, len(parts)):
-                if parts[x] != None:
+                if parts[x] is not None:
                     new_name = join(new_name, parts[x])
             return new_name
 
@@ -718,7 +720,7 @@ class PostProcessScript(ScriptBase):
         # Check out NZB-Filename
         if len(self.nzb_items()):
             self.logger.info(
-                'All file path parts are obfuscated, using obfuscated ' + \
+                'All file path parts are obfuscated, using obfuscated ' +
                 'NZB-Headers',
             )
 
@@ -731,8 +733,8 @@ class PostProcessScript(ScriptBase):
             if self.nzb_get('name'):
                 # We can pick from the nzb headers
                 nzb_name = self.nzb_get('name')
-                new_name = join(ref_dir, '%s%s' %(
-                    re.sub('[\s]+','.', nzb_name),
+                new_name = join(ref_dir, '%s%s' % (
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
 
@@ -743,8 +745,8 @@ class PostProcessScript(ScriptBase):
                 if self.nzb_get('movieyear'):
                     nzb_name += '(%s)' % self.nzb_get('movieyear')
 
-                new_name = join(ref_dir, '%s%s' %(
-                    re.sub('[\s]+','.', nzb_name),
+                new_name = join(ref_dir, '%s%s' % (
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
 
@@ -753,20 +755,20 @@ class PostProcessScript(ScriptBase):
                 nzb_name = self.nzb_get('propername')
                 if self.nzb_get('episodename'):
                     nzb_name += '-%s' % \
-                            self.nzb_get('episodename')
+                        self.nzb_get('episodename')
 
                 if subcategory == 'hd':
                     nzb_name += '-HDTV'
 
-                new_name = join(ref_dir, '%s%s' %(
-                    re.sub('[\s]+','.', nzb_name),
+                new_name = join(ref_dir, '%s%s' % (
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
 
             elif self.nzb_get('propername'):
                 nzb_name = self.nzb_get('propername')
-                new_name = join(ref_dir, '%s%s' %(
-                    re.sub('[\s]+','.', nzb_name),
+                new_name = join(ref_dir, '%s%s' % (
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(filename))[1],
                 ))
             else:
@@ -774,7 +776,8 @@ class PostProcessScript(ScriptBase):
                 new_name = ''
 
         if new_name:
-            self.logger.debug('Deobfuscate - Generated filename: %s' % new_name)
+            self.logger.debug(
+                'Deobfuscate - Generated filename: %s' % new_name)
             return new_name
 
         # we're running out of new names :)... try the NZB-FileName
@@ -782,9 +785,8 @@ class PostProcessScript(ScriptBase):
             self.logger.info(
                 'All file path parts are obfuscated, using NZB-FileName',
             )
-            new_name = join(ref_dir, '%s%s' %(
-                re.sub('[\s]+','.',
-                       splitext(basename(ref_nzbfile))[0]),
+            new_name = join(ref_dir, '%s%s' % (
+                re.sub(r'[\s]+', '.', splitext(basename(ref_nzbfile))[0]),
                 splitext(basename(filename))[1],
             ))
 

@@ -1,14 +1,11 @@
 [![Build Status](https://travis-ci.org/caronc/pynzbget.svg?branch=master)](https://travis-ci.org/caronc/pynzbget)
 [![CodeCov Status](https://codecov.io/github/caronc/pynzbget/branch/master/graph/badge.svg)](https://codecov.io/github/caronc/pynzbget)
 [![Paypal](https://img.shields.io/badge/paypal-donate-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MHANV39UZNQ5E)
-[![Patreon](https://img.shields.io/badge/patreon-donate-green.svg)](https://www.patreon.com/caronc)<br/>
-
 Description
 =================
 This provides a python framework to design NZBGet scripts with. The intent
 was to greatly simplify the development and debugging process. It was
-initially designed to work with NZBGet v13, but was made to be compatible
-with versions 12 and 11 as well. Naturally it works with all newer versions as well (v14, v15, v16, etc).
+initially designed to work with NZBGet and is backwards compatible with all previous versions (as far back to v11). However it is also compatible with SABnzbd users too!
 
 * It contains a built in meta tag parser to extract content from NZB-Files.
    _Note: This can only happen if lxml is installed on your system_.
@@ -27,6 +24,8 @@ with versions 12 and 11 as well. Naturally it works with all newer versions as w
   inside of every other NZBGet script such as file scanning.
 * It greatly simplifies the handling of environment variables and interaction
   to and from NZBGet.
+* It can also be adapted to support SABnzbd scripting! Thus any script you write
+  for NZBGet users, you can also tweak to work [with SABnzbd users too](https://github.com/caronc/pynzbget/wiki/SAB_PostProcessScripts)!
 
 Documentation
 =============
@@ -34,8 +33,10 @@ For the most up to date information and API, visit the wiki at
 * https://github.com/caronc/pynzbget/wiki
 
 The entire framework was based on the information found here:
-* NZBGet: http://nzbget.net
-* NZBGet: scripting documentation: http://nzbget.net/Extension_scripts
+* [NZBGet](https://nzbget.net)
+* [NZBGet Scripting Documentation](http://nzbget.net/Extension_scripts)
+* [SABnzbd](http://sabnzbd.org/)
+* [SABnzbd Scripting Documentation](https://sabnzbd.org/wiki/scripts/post-processing-scripts)
 
 Simplified Development
 ======================

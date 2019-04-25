@@ -114,10 +114,8 @@ class TestSchedulerScript(TestBase):
         assert os.environ['%sTASKID' % SCHEDULER_ENVIRO_ID] == str(taskid)
 
     def test_get_task(self):
-
         script = SchedulerScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         task = script.get_task()
-        print str(task)
         assert len(task) == 2
 
     def test_set_and_get(self):
