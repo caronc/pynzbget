@@ -1,8 +1,9 @@
 [![Build Status](https://travis-ci.org/caronc/pynzbget.svg?branch=master)](https://travis-ci.org/caronc/pynzbget)
 [![CodeCov Status](https://codecov.io/github/caronc/pynzbget/branch/master/graph/badge.svg)](https://codecov.io/github/caronc/pynzbget)
-[![Paypal](https://img.shields.io/badge/paypal-donate-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MHANV39UZNQ5E)
+[![Paypal](https://img.shields.io/badge/paypal-donate-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MHANV39UZNQ5E)<br/>
+
 Description
-=================
+===========
 This provides a python framework to design NZBGet scripts with. The intent
 was to greatly simplify the development and debugging process. It was
 initially designed to work with NZBGet and is backwards compatible with all previous versions (as far back to v11). However it is also compatible with SABnzbd users too!
