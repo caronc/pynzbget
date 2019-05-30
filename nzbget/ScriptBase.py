@@ -2,7 +2,7 @@
 #
 # A base scripting class for NZBGet
 #
-# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2019 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -132,6 +132,7 @@ Additionally all exception handling is wrapped to make debugging easier.
 """
 
 import re
+import six
 from tempfile import gettempdir
 from tempfile import mkstemp
 from platform import system as p_system
@@ -180,6 +181,23 @@ from .Utils import unescape_xml
 
 import signal
 
+# File Stats
+from stat import ST_ATIME
+from stat import ST_CTIME
+from stat import ST_MTIME
+from stat import ST_SIZE
+
+from os import stat
+from base64 import standard_b64encode
+
+try:
+    # Python v2.7 -> v3.6
+    re_pattern_type = re._pattern_type
+
+except AttributeError:
+    # Python v3.7+
+    re_pattern_type = re.Pattern
+
 # Initialize the default character set to use
 DEFAULT_CHARSET = u'utf-8'
 
@@ -225,20 +243,20 @@ except ImportError:
     # No panic, we just can't use database
     pass
 
-# File Stats
-from stat import ST_ATIME
-from stat import ST_CTIME
-from stat import ST_MTIME
-from stat import ST_SIZE
+try:
+    # Python 2.7
+    from urllib import unquote
+    from urllib import quote
+    from urlparse import parse_qsl
+    from urlparse import urlparse
 
-from os import stat
+except ImportError:
+    # Python 3.x
+    from urllib.parse import unquote
+    from urllib.parse import quote
+    from urllib.parse import parse_qsl
+    from urllib.parse import urlparse
 
-from urlparse import urlparse
-from urlparse import parse_qsl
-from urllib import quote
-from urllib import unquote
-
-from base64 import standard_b64encode
 try:
     # Python 2
     from xmlrpclib import ServerProxy
@@ -311,6 +329,7 @@ class SCRIPT_MODE(object):
     # None is detected if you aren't using one of the above types
     NONE = 'shell'
 
+
 # Depending on certain environment variables, a mode can be detected
 # a mode can be used to. When using a MultiScript
 SCRIPT_MODES = (
@@ -331,6 +350,7 @@ SCRIPT_MODES = (
     SCRIPT_MODE.NONE,
 )
 
+
 class EXIT_CODE(object):
     """List of exit codes for post processing
     """
@@ -347,6 +367,7 @@ class EXIT_CODE(object):
     # due to how content was parsed.
     NONE = 95
 
+
 class SHELL_EXIT_CODE(object):
     """List of exit codes for shell execution
     """
@@ -359,6 +380,7 @@ class SHELL_EXIT_CODE(object):
     # due to how content was parsed. For shell execution; this is just the same
     # as a success as there is nothing good or bad to handle here
     NONE = 0
+
 
 EXIT_CODES = (
     EXIT_CODE.PARCHECK_CURRENT,
@@ -391,6 +413,7 @@ COMMON_MODES = (
     # None should always be the last entry
     SCRIPT_MODE.NONE,
 )
+
 
 class NZBGetDuplicateMode(object):
     """Defines Duplicate Mode. This is used when Adding NZB-Files directly
@@ -568,8 +591,8 @@ class Health(tuple):
         # Default Sub Category
         subcategory = Health.DEFAULT_SUB
 
-        if isinstance(health, basestring):
-            health = re.split('[\s/\\\]+', health + '/')
+        if isinstance(health, six.string_types):
+            health = re.split(r'[\s/\\]+', health + '/')
 
         elif not isinstance(health, (tuple, list)):
             health = (category, subcategory)
@@ -594,7 +617,7 @@ class Health(tuple):
             pass
 
         return super(Health, self)\
-                .__new__(self, tuple((category, subcategory)))
+            .__new__(self, tuple((category, subcategory)))
 
     def __init__(self, health):
         super(Health, self).__init__()
@@ -605,22 +628,22 @@ class Health(tuple):
         self.subcategory = self[1]
 
         # Assign Defaults
-        self.has_archive = Health.HEALTH_MAP\
-                [self.category][Health.DEFAULT_SUB][u'has_archive']
-        self.is_unpacked = Health.HEALTH_MAP\
-                [self.category][Health.DEFAULT_SUB][u'is_unpacked']
+        self.has_archive = Health\
+            .HEALTH_MAP[self.category][Health.DEFAULT_SUB][u'has_archive']
+        self.is_unpacked = Health\
+            .HEALTH_MAP[self.category][Health.DEFAULT_SUB][u'is_unpacked']
 
         try:
-            self.has_archive = Health.HEALTH_MAP\
-                    [self.category][self.subcategory][u'has_archive']
+            self.has_archive = Health\
+                .HEALTH_MAP[self.category][self.subcategory][u'has_archive']
 
         except KeyError:
             # No problem, we'll just use the defaults
             pass
 
         try:
-            self.is_unpacked = Health.HEALTH_MAP\
-                [self.category][self.subcategory][u'is_unpacked']
+            self.is_unpacked = Health\
+                .HEALTH_MAP[self.category][self.subcategory][u'is_unpacked']
 
         except KeyError:
             # No problem, we'll just use the defaults
@@ -646,6 +669,7 @@ class PRIORITY(object):
     HIGH = 50
     VERY_HIGH = 100
     FORCE = 900
+
 
 # A list of priorities makes it easier to validate them
 # for each priority added above, make sure you also update this list.
@@ -713,18 +737,18 @@ SHR_ENVIRO_GUESS_ID = u'_GUESS_'
 NZBGET_MSG_PREFIX = u'[NZB] '
 
 # Precompile regular expressions for speed
-SYS_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SYS_ENVIRO_ID)
-CFG_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % CFG_ENVIRO_ID)
-SHR_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SHR_ENVIRO_ID)
-TST_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % TST_ENVIRO_ID)
-SAB_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SAB_ENVIRO_ID)
-DNZB_OPTS_RE = re.compile('^%s%s([A-Z0-9_]+)$' % (
+SYS_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(SYS_ENVIRO_ID))
+CFG_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(CFG_ENVIRO_ID))
+SHR_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(SHR_ENVIRO_ID))
+TST_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(TST_ENVIRO_ID))
+SAB_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(SAB_ENVIRO_ID))
+DNZB_OPTS_RE = re.compile(r'^{}{}([A-Z0-9_]+)$'.format(
     SHR_ENVIRO_ID,
     SHR_ENVIRO_DNZB_ID,
 ))
 
 # Precompile Guess Fetching
-SHR_GUESS_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % SHR_ENVIRO_GUESS_ID)
+SHR_GUESS_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(SHR_ENVIRO_GUESS_ID))
 
 # This is used as a mapping table so when we fetch content later
 # at another time we can map them to the same format commonly
@@ -736,7 +760,7 @@ GUESS_KEY_MAP = {
     u'EDITION': u'edition', u'EPISODENUMBER': u'episodeNumber',
     u'FILMNUMBER': u'filmNumber', u'FILMSERIES': u'filmSeries',
     u'FORMAT': u'format', u'LANGUAGE': u'language',
-    u'RELEASEGROUP': u'releaseGroup',  u'SCREENSIZE': u'screenSize',
+    u'RELEASEGROUP': u'releaseGroup', u'SCREENSIZE': u'screenSize',
     u'SEASON': u'season', u'SERIES': u'series', u'SPECIAL': u'special',
     u'SUBTITLELANGUAGE': u'subtitleLanguage', u'TITLE': u'title',
     u'TYPE': u'type', u'VIDEOCODEC': u'videoCodec', u'VTYPE': u'vtype',
@@ -744,7 +768,7 @@ GUESS_KEY_MAP = {
 }
 
 # keys should not be complicated... make it so they aren't
-VALID_KEY_RE = re.compile('[^a-zA-Z0-9_.-]')
+VALID_KEY_RE = re.compile(r'[^a-zA-Z0-9_.-]')
 
 # delimiters used to separate values when content is passed in by string
 # This is useful when turning a string into a list
@@ -752,10 +776,10 @@ STRING_DELIMITERS = r'[\[\]\;,\s]+'
 
 # For separating paths
 PATH_DELIMITERS = r'([%s]+[%s;\|,\s]+|[;\|,\s%s]+[%s]+)' % (
-        ESCAPED_NUX_PATH_SEPARATOR,
-        ESCAPED_NUX_PATH_SEPARATOR,
-        ESCAPED_NUX_PATH_SEPARATOR,
-        ESCAPED_NUX_PATH_SEPARATOR,
+    ESCAPED_NUX_PATH_SEPARATOR,
+    ESCAPED_NUX_PATH_SEPARATOR,
+    ESCAPED_NUX_PATH_SEPARATOR,
+    ESCAPED_NUX_PATH_SEPARATOR,
 )
 
 # SQLite Database
@@ -779,6 +803,18 @@ class ScriptBase(object):
         self.logger_id = __name__
         self.logger = logger
         self.debug = debug
+
+        # System Environment Variables
+        self.system = {}
+
+        # Configuration Environment Options
+        self.config = {}
+
+        # Shared Environment Options
+        self.shared = {}
+
+        # Test Environment Options
+        self.test = {}
 
         # Initialize the default character set
         self.charset = None
@@ -822,25 +858,30 @@ class ScriptBase(object):
         self.database_key = database_key
 
         # Fetch System Environment (passed from NZBGet)
-        self.system = dict(
-            dict([(SYS_OPTS_RE.match(k).group(1), v.strip())
-            for (k, v) in environ.items() if SYS_OPTS_RE.match(k)]).items() +\
-            dict([(SAB_OPTS_RE.match(k).group(1), v.strip())
-            for (k, v) in environ.items() if SAB_OPTS_RE.match(k)]).items()
-        )
+        self.system.update({
+            SYS_OPTS_RE.match(k).group(1): v.strip()
+            for (k, v) in environ.items() if SYS_OPTS_RE.match(k)})
+
+        # Fetch System Environment (passed from SABNZBd)
+        self.system.update({
+            SAB_OPTS_RE.match(k).group(1): v.strip()
+            for (k, v) in environ.items() if SAB_OPTS_RE.match(k)})
 
         # Fetch/Load Script Specific Configuration
-        self.config = dict([(CFG_OPTS_RE.match(k).group(1), v.strip())
-            for (k, v) in environ.items() if CFG_OPTS_RE.match(k)])
+        self.config.update({
+            CFG_OPTS_RE.match(k).group(1): v.strip()
+            for (k, v) in environ.items() if CFG_OPTS_RE.match(k)})
 
         # Fetch/Load Shared Configuration through push()
-        self.shared = dict([(SHR_OPTS_RE.match(k).group(1), v.strip())
-            for (k, v) in environ.items() if SHR_OPTS_RE.match(k)])
+        self.shared.update({
+            SHR_OPTS_RE.match(k).group(1): v.strip()
+            for (k, v) in environ.items() if SHR_OPTS_RE.match(k)})
 
         # Fetch/Load Test/Command Specific Configuration; This is used
         # when issuing commands to a script from the configuration screen
-        self.test = dict([(TST_OPTS_RE.match(k).group(1), v.strip()) \
-            for (k, v) in environ.items() if TST_OPTS_RE.match(k)])
+        self.test.update({
+            TST_OPTS_RE.match(k).group(1): v.strip()
+            for (k, v) in environ.items() if TST_OPTS_RE.match(k)})
 
         # Preload nzbheaders based on any DNZB environment variables
         self.nzbheaders = self.pull_dnzb()
@@ -869,14 +910,14 @@ class ScriptBase(object):
 
         # Enabling DEBUG as a flag by specifying in the configuration
         # section of your script
-        #Debug=no
+        # Debug=no
         if self.debug is None:
             self.debug = self.parse_bool(
                 self.config.get('DEBUG', False))
 
         # Enabling Character Set as a flag by specifying in the configuration
         # section of your script
-        #CharSet=no
+        # CharSet=no
         if self.charset is None:
             self.charset = self.config.get('CHARSET', DEFAULT_CHARSET)
 
@@ -902,7 +943,7 @@ class ScriptBase(object):
             SCRIPT_MODE.NONE, SCRIPT_MODE.SABNZBD_POSTPROCESSING,
         )
 
-        if isinstance(self.logger, basestring):
+        if isinstance(self.logger, six.string_types):
             # Use Log File
             self.logger = init_logger(
                 name=self.logger_id,
@@ -936,14 +977,6 @@ class ScriptBase(object):
         self.logger.debug('Python v%s' % p_version())
         self.logger.debug('OS: %s %s' % (p_system(), p_release()))
 
-        # Track the current working directory
-        try:
-            self.curdir = getcwd()
-        except OSError:
-            # This happens on some systems that simply don't
-            # allow us access to this information
-            self.curdir = './'
-
         # enforce temporary directory
         if not self.tempdir:
             self.tempdir = join(
@@ -956,12 +989,25 @@ class ScriptBase(object):
 
         if not isdir(self.tempdir):
             try:
-                makedirs(self.tempdir, 0700)
+                makedirs(self.tempdir, 0o700)
             except:
                 self.logger.warning(
-                    'Temporary directory could not be ' + \
+                    'Temporary directory could not be '
                     'created: %s' % self.system['TEMPDIR'],
                 )
+
+        # Track the current working directory
+        try:
+            self.curdir = getcwd()
+
+        except Exception:
+            # OSError if Python v2
+            # FileNotFoundError if Python v3
+
+            # This happens on some systems that simply don't
+            # allow us access to this information
+            self.curdir = self.tmpdir
+            chdir(self.tmpdir)
 
         if self.vvdebug:
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1159,7 +1205,7 @@ class ScriptBase(object):
         # An NZBGet Mode means we should work out of a writeable directory
         if not isdir(piddir):
             try:
-                makedirs(piddir, 0755)
+                makedirs(piddir, 0o755)
                 if verbose:
                     self.logger.info(
                         'Created PID-File directory: %s' % piddir
@@ -1167,7 +1213,7 @@ class ScriptBase(object):
             except (IOError, OSError):
                 if verbose:
                     self.logger.error(
-                        'PID-File directory could not be ' + \
+                        'PID-File directory could not be '
                         'created: %s' % piddir
                     )
                 if die_on_fail:
@@ -1176,19 +1222,19 @@ class ScriptBase(object):
 
         if isfile(self.pidfile):
             try:
-                pid = int(open(self.pidfile, 'r').read())
-                if verbose:
-                    self.logger.debug(
-                        'PID-File identifies PID %d (our PID is %d):' % (
-                        pid,
-                        self.pid,
-                    ))
+                with open(self.pidfile, 'r') as pidfile:
+                    pid = int(pidfile.read())
+                    if verbose:
+                        self.logger.debug(
+                            'PID-File identifies PID %d (our PID is %d):' % (
+                                pid,
+                                self.pid))
 
             except (ValueError, TypeError):
                 # Bad data
                 if verbose:
                     self.logger.info(
-                            'Removed (dead) PID-File: %s' % self.pidfile)
+                        'Removed (dead) PID-File: %s' % self.pidfile)
                 try:
                     unlink(self.pidfile)
                     if verbose:
@@ -1198,7 +1244,7 @@ class ScriptBase(object):
                     unlink(self.pidfile)
                     if verbose:
                         self.logger.warning(
-                            'Failed to removed (dead) PID-File: %s' % \
+                            'Failed to removed (dead) PID-File: %s' %
                             self.pidfile)
 
                     # It probably isn't ours
@@ -1226,7 +1272,7 @@ class ScriptBase(object):
                 if _pid_running(pid):
                     if verbose:
                         self.logger.warning(
-                           'Process is already running in ' +
+                            'Process is already running in '
                             'another instance (pid=%d)' % pid,
                         )
 
@@ -1240,7 +1286,7 @@ class ScriptBase(object):
 
         # Write our PIDFile
         try:
-           fp = open(self.pidfile, "w")
+            fp = open(self.pidfile, "w")
 
         except:
             if verbose:
@@ -1293,8 +1339,7 @@ class ScriptBase(object):
         if verbose:
             self.logger.info(
                 'Created PID-File: %s (pid=%d)' % (
-                     self.pidfile, self.pid,
-            ))
+                    self.pidfile, self.pid))
         return True
 
     def __del__(self):
@@ -1333,7 +1378,7 @@ class ScriptBase(object):
             # convert boolean's to int's for consistency
             value = str(int(value))
 
-        elif not isinstance(value, basestring):
+        elif not isinstance(value, six.string_types):
             value = str(value)
 
         # Push message on to nzbget (by simply sending it to
@@ -1359,7 +1404,7 @@ class ScriptBase(object):
             # convert boolean's to int's for consistency
             value = str(int(value))
 
-        elif not isinstance(value, basestring):
+        elif not isinstance(value, six.string_types):
             value = str(value)
 
         if use_env:
@@ -1401,8 +1446,8 @@ class ScriptBase(object):
             return dict()
 
         # Preload nzbheaders based on any DNZB environment variables
-        return dict([(DNZB_OPTS_RE.match(k).group(1).upper(), v.strip()) \
-            for (k, v) in environ.items() if DNZB_OPTS_RE.match(k)])
+        return {DNZB_OPTS_RE.match(k).group(1).upper(): v.strip()
+                for (k, v) in environ.items() if DNZB_OPTS_RE.match(k)}
 
     def push_guess(self, guess):
         """pushes guess results to NZBGet Server. The function was
@@ -1437,11 +1482,10 @@ class ScriptBase(object):
             return dict()
 
         # Fetch/Load Guess Specific Content
-        return dict([
-            (GUESS_KEY_MAP[SHR_GUESS_OPTS_RE.match(k).group(1)], v.strip()) \
-            for (k, v) in self.shared.items() \
-                if SHR_GUESS_OPTS_RE.match(k) and \
-                SHR_GUESS_OPTS_RE.match(k).group(1) in GUESS_KEY_MAP])
+        return {GUESS_KEY_MAP[SHR_GUESS_OPTS_RE.match(k).group(1)]: v.strip()
+                for (k, v) in self.shared.items()
+                if SHR_GUESS_OPTS_RE.match(k) and
+                SHR_GUESS_OPTS_RE.match(k).group(1) in GUESS_KEY_MAP}
 
     def parse_nzbfile(self, nzbfile, check_queued=False):
         """Parse an nzbfile specified and return just the
@@ -1449,7 +1493,7 @@ class ScriptBase(object):
 
         """
         results = {}
-        if not isinstance(nzbfile, basestring):
+        if not isinstance(nzbfile, six.string_types):
             # Simple check for nothing found
             self.logger.debug('NZB-File not defined; parse skipped.')
             return results
@@ -1486,35 +1530,28 @@ class ScriptBase(object):
 
             nzb_dir = self.get('NZBDir', None)
             if nzb_dir and abspath(nzb_dir) != abspath(dirname(nzbfile)):
-                _filenames = dict(
-                    _filenames.items() + self.get_files(
-                        search_dir=abspath(nzb_dir),
-                        regex_filter=file_regex,
-                        fullstats=True,
-                        max_depth=1,
-                    ).items(),
-                )
+                _filenames.update(self.get_files(
+                    search_dir=abspath(nzb_dir),
+                    regex_filter=file_regex,
+                    fullstats=True,
+                    max_depth=1))
 
             if len(_filenames):
                 # sort our results by access time
-                _files = sorted (
-                    _filenames.iterkeys(),
-                    key=lambda k: (
-                        # Sort by Accessed time first
-                        _filenames[k]['accessed'],
-                        # Then sort by Created Date
-                        _filenames[k]['created'],
-                        # Then sort by filename length
-                        # file.nzb.2.queued > file.nzb.queued
-                        len(k)),
-                    reverse=True,
-                )
+                _files = sorted(list(_filenames.keys()), key=lambda k: (
+                    # Sort by Accessed time first
+                    _filenames[k]['accessed'],
+                    # Then sort by Created Date
+                    _filenames[k]['created'],
+                    # Then sort by filename length
+                    # file.nzb.2.queued > file.nzb.queued
+                    len(k)), reverse=True)
                 if self.debug:
                     for _file in _files:
                         self.logger.debug('NZB-Files located: %s (%s)' % (
                             basename(_file),
-                            _filenames[_file]['accessed']\
-                                .strftime('%Y-%m-%d %H:%M:%S'),
+                            _filenames[_file]['accessed']
+                            .strftime('%Y-%m-%d %H:%M:%S'),
                         ))
                 # Assign first file (since we've listed by access time)
                 nzbfile = _files[0]
@@ -1531,8 +1568,9 @@ class ScriptBase(object):
                 elements = etree.iterparse(nzbfile)
 
                 for event, element in elements:
-                    if element.tag == "{http://www.newzbin.com/DTD/2003/nzb}meta":
-                        if isinstance(element.text, basestring) and \
+                    if element.tag == \
+                            "{http://www.newzbin.com/DTD/2003/nzb}meta":
+                        if isinstance(element.text, six.string_types) and \
                                 element.text.strip():
                             # Only store entries with content
                             results[element.attrib['type'].upper()] = \
@@ -1546,8 +1584,9 @@ class ScriptBase(object):
 
                 for event, element in elements:
                     for child in element:
-                        if child.tag == "{http://www.newzbin.com/DTD/2003/nzb}meta":
-                            if isinstance(child.text, basestring) and \
+                        if child.tag == \
+                                "{http://www.newzbin.com/DTD/2003/nzb}meta":
+                            if isinstance(child.text, six.string_types) and \
                                     child.text.strip():
                                 # Only store entries with content
                                 results[child.attrib['type'].upper()] = \
@@ -1576,7 +1615,7 @@ class ScriptBase(object):
                 #       /19f0a477c935b402c93395f8c0cb561646f4bdc3
                 # So we can relax and return ok results here
                 self.logger.info(
-                    'NZBParse - NZB-File parsed %d meta entries' % \
+                    'NZBParse - NZB-File parsed %d meta entries' %
                     len(results),
                 )
             else:
@@ -1586,9 +1625,8 @@ class ScriptBase(object):
                 )
                 self.logger.debug(
                     'NZBParse - %s Exception %s' % (
-                    LXML_TYPE,
-                    str(e),
-                ))
+                        LXML_TYPE,
+                        str(e)))
 
         except Exception as e:
             self.logger.error(
@@ -1596,13 +1634,12 @@ class ScriptBase(object):
             )
             self.logger.debug(
                 'NZBParse - %s Unhandled Exception %s' % (
-                str(e),
-                LXML_TYPE,
-            ))
+                    str(e),
+                    LXML_TYPE))
 
         return results
 
-    def parse_nzbcontent(self, nzbcontent):
+    def parse_nzbcontent(self, nzbcontent, verbose=True):
         """
         Parses nzb-content (extracted from within an NZB-File)
 
@@ -1635,7 +1672,7 @@ class ScriptBase(object):
         except:
             if verbose:
                 self.logger.warning(
-                    'Failed to removed (temporary) NZB-File: %s' % \
+                    'Failed to removed (temporary) NZB-File: %s' %
                     fname)
 
         return results
@@ -1663,7 +1700,7 @@ class ScriptBase(object):
          content could not be extracted.
         """
 
-        if not isinstance(url, basestring):
+        if not isinstance(url, six.string_types):
             # Simple error checking
             return None
 
@@ -1737,12 +1774,12 @@ class ScriptBase(object):
         # Parse Query Arugments ?val=key&key=val
         # while ensureing that all keys are lowercase
         if qsdata:
-            result['qsd'] = dict([(k.lower().strip(), v.strip()) \
-                                  for k, v in parse_qsl(
-                qsdata,
-                keep_blank_values=True,
-                strict_parsing=False,
-            )])
+            result['qsd'] = \
+                dict([(k.lower().strip(), v.strip())
+                     for k, v in parse_qsl(
+                         qsdata,
+                         keep_blank_values=True,
+                         strict_parsing=False)])
 
         if not result['fullpath']:
             # Default
@@ -1759,7 +1796,7 @@ class ScriptBase(object):
                     result['query'] = None
         try:
             (result['user'], result['host']) = \
-                    re.split('[\s@]+', result['host'])[:2]
+                re.split(r'[\s@]+', result['host'])[:2]
 
         except ValueError:
             # no problem then, host only exists
@@ -1769,7 +1806,7 @@ class ScriptBase(object):
         if result['user'] is not None:
             try:
                 (result['user'], result['password']) = \
-                        re.split('[:\s]+', result['user'])[:2]
+                    re.split(r'[:\s]+', result['user'])[:2]
 
             except ValueError:
                 # no problem then, user only exists
@@ -1796,7 +1833,7 @@ class ScriptBase(object):
 
         try:
             (result['host'], result['port']) = \
-                    re.split('[\s:]+', result['host'])[:2]
+                re.split(r'[\s:]+', result['host'])[:2]
 
         except ValueError:
             # no problem then, user only exists
@@ -1814,9 +1851,9 @@ class ScriptBase(object):
 
         # Re-assemble cleaned up version of the url
         result['url'] = '%s://' % result['schema']
-        if isinstance(result['user'], basestring):
+        if isinstance(result['user'], six.string_types):
             result['url'] += result['user']
-            if isinstance(result['password'], basestring):
+            if isinstance(result['password'], six.string_types):
                 result['url'] += ':%s@' % result['password']
             else:
                 result['url'] += '@'
@@ -2060,6 +2097,7 @@ class ScriptBase(object):
                 )
 
                 # Fetch from database first
+                # We return items as a list and not an iter
                 items = self.database.items()
 
             except EnvironmentError:
@@ -2076,18 +2114,24 @@ class ScriptBase(object):
             # Fetch from database first
             items = self.database.items()
 
+        # Convert our list to a dictionary temporarily to provide
+        # potential overrides
+        items = dict(items)
+
         if check_shared:
             # Shared values trump any database set ones
-            items = dict(items + self.shared.items()).items()
+            items.update(self.shared)
 
         # configuration trumps shared values
-        items = dict(items + self.config.items()).items()
+        items.update(self.config)
 
         if check_system:
             # system trumps all values
-            items = dict(items + self.system.items()).items()
+            items.update(self.system)
 
-        return items
+        # For Python 3 returns an iterator, for compatibility with
+        # Python 2, we want to convert this iterator back to a list
+        return [(k, v) for k, v in items.items()]
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # nzb_set() and nzb_get() wrappers
@@ -2208,7 +2252,7 @@ class ScriptBase(object):
                     # Convert boolean to integer (True to 1 or False to 0)
                     value = str(int(value))
 
-                elif not isinstance(value, basestring):
+                elif not isinstance(value, six.string_types):
                     value = str(value)
 
                 environ['%s%s%s' % (
@@ -2320,9 +2364,10 @@ class ScriptBase(object):
             items = self.database.items(category=Category.NZB)
 
         # configuration trumps shared values
-        items = dict(items + self.nzbheaders.items()).items()
+        items = dict(items)
+        items.update(self.nzbheaders)
 
-        return items
+        return [(x, v) for x, v in items.items()]
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Sanity
@@ -2357,24 +2402,23 @@ class ScriptBase(object):
 
         if keys:
             missing = []
-            if isinstance(keys, basestring):
+            if isinstance(keys, six.string_types):
                 keys = self.parse_list(keys)
 
-            missing = [
-                k for k in keys \
-                        if not (k.upper() in self.system \
-                             or k.upper() in self.config)
-            ]
+            missing = \
+                [k for k in keys if not (k.upper() in self.system
+                 or k.upper() in self.config)]
 
             if missing:
-                self.logger.error('Validation - Directives not set: %s' % \
-                      ', '.join(missing))
+                self.logger.error(
+                    'Validation - Directives not set: %s' %
+                    ', '.join(missing))
                 is_okay = False
 
         # We should fail if the temporary directory is not accessible
-        if not access(self.tempdir, (R_OK|W_OK|X_OK)):
+        if not access(self.tempdir, (R_OK | W_OK | X_OK)):
             self.logger.error(
-                'Validation - Temporary directory is not accessible %s' % \
+                'Validation - Temporary directory is not accessible %s' %
                 self.tempdir,
             )
             is_okay = False
@@ -2394,7 +2438,7 @@ class ScriptBase(object):
         # introduced in v11 (the minimum version we support)
         if self.script_mode not in (
                 SCRIPT_MODE.SABNZBD_POSTPROCESSING,
-                SCRIPT_MODE.NONE) and not 'SCRIPTDIR' in self.system:
+                SCRIPT_MODE.NONE) and 'SCRIPTDIR' not in self.system:
             self.logger.error(
                 'Validation - (<v11) Directive not set: %s' % 'SCRIPTDIR',
             )
@@ -2444,7 +2488,7 @@ class ScriptBase(object):
         if host == "0.0.0.0":
             host = "127.0.0.1"
 
-        #Build URL
+        # Build URL
         if secure is None:
             # Secure only works if the KeyFiles exist too
             # Otherwise, setting this to True means nothing
@@ -2474,7 +2518,7 @@ class ScriptBase(object):
         if user and password:
             xmlrpc_url += '%s:%s@' % (user, password)
 
-        xmlrpc_url += '%s:%s/xmlrpc' % ( \
+        xmlrpc_url += '%s:%s/xmlrpc' % (
             host,
             str(port),
         )
@@ -2486,7 +2530,7 @@ class ScriptBase(object):
         # Future TODO: make this an option for those who want to verify
         # the host.
         context = hasattr(ssl, '_create_unverified_context') \
-                and ssl._create_unverified_context() or None
+            and ssl._create_unverified_context() or None
 
         try:
             # Python >= 2.7.9
@@ -2555,23 +2599,22 @@ class ScriptBase(object):
             return []
 
         # Return a simple ordered list of strings
-        if oldest_first == True:
-            return list(reversed([ '%s - %s - %s' % (
-                datetime.fromtimestamp(int(entry['Time']))\
-                        .strftime('%Y-%m-%d %H:%M:%S'),
+        if oldest_first is True:
+            return list(reversed(['%s - %s - %s' % (
+                datetime.fromtimestamp(int(entry['Time']))
+                .strftime('%Y-%m-%d %H:%M:%S'),
                 entry['Kind'], entry['Text'].strip(),
-            ) for entry in logs ]))[:max_lines]
+            ) for entry in logs]))[:max_lines]
 
         # If we reach here, we are to return the contents
         # where the newest item is the first entry in
         # the list; under normal circumstances, this is the
         # order that the server automatically returns content in
-        return [ '%s - %s - %s' % (
-            datetime.fromtimestamp(int(entry['Time']))\
-                    .strftime('%Y-%m-%d %H:%M:%S'),
+        return ['%s - %s - %s' % (
+            datetime.fromtimestamp(int(entry['Time']))
+            .strftime('%Y-%m-%d %H:%M:%S'),
             entry['Kind'], entry['Text'].strip(),
-        ) for entry in logs ][max_lines:]
-
+        ) for entry in logs][max_lines:]
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     # Add NZB File to Queue
@@ -2639,14 +2682,15 @@ class ScriptBase(object):
             # Try to capture error
             exc_type, exc_value, exc_traceback = exc_info()
             lines = traceback.format_exception(
-                     exc_type, exc_value, exc_traceback)
+                exc_type, exc_value, exc_traceback)
             if self.script_mode != SCRIPT_MODE.NONE:
                 # NZBGet Mode enabled
                 for line in lines:
                     self.logger.error(line)
             else:
                 # Display error as is
-                self.logger.error('API:NZB-File append() Exception:\n%s' % \
+                self.logger.error(
+                    'API:NZB-File append() Exception:\n%s' %
                     ''.join('  ' + line for line in lines))
 
             return False
@@ -2670,10 +2714,10 @@ class ScriptBase(object):
         return core_function(*args, **kwargs)
 
     def _get_files(self, search_dir, regex_filter=None, prefix_filter=None,
-                    suffix_filter=None, fullstats=False,
+                   suffix_filter=None, fullstats=False,
                    followlinks=False, min_depth=None, max_depth=None,
-                  case_sensitive=False, skip_directories=SKIP_DIRECTORIES,
-                  *args, **kwargs):
+                   case_sensitive=False, skip_directories=SKIP_DIRECTORIES,
+                   *args, **kwargs):
         """Returns a dict object of the files found in the download
            directory. You can additionally pass in filters as a list or
            string) to filter the results returned.
@@ -2712,7 +2756,7 @@ class ScriptBase(object):
         if isinstance(search_dir, (list, tuple)):
             for _dir in search_dir:
                 # use recursion to build a master (unique) list
-                files = dict(files.items() + self._get_files(
+                files.update(self._get_files(
                     search_dir=_dir,
                     regex_filter=regex_filter,
                     prefix_filter=prefix_filter,
@@ -2725,27 +2769,27 @@ class ScriptBase(object):
                     skip_directories=skip_directories,
                     # Internal Current Directory Depth tracking
                     __current_depth=current_depth,
-                ).items())
+                ))
             return files
 
-        elif not isinstance(search_dir, basestring):
+        elif not isinstance(search_dir, six.string_types):
             # Unsupported
             return {}
 
         # Change all filters strings lists (if they aren't already)
         if regex_filter is None:
             regex_filter = tuple()
-        if isinstance(regex_filter, basestring):
+        if isinstance(regex_filter, six.string_types):
             regex_filter = (regex_filter,)
-        elif isinstance(regex_filter, re._pattern_type):
+        elif isinstance(regex_filter, re_pattern_type):
             regex_filter = (regex_filter,)
         if suffix_filter is None:
             suffix_filter = tuple()
-        if isinstance(suffix_filter, basestring):
+        if isinstance(suffix_filter, six.string_types):
             suffix_filter = (suffix_filter, )
         if prefix_filter is None:
             prefix_filter = tuple()
-        if isinstance(prefix_filter, basestring):
+        if isinstance(prefix_filter, six.string_types):
             prefix_filter = (prefix_filter, )
 
         # clean prefix list
@@ -2760,7 +2804,7 @@ class ScriptBase(object):
         if regex_filter:
             _filters = []
             for f in regex_filter:
-                if not isinstance(f, re._pattern_type):
+                if not isinstance(f, re_pattern_type):
                     flags = re.MULTILINE
                     if not case_sensitive:
                         flags |= re.IGNORECASE
@@ -2851,10 +2895,10 @@ class ScriptBase(object):
             # we fetch
             _file = {
                 search_dir: {
-                'basename': fname,
-                'dirname': dname,
-                'extension': splitext(basename(fname))[1].lower(),
-                'filename': splitext(basename(fname))[0],
+                    'basename': fname,
+                    'dirname': dname,
+                    'extension': splitext(basename(fname))[1].lower(),
+                    'filename': splitext(basename(fname))[0],
                 }
             }
             if fullstats:
@@ -2900,9 +2944,10 @@ class ScriptBase(object):
 
         try:
             # Get Directory entries
-            dirents = [ d for d in listdir(search_dir) \
-                      if d not in ('..', '.') ]
-        except OSError, e:
+            dirents = \
+                [d for d in listdir(search_dir) if d not in ('..', '.')]
+
+        except OSError as e:
             # Uh oh, we have no access to the directories
             self.logger.error('Could not access %s' % search_dir)
             self.logger.error('Reason %s' % str(e))
@@ -2912,10 +2957,6 @@ class ScriptBase(object):
             # Store Path
             fullpath = join(search_dir, dirent)
 
-            ## Iterate over entries and process the files
-            #for dname, dnames, fnames in walk(
-            #search_dir, followlinks=followlinks):
-
             if isdir(fullpath):
                 # Min and Max depth handling
                 if max_depth and max_depth < current_depth:
@@ -2924,7 +2965,7 @@ class ScriptBase(object):
                     continue
 
                 # Handle skip_directory directive
-                if (isinstance(skip_directories, list) and \
+                if (isinstance(skip_directories, list) and
                         dirent in skip_directories) or \
                         (skip_directories and dirent in SKIP_DIRECTORIES):
                     self.logger.vdebug(
@@ -2940,7 +2981,7 @@ class ScriptBase(object):
                     continue
 
                 # use recursion to build a master (unique) list
-                files = dict(files.items() + self._get_files(
+                files.update(self._get_files(
                     search_dir=fullpath,
                     regex_filter=regex_filter,
                     prefix_filter=prefix_filter,
@@ -2953,7 +2994,7 @@ class ScriptBase(object):
                     skip_directories=skip_directories,
                     # Internal Current Directory Depth tracking
                     __current_depth=current_depth,
-                ).items())
+                ))
                 continue
 
             elif not isfile(fullpath):
@@ -3023,19 +3064,19 @@ class ScriptBase(object):
                         datetime.fromtimestamp(stat_obj[ST_MTIME])
                 except ValueError:
                     files[fullpath]['modified'] = \
-                            datetime(1980, 1, 1, 0, 0, 0, 0)
+                        datetime(1980, 1, 1, 0, 0, 0, 0)
                 try:
                     files[fullpath]['accessed'] = \
                         datetime.fromtimestamp(stat_obj[ST_ATIME])
                 except ValueError:
                     files[fullpath]['accessed'] = \
-                            datetime(1980, 1, 1, 0, 0, 0, 0)
+                        datetime(1980, 1, 1, 0, 0, 0, 0)
                 try:
                     files[fullpath]['created'] = \
                         datetime.fromtimestamp(stat_obj[ST_CTIME])
                 except ValueError:
                     files[fullpath]['created'] = \
-                            datetime(1980, 1, 1, 0, 0, 0, 0)
+                        datetime(1980, 1, 1, 0, 0, 0, 0)
 
                 files[fullpath]['filesize'] = stat_obj[ST_SIZE]
         # Return all files
@@ -3078,19 +3119,20 @@ class ScriptBase(object):
             # Try to capture error
             exc_type, exc_value, exc_traceback = exc_info()
             lines = traceback.format_exception(
-                     exc_type, exc_value, exc_traceback)
+                exc_type, exc_value, exc_traceback)
             if self.script_mode != SCRIPT_MODE.NONE:
                 # NZBGet Mode enabled
                 for line in lines:
                     self.logger.error(line)
             else:
                 # Display error as is
-                self.logger.error('Fatal Exception:\n%s' % \
+                self.logger.error(
+                    'Fatal Exception:\n%s' %
                     ''.join('  ' + line for line in lines))
             exit_code = EXIT_CODE.FAILURE
 
         # Handle tidying of PID-File if it exists
-        if isinstance(self.pidfile, basestring):
+        if isinstance(self.pidfile, six.string_types):
             if self.is_unique_instance(die_on_fail=False, verbose=False):
                 # It is our PID-File; so do our cleanup
                 try:
@@ -3102,13 +3144,12 @@ class ScriptBase(object):
                         'Failed to remove PID-File: %s' % self.pidfile)
                     pass
 
-
         # If we reach here we call any mode_close() functions defined. allowing
         # our scripts to perform any cleanup if need be
         if len(self.script_dict.keys()):
-            for k in [ v for v in SCRIPT_MODES \
-                      if v in self.script_dict.keys() + [
-                              SCRIPT_MODE.CONFIG_ACTION, SCRIPT_MODE.NONE,]]:
+            for k in [v for v in SCRIPT_MODES
+                      if v in list(self.script_dict.keys()) + [
+                          SCRIPT_MODE.CONFIG_ACTION, SCRIPT_MODE.NONE]]:
                 if hasattr(self, '%s_%s' % (k, 'close')):
                     try:
                         # Execute our close() function we detected
@@ -3132,7 +3173,7 @@ class ScriptBase(object):
         # then simply swap it with the FAILURE one
         if exit_code not in EXIT_CODES:
             self.logger.error(
-                'The exit code %d is not valid, ' % exit_code + \
+                'The exit code %d is not valid, ' % exit_code +
                 'changing response to a failure (%d).' % (EXIT_CODE.FAILURE),
             )
             exit_code = EXIT_CODE.FAILURE
@@ -3145,8 +3186,7 @@ class ScriptBase(object):
                 exit_code = SHELL_EXIT_CODE_MAP[exit_code]
 
         # Perform Shell Translation if requird
-        self.logger.debug(
-           'Exiting with return code: %d' % exit_code)
+        self.logger.debug('Exiting with return code: %d' % exit_code)
         return exit_code
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -3175,12 +3215,12 @@ class ScriptBase(object):
 
         result = []
         for arg in args:
-            if isinstance(arg, basestring):
+            if isinstance(arg, six.string_types):
                 result += re.split(STRING_DELIMITERS, arg)
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(arg, basestring):
+                    if isinstance(arg, six.string_types):
                         result += re.split(STRING_DELIMITERS, arg)
                     # A list inside a list? - use recursion
                     elif isinstance(_arg, (list, tuple)):
@@ -3194,7 +3234,7 @@ class ScriptBase(object):
 
         # apply as well as make the list unique by converting it
         # to a set() first. filter() eliminates any empty entries
-        return filter(bool, list(set(result)))
+        return [x for x in filter(bool, list(set(result)))]
 
     def parse_path_list(self, *args):
         """
@@ -3224,27 +3264,24 @@ class ScriptBase(object):
             self._path_win_drive_re = re.compile(
                 r'[\s,\|]+([A-Za-z]):+(%s)%s*' % (
                     ESCAPED_WIN_PATH_SEPARATOR,
-                    ESCAPED_WIN_PATH_SEPARATOR,
-            ))
+                    ESCAPED_WIN_PATH_SEPARATOR))
 
             self._path_win_re = re.compile(
                 r'[%s]+[\s,\|]+([%s]{2}%s*|[^%s])' % (
                     ESCAPED_WIN_PATH_SEPARATOR,
                     ESCAPED_WIN_PATH_SEPARATOR,
                     ESCAPED_WIN_PATH_SEPARATOR,
-                    ESCAPED_WIN_PATH_SEPARATOR,
-            ))
+                    ESCAPED_WIN_PATH_SEPARATOR))
 
             self._path_winnw_re = re.compile(
                 r'[\s,\|]+(%s%s)%s*' % (
                     ESCAPED_WIN_PATH_SEPARATOR,
                     ESCAPED_WIN_PATH_SEPARATOR,
-                    ESCAPED_WIN_PATH_SEPARATOR,
-            ))
+                    ESCAPED_WIN_PATH_SEPARATOR))
 
         result = []
         for arg in args:
-            if isinstance(arg, basestring):
+            if isinstance(arg, six.string_types):
                 cleaned = self._path_delimiter_re.sub('|/', tidy_path(arg))
                 cleaned = self._path_win_re.sub('|\\1', cleaned)
                 cleaned = self._path_winnw_re.sub('|\\1', cleaned)
@@ -3253,11 +3290,13 @@ class ScriptBase(object):
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(_arg, basestring):
-                        cleaned = self._path_delimiter_re.sub('|', tidy_path(_arg))
+                    if isinstance(_arg, six.string_types):
+                        cleaned = \
+                            self._path_delimiter_re.sub('|', tidy_path(_arg))
                         cleaned = self._path_win_re.sub('|\\1', cleaned)
                         cleaned = self._path_winnw_re.sub('|\\1', cleaned)
-                        cleaned = self._path_win_drive_re.sub('|\\1:\\2', cleaned)
+                        cleaned = \
+                            self._path_win_drive_re.sub('|\\1:\\2', cleaned)
                         result += re.split('[,|]+', cleaned)
 
                     # A list inside a list? - use recursion
@@ -3272,7 +3311,8 @@ class ScriptBase(object):
 
         # apply as well as make the list unique by converting it
         # to a set() first. filter() eliminates any empty entries
-        return filter(bool, list(set([tidy_path(p) for p in result])))
+        return [x for x in filter(
+            bool, list(set([tidy_path(p) for p in result])))]
 
     def parse_regex(self, *args, **kwargs):
         """
@@ -3303,16 +3343,16 @@ class ScriptBase(object):
 
         result = []
         for arg in args:
-            if isinstance(arg, basestring):
+            if isinstance(arg, six.string_types):
                 result += delimiter.split(arg)
 
-            elif isinstance(arg, re._pattern_type):
+            elif isinstance(arg, re_pattern_type):
                 # Nothing further to do
                 result += arg
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(arg, basestring):
+                    if isinstance(arg, six.string_types):
                         result += delimiter.split(arg)
                     # A list inside a list? - use recursion
                     elif isinstance(_arg, (list, tuple)):
@@ -3327,7 +3367,7 @@ class ScriptBase(object):
         result = filter(bool, list(set(result)))
         results = []
         for f in result:
-            if isinstance(f, re._pattern_type):
+            if isinstance(f, re_pattern_type):
                 # We can just keep moving on with already compiled expressions
                 results.append(f)
                 continue
@@ -3336,19 +3376,19 @@ class ScriptBase(object):
             if simple:
                 # Convert content
                 # escape special characters reserved for regex
-                _f = f.replace('.', '\.');
-                _f = _f.replace('^', '\^');
-                _f = _f.replace('+', '\+');
-                _f = _f.replace('$', '\$');
-                _f = _f.replace('[', '\[');
-                _f = _f.replace(']', '\]');
-                _f = _f.replace('(', '\(');
-                _f = _f.replace(')', '\)');
-                _f = _f.replace('|', '\|');
+                _f = f.replace('.', '\\.')
+                _f = _f.replace('^', '\\^')
+                _f = _f.replace('+', '\\+')
+                _f = _f.replace('$', '\\$')
+                _f = _f.replace('[', '\\[')
+                _f = _f.replace(']', '\\]')
+                _f = _f.replace('(', '\\(')
+                _f = _f.replace(')', '\\)')
+                _f = _f.replace('|', '\\|')
                 # convert question marks
-                _f = _f.replace('?', '.');
+                _f = _f.replace('?', '.')
                 # convert asterix's in to .*
-                _f = _f.replace('*', '.*');
+                _f = _f.replace('*', '.*')
                 self.logger.vdebug(
                     'Built simple regex "%s" from "%s"' % (_f, f))
             else:
@@ -3358,14 +3398,14 @@ class ScriptBase(object):
                 results.append(re.compile(_f, flags=re.IGNORECASE))
                 self.logger.vdebug('Compiled regex "%s"' % _f)
 
-            except Exception as e:
+            except Exception:
                 self.logger.error(
                     'Invalid regular expression: "%s"' % f,
                 )
 
         # apply as well as make the list unique by converting it
         # to a set() first. filter() eliminates any empty entries
-        return filter(bool, list(set(results)))
+        return [x for x in filter(bool, list(set(results)))]
 
     def parse_bool(self, arg, default=False):
         """
@@ -3379,7 +3419,7 @@ class ScriptBase(object):
         returned.
         """
 
-        if isinstance(arg, basestring):
+        if isinstance(arg, six.string_types):
             # no = no - False
             # of = short for off - False
             # 0  = int for False
@@ -3389,7 +3429,8 @@ class ScriptBase(object):
             # ne  = short for Never - False
             # di  = short for Disable(d) - False
             # de  = short for Deny - False
-            if arg.lower()[0:2] in ('de', 'di', 'ne', 'f', 'n', 'no', 'of', '0', 'fa'):
+            if arg.lower()[0:2] in ('de', 'di', 'ne', 'f', 'n', 'no', 'of',
+                                    '0', 'fa'):
                 return False
             # ye = yes - True
             # on = short for off - True
@@ -3398,7 +3439,8 @@ class ScriptBase(object):
             # t  = short for True - True
             # al = short for Always (and Allow) - True
             # en  = short for Enable(d) - True
-            elif arg.lower()[0:2] in ('en', 'al', 't', 'y', 'ye', 'on', '1', 'tr'):
+            elif arg.lower()[0:2] in ('en', 'al', 't', 'y', 'ye', 'on', '1',
+                                      'tr'):
                 return True
             # otherwise
             return default
@@ -3427,11 +3469,11 @@ class ScriptBase(object):
             ))
 
             if not callable(self._config_action):
-                self.logger.debug('The internal script variable '\
+                self.logger.debug(
+                    'The internal script variable '
                     '%s is not a function (type=%s)' % (
                         (SCRIPT_MODE.CONFIG_ACTION, command()),
-                        type(self._config_action),
-                ))
+                        type(self._config_action)))
 
                 # Reset it's variable
                 self._config_action = None
@@ -3441,18 +3483,18 @@ class ScriptBase(object):
             return True
 
         elif hasattr(self, '%s_%s' % (
-            SCRIPT_MODE.CONFIG_ACTION, command.lower())):
+                SCRIPT_MODE.CONFIG_ACTION, command.lower())):
             self._config_action = getattr(self, '%s_%s' % (
                 SCRIPT_MODE.CONFIG_ACTION,
                 command.lower(),
             ))
 
             if not callable(self._config_action):
-                self.logger.debug('The internal script variable '\
+                self.logger.debug(
+                    'The internal script variable '
                     '%s is not a function (type=%s)' % (
                         (SCRIPT_MODE.CONFIG_ACTION, command.lower()),
-                        type(self._config_action),
-                ))
+                        type(self._config_action)))
                 # Reset it's variable
                 self._config_action = None
                 return False
@@ -3474,15 +3516,17 @@ class ScriptBase(object):
             self.script_mode = mode
 
         if self.script_mode is not None:
-            if self.script_mode in self.script_dict.keys() + [SCRIPT_MODE.NONE, ]:
+            if self.script_mode in list(self.script_dict.keys()) + \
+                    [SCRIPT_MODE.NONE, ]:
                 return self.script_mode
 
         # If we reach here, self.script_mode is invalid and/or is not
         # set; we need to detect it's value
         if len(self.script_dict.keys()):
-            for k in [ v for v in SCRIPT_MODES \
-                      if v in self.script_dict.keys() + [
-                              SCRIPT_MODE.CONFIG_ACTION, SCRIPT_MODE.NONE,]]:
+            for k in [v for v in SCRIPT_MODES
+                      if v in list(self.script_dict.keys()) + [
+                          SCRIPT_MODE.CONFIG_ACTION, SCRIPT_MODE.NONE, ]]:
+
                 if hasattr(self, '%s_%s' % (k, 'sanity_check')):
                     if getattr(self, '%s_%s' % (k, 'sanity_check'))():
                         self.script_mode = k
@@ -3506,11 +3550,10 @@ class ScriptBase(object):
         #  - feed_signal_quit()
         #
         # otherwise we go ahead and gracefully exit
-        exit_code = 1
         if hasattr(self, '%s_%s' % (self.script_mode, 'signal_quit')):
             signal_function = getattr(
                 self, '%s_%s' % (self.script_mode, 'signal_quit'))
-            exit_code = signal_function(*args, **kwargs)
+            signal_function()
 
         self.logger.info('Quit Signal Received; Exiting.')
         self.logger.debug('%d Signal Received.' % signum)

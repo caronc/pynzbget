@@ -35,15 +35,19 @@ from nzbget.ScriptBase import Health
 
 from nzbget.PostProcessScript import PostProcessScript
 from nzbget.PostProcessScript import POSTPROC_ENVIRO_ID
-from nzbget.PostProcessScript import SCRIPT_STATUS
+from nzbget.PostProcessCommon import SCRIPT_STATUS
 from nzbget.PostProcessScript import TOTAL_STATUS
 from nzbget.PostProcessScript import PAR_STATUS
 from nzbget.PostProcessScript import UNPACK_STATUS
 
 from nzbget.Logger import VERY_VERBOSE_DEBUG
 
-
-import StringIO
+try:
+    # Python v2.7
+    from StringIO import StringIO
+except ImportError:
+    # Python v3.x
+    from io import StringIO
 
 from shutil import rmtree
 
@@ -438,7 +442,7 @@ class TestPostProcessScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_directory(directory)
 
         # extract data
@@ -464,7 +468,7 @@ class TestPostProcessScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_directory(directory, final=True)
 
         # extract data
@@ -493,7 +497,7 @@ class TestPostProcessScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push(KEY, VALUE)
 
         # extract data
@@ -611,26 +615,28 @@ class TestPostProcessScript(TestBase):
         script = PostProcessScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         files = script.get_files(search_dir=SEARCH_DIR)
         assert len(files) == 6
-        assert 'basename' in files[files.keys()[0]]
-        assert 'dirname' in files[files.keys()[0]]
-        assert 'extension' in files[files.keys()[0]]
-        assert 'filesize' not in files[files.keys()[0]]
-        assert 'modified' not in files[files.keys()[0]]
-        assert 'accessed' not in files[files.keys()[0]]
-        assert 'created' not in files[files.keys()[0]]
+        index = [x for x in files.keys()][0]
+        assert 'basename' in files[index]
+        assert 'dirname' in files[index]
+        assert 'extension' in files[index]
+        assert 'filesize' not in files[index]
+        assert 'modified' not in files[index]
+        assert 'accessed' not in files[index]
+        assert 'created' not in files[index]
 
         files = script.get_files(
             fullstats=True,
             search_dir=SEARCH_DIR,
         )
         assert len(files) == 6
-        assert 'basename' in files[files.keys()[0]]
-        assert 'dirname' in files[files.keys()[0]]
-        assert 'extension' in files[files.keys()[0]]
-        assert 'filesize' in files[files.keys()[0]]
-        assert 'modified' in files[files.keys()[0]]
-        assert 'accessed' in files[files.keys()[0]]
-        assert 'created' in files[files.keys()[0]]
+        index = [x for x in files.keys()][0]
+        assert 'basename' in files[index]
+        assert 'dirname' in files[index]
+        assert 'extension' in files[index]
+        assert 'filesize' in files[index]
+        assert 'modified' in files[index]
+        assert 'accessed' in files[index]
+        assert 'created' in files[index]
 
         # Test Filters (as strings)
         files = script.get_files(
@@ -892,7 +898,7 @@ class TestPostProcessScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_guess(guess_dict)
 
         # extract data
@@ -902,8 +908,9 @@ class TestPostProcessScript(TestBase):
         # return stdout back to how it was
         sys.stdout = stdout
 
-        guess_keys = guess_dict.keys()
+        guess_keys = [x for x in guess_dict.keys()]
         guess_keys.remove('BadEntry')
+
         cmp_output = ['%s%s%s%s=%s' % (
             NZBGET_MSG_PREFIX,
             PUSH_ENVIRO_ID,

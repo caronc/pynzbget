@@ -148,6 +148,7 @@ from os import environ
 from .ScriptBase import ScriptBase
 from .ScriptBase import NZBGET_BOOL_FALSE
 from .ScriptBase import SCRIPT_MODE
+from .PostProcessScript import POSTPROC_ENVIRO_ID
 
 # Environment variable that prefixes all NZBGET options being passed into
 # scripts with respect to the NZB-File (used in Feed Scripts)
@@ -156,6 +157,7 @@ FEEDID_ENVIRO_ID = 'FEEDID'
 
 # Precompile Regulare Expression for Speed
 FEED_OPTS_RE = re.compile('^%s([A-Z0-9_]+)$' % FEED_ENVIRO_ID)
+
 
 class FeedScript(ScriptBase):
 
@@ -184,8 +186,9 @@ class FeedScript(ScriptBase):
         filename = kwargs.get('filename')
 
         # Fetch/Load Feed Script Configuration
-        script_config = dict([(FEED_OPTS_RE.match(k).group(1), v.strip()) \
-               for (k, v) in environ.items() if FEED_OPTS_RE.match(k)])
+        script_config = \
+            dict([(FEED_OPTS_RE.match(k).group(1), v.strip())
+                 for (k, v) in environ.items() if FEED_OPTS_RE.match(k)])
 
         if self.vvdebug:
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -195,7 +198,8 @@ class FeedScript(ScriptBase):
                 self.logger.vvdebug('%s%s=%s' % (FEED_ENVIRO_ID, k, v))
 
         # Merge Script Configuration With System Config
-        self.system = dict(script_config.items() + self.system.items())
+        script_config.update(self.system)
+        self.system = script_config
 
         # self.feedid
         # This is the Feed Identifier passed in from NZBGet
@@ -267,8 +271,8 @@ class FeedScript(ScriptBase):
         if found_opts != required_opts:
             missing_opts = list(required_opts ^ found_opts)
             self.logger.error(
-                'Validation - (v11) Directives not set: %s' % \
-                  missing_opts.join(', ')
+                'Validation - (v11) Directives not set: %s' %
+                missing_opts.join(', ')
             )
             is_okay = False
 
@@ -280,7 +284,6 @@ class FeedScript(ScriptBase):
     def feed_sanity_check(self, *args, **kargs):
         """Sanity checking to ensure this really is a post_process script
         """
-        from PostProcessScript import POSTPROC_ENVIRO_ID
         return ('%sDIRECTORY' % POSTPROC_ENVIRO_ID not in environ) and \
                ('%sFEEDID' % FEED_ENVIRO_ID in environ)
 
@@ -321,5 +324,5 @@ class FeedScript(ScriptBase):
         ))
 
         # Fetch Feed related content
-        return dict([(feed_re.match(k).group(1), v.strip()) \
-            for (k, v) in environ.items() if feed_re.match(k)])
+        return dict([(feed_re.match(k).group(1), v.strip())
+                    for (k, v) in environ.items() if feed_re.match(k)])

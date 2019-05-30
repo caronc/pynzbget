@@ -63,7 +63,6 @@ class TestPostProcessScript(TestBase):
         class TestDualScript(PostProcessScript, SchedulerScript):
             pass
 
-        print os.environ.keys()
         # No environment variables make us unsure what we're testing
         script = TestDualScript(logger=False, debug=VERY_VERBOSE_DEBUG)
         assert script.detect_mode() == SCRIPT_MODE.NONE
@@ -330,6 +329,7 @@ class TestPostProcessScript(TestBase):
 
             def scheduler_main(self, *args, **kwargs):
                 return False
+
         script = TestDualScript(
             logger=False, debug=VERY_VERBOSE_DEBUG,
             script_mode=SCRIPT_MODE.POSTPROCESSING,

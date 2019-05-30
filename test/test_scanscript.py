@@ -32,7 +32,12 @@ from nzbget.ScanScript import PRIORITY
 
 from nzbget.Logger import VERY_VERBOSE_DEBUG
 
-import StringIO
+try:
+    # Python v2.7
+    from StringIO import StringIO
+except ImportError:
+    # Python v3.x
+    from io import StringIO
 
 # Some constants to work with
 DIRECTORY = TEMP_DIRECTORY
@@ -226,7 +231,7 @@ class TestScanScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_nzbname(nzbname)
 
         # extract data
@@ -252,7 +257,7 @@ class TestScanScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_category(category)
 
         # extract data
@@ -278,7 +283,7 @@ class TestScanScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_priority(priority)
 
         # extract data
@@ -304,7 +309,7 @@ class TestScanScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_top(top)
 
         # extract data
@@ -330,7 +335,7 @@ class TestScanScript(TestBase):
 
         # Keep a handle on the real standard output
         stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         script.push_paused(paused)
 
         # extract data

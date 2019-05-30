@@ -38,7 +38,10 @@ class TestBase(object):
             rmtree(TEMP_DIRECTORY)
         except:
             pass
-        makedirs(TEMP_DIRECTORY, 0700)
+        makedirs(TEMP_DIRECTORY, 0o700)
+
+        # Ensure we're residing in this directory
+        os.chdir(TEMP_DIRECTORY)
 
     def teardown_method(self):
         """This method is run once after _each_ test method is executed"""
