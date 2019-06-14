@@ -2,7 +2,7 @@
 #
 # simplify importing of comonly used modules
 #
-# Copyright (C) 2014-2017 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2014-2019 Chris Caron <lead2gold@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by
@@ -15,10 +15,10 @@
 # GNU Lesser General Public License for more details.
 #
 __title__ = 'pynzbget'
-__version__ = '0.6.2'
+__version__ = '0.6.3'
 __author__ = 'Chris Caron <lead2gold@gmail.com>'
 __license__ = 'GPLv3'
-__copywrite__ = 'Copyright 2014-2017 Chris Caron <lead2gold@gmail.com>'
+__copywrite__ = 'Copyright 2014-2019 Chris Caron <lead2gold@gmail.com>'
 
 from .ScriptBase import *
 from .SchedulerScript import *
