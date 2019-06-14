@@ -30,7 +30,7 @@ sdist/
 *.spec
 
 # Allow RPM SPEC files despite pyInstaller ignore
-!packaging/redhat/*.spec
+!packaging/*.spec
 
 # Installer logs
 pip-log.txt
