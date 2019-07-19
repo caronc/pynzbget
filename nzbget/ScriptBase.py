@@ -2516,7 +2516,7 @@ class ScriptBase(object):
             password = self.get('ControlPassword', '')
 
         if user and password:
-            xmlrpc_url += '%s:%s@' % (user, password)
+            xmlrpc_url += '%s:%s@' % (quote(user), quote(password))
 
         xmlrpc_url += '%s:%s/xmlrpc' % (
             host,
@@ -2562,7 +2562,7 @@ class ScriptBase(object):
             except TypeError:
                 # One last try for the Python 2.6 users to Python v2.7.4
                 try:
-                    ServerProxy(xmlrpc_url)
+                    self.api = ServerProxy(xmlrpc_url)
 
                 except Exception as e:
                     self.logger.debug(
