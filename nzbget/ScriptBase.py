@@ -2534,20 +2534,14 @@ class ScriptBase(object):
 
         try:
             # Python >= 2.7.9
-            try:
-                self.api = ServerProxy(
-                    xmlrpc_url,
-                    verbose=False,
-                    use_datetime=True,
-                    context=context,
-                )
-            except Exception as e:
-                self.logger.debug(
-                    'API connection failed @ %s' % xmlrpc_url)
-                self.logger.debug('Failure Reason: %s' % str(e))
-                return False
+            self.api = ServerProxy(
+                xmlrpc_url,
+                verbose=False,
+                use_datetime=True,
+                context=context,
+            )
 
-        except AttributeError:
+        except TypeError:
             # Python < 2.7.9
             try:
                 self.api = ServerProxy(
