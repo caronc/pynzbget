@@ -826,6 +826,8 @@ class ScriptBase(object):
         # API by default is not configured; it is set up when a call to
         # an api function is made.
         self.api = None
+        # Track our xml_rpc_url
+        self._xmlrpc_url = ''
 
         # Acquire our PID
         self.pid = getpid()
@@ -2483,7 +2485,7 @@ class ScriptBase(object):
 
         # if we reach here, we have enough data to build an RCP connection
         if host is None:
-            host = self.system.get('ControlIP', '127.0.0.1')
+            host = self.get('ControlIP', '127.0.0.1')
 
         if host == "0.0.0.0":
             host = "127.0.0.1"
@@ -2572,6 +2574,8 @@ class ScriptBase(object):
 
             self.logger.debug('API connected @ %s' % xmlrpc_url)
 
+        # Set xmlrpc_url
+        self._xmlrpc_url = xmlrpc_url
         return True
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -2643,12 +2647,11 @@ class ScriptBase(object):
 
             try:
                 content = f.read()
-
+                f.close()
             except:
                 self.logger.debug('API:NZB-File Could not read: %s' % filename)
+                f.close()
                 return False
-
-            f.close()
 
         elif not category:
             # We have content already loaded; We need to convert it into an
@@ -2657,7 +2660,12 @@ class ScriptBase(object):
             category = unescape_xml(meta.get('CATEGORY', '').strip())
 
         # Encode content
-        b64content = standard_b64encode(content)
+        try:
+            # Python 2.x
+            b64content = standard_b64encode(content)
+        except TypeError:
+            # Python 3.x
+            b64content = standard_b64encode(content.encode('utf-8'))
 
         try:
             return self.api.append(
@@ -2671,6 +2679,12 @@ class ScriptBase(object):
                 dup_score,
                 dup_mode,
             )
+
+        except ConnectionRefusedError:
+            self.logger.error(
+                'API:NZB-File could not establish a '
+                'connection to %s.' % str(self._xmlrpc_url))
+            return False
 
         except:
             # Try to capture error
