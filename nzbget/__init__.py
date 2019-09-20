@@ -15,7 +15,7 @@
 # GNU Lesser General Public License for more details.
 #
 __title__ = 'pynzbget'
-__version__ = '0.6.3'
+__version__ = '0.6.4'
 __author__ = 'Chris Caron <lead2gold@gmail.com>'
 __license__ = 'GPLv3'
 __copywrite__ = 'Copyright 2014-2019 Chris Caron <lead2gold@gmail.com>'

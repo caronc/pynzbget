@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 install_requires = open('requirements.txt').readlines()
 setup(
     name='pynzbget',
-    version='0.6.3',
+    version='0.6.4',
     description="Provides a framework for NZBGet and SABnzbd script"
                 "development.",
     license='GPLv3',

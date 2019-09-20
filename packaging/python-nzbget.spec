@@ -47,7 +47,7 @@
 A python wrapper to simplify the handling of NZBGet and SABnzbd Scripts}
 
 Name:           python-%{pkg_name}
-Version:        0.6.3
+Version:        0.6.4
 Release:        1%{?dist}
 Summary:        Simplify the development and deployment of NZBGet and SABnzbd scripts
 License:        GPLv3
@@ -160,5 +160,7 @@ PYTHONPATH=%{buildroot}%{python3_sitelib} py.test-%{python3_version}
 %endif # with_python3
 
 %changelog
+* Fri Sep 20 2019 Chris Caron <lead2gold@gmail.com> - 0.6.4-1
+- Updated to v0.6.4
 * Fri Jun 14 2019 Chris Caron <lead2gold@gmail.com> - 0.6.3-1
 - Initial release of v0.6.3
