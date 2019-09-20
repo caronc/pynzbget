@@ -2665,7 +2665,8 @@ class ScriptBase(object):
             b64content = standard_b64encode(content)
         except TypeError:
             # Python 3.x
-            b64content = standard_b64encode(content.encode('utf-8'))
+            b64content = standard_b64encode(
+                content.encode('utf-8')).decode('utf-8')
 
         try:
             return self.api.append(
