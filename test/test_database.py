@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for an SQLite 3 wrapper Class written for NZBGet
 #
@@ -40,7 +39,7 @@ class TestDatabase(TestBase):
             pass
 
         # common
-        super(TestDatabase, self).teardown_method()
+        super().teardown_method()
 
     def test_schema_init(self):
 

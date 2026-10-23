@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A simple SQLite (3) Database wrapper for shared NZBGet transactions
 #
@@ -31,7 +30,6 @@ cpu power by just sharing your results in advance.
 """
 import sqlite3
 import re
-import six
 from datetime import datetime
 from datetime import timedelta
 from os.path import isfile
@@ -85,18 +83,18 @@ NZBGET_SCHEMA = {
 # Define just table names here that were fully declared above in
 # the schema
 NZBGET_SCHEMA_TABLES = (
-   u'lookup',
-   u'keystore',
+   'lookup',
+   'keystore',
 )
 
 # Categories allow us to further partition our keystore hash table
 # into groups for others subsections to use without stepping on
 # each other.
-class Category(object):
+class Category:
     # General Script Configuration
-    CONFIG = u'config'
+    CONFIG = 'config'
     # NZB/NZBD Defined Variables
-    NZB = u'nzb'
+    NZB = 'nzb'
 
 CATEGORIES = [ Category.CONFIG, Category.NZB, ]
 DEFAULT_CATEGORY = Category.CONFIG
@@ -104,7 +102,7 @@ DEFAULT_CATEGORY = Category.CONFIG
 # keys should not be complicated... make it so they aren't
 VALID_KEY_RE = re.compile('[^a-zA-Z0-9_.-]')
 
-class Database(object):
+class Database:
     def __init__(self, container, database, reset=False,
                  logger=True, debug=False):
         """Initializes the database if it isn't already prepared,
@@ -131,7 +129,7 @@ class Database(object):
         self.logger = logger
         self.debug = debug
 
-        if isinstance(self.logger, six.string_types):
+        if isinstance(self.logger, str):
             # Use Log File
             self.logger = init_logger(
                 name=self.logger_id,
@@ -164,13 +162,13 @@ class Database(object):
 
         # Connect to Database
         if not self.connect():
-            raise EnvironmentError('Could not access database.')
+            raise OSError('Could not access database.')
 
         if not self._schema_okay():
             # fail-safe
             self._reset()
             if not self._schema_okay():
-                raise EnvironmentError('Could not prepare database.')
+                raise OSError('Could not prepare database.')
 
         # Keep content clean
         # self.prune()
@@ -230,7 +228,7 @@ class Database(object):
             return False
 
         try:
-            self.socket = sqlite3.connect(self.database, 20)
+            self.socket = sqlite3.connect(self.database, timeout=20)
             self.logger.debug(
                 'Opened connection to SQLite Database: %s' % \
                 self.database,

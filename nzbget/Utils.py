@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # Some common utilities that may prove useful when processing downloads
 #
@@ -17,12 +16,7 @@
 import re
 from os.path import expanduser
 
-try:
-    from xml.sax.saxutils import unescape
-    SAX_UNESCAPE = True
-except ImportError:
-    SAX_UNESCAPE = False
-    from HTMLParser import HTMLParser
+from xml.sax.saxutils import unescape
 
 # Pre-Escape content since we reference it so much
 ESCAPED_PATH_SEPARATOR = re.escape('\\/')
@@ -110,6 +104,4 @@ def unescape_xml(content):
     Escapes XML content into it's regular string value
     """
 
-    if SAX_UNESCAPE:
-        return unescape(content)
-    return HTMLParser().unescape(content)
+    return unescape(content)

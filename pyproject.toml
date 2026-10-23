@@ -46,9 +46,6 @@ keywords = [
 ]
 
 dependencies = [
-    # Python 2/3 helpers the library is built on
-    "six",
-
     # Faster NZB-File parsing; pynzbget falls back to Python's own
     # xml.etree when it's missing
     "lxml",
@@ -114,10 +111,13 @@ select = [
     "E",    # pycodestyle errors
     "F",    # pyflakes
     "W",    # pycodestyle warnings
+    "UP",   # pyupgrade (keeps Python 2 leftovers out)
 ]
 ignore = [
     "E722",  # bare except; used on purpose across the older code
     "E741",  # short variable names such as l
+    "UP031", # '%' formatting is used throughout; not worth rewriting
+    "UP032", # same for .format()
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for NZBGet's Feed Scripting
 #
@@ -176,7 +175,7 @@ class FeedScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        super(FeedScript, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def feed_init(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -257,7 +256,7 @@ class FeedScript(ScriptBase):
     def feed_validate(self, keys=None, min_version=11, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(FeedScript, self)._validate(
+        is_okay = super()._validate(
             keys=keys,
             min_version=min_version,
         )

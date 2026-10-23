@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for NZBGet's Scheduler Scripting
 #
@@ -172,7 +171,7 @@ class SchedulerScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        super(SchedulerScript, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def scheduler_init(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -239,7 +238,7 @@ class SchedulerScript(ScriptBase):
     def scheduler_validate(self, keys=None, min_version=11, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(SchedulerScript, self)._validate(
+        is_okay = super()._validate(
             keys=keys,
             min_version=min_version,
         )

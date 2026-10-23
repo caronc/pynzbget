@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A base testing class/library to help set some common testing vars
 #
@@ -31,7 +30,7 @@ TEMP_DIRECTORY = join(
 )
 
 
-class TestBase(object):
+class TestBase:
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
         try:

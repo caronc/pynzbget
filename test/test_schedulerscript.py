@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the SchedulerScript Class
 #
@@ -36,7 +35,7 @@ TASK_TIME = '00:00,00:15'
 class TestSchedulerScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestSchedulerScript, self).setup_method()
+        super().setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -56,7 +55,7 @@ class TestSchedulerScript(TestBase):
             SCHEDULER_ENVIRO_ID, TASK_ENVIRO_ID, TASKID)]
 
         # common
-        super(TestSchedulerScript, self).teardown_method()
+        super().teardown_method()
 
     def test_environment_varable_init(self):
         """

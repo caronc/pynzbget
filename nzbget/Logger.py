@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for NZBGet Post and Pre Processing
 #
@@ -19,7 +18,6 @@ This class simplifies the setup of the logging to screen or file. It was
 written to simplify the logging to and from an NZBGet Script
 """
 import sys
-import six
 import logging
 import logging.handlers
 from logging import Logger
@@ -65,7 +63,7 @@ def destroy_logger(name=None):
 
     if isinstance(name, Logger):
         logger = name
-    elif isinstance(name, six.string_types):
+    elif isinstance(name, str):
         logger = logging.getLogger(name)
     else:
         # not supported
@@ -160,7 +158,7 @@ def init_logger(name=None, logger=True, debug=False, nzbget_mode=True,
         # no logging handler nessisary
         return _logger
 
-    elif isinstance(logger, six.string_types):
+    elif isinstance(logger, str):
         # prepare rotating handler using the log file specified
         if not daily:
             h1 = logging.handlers.RotatingFileHandler(

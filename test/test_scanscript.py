@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the ScanScript Class
 #
@@ -32,12 +31,7 @@ from nzbget.ScanScript import PRIORITY
 
 from nzbget.Logger import VERY_VERBOSE_DEBUG
 
-try:
-    # Python v2.7
-    from StringIO import StringIO
-except ImportError:
-    # Python v3.x
-    from io import StringIO
+from io import StringIO
 
 # Some constants to work with
 DIRECTORY = TEMP_DIRECTORY
@@ -52,7 +46,7 @@ PAUSED = False
 class TestScanScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestScanScript, self).setup_method()
+        super().setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -77,7 +71,7 @@ class TestScanScript(TestBase):
         del os.environ['%sPAUSED' % SCAN_ENVIRO_ID]
 
         # common
-        super(TestScanScript, self).teardown_method()
+        super().teardown_method()
 
     def test_environment_varable_init(self):
         """

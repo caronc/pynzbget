@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the PostProcessScript Class
 #
@@ -42,12 +41,7 @@ from nzbget.PostProcessScript import UNPACK_STATUS
 
 from nzbget.Logger import VERY_VERBOSE_DEBUG
 
-try:
-    # Python v2.7
-    from StringIO import StringIO
-except ImportError:
-    # Python v3.x
-    from io import StringIO
+from io import StringIO
 
 from shutil import rmtree
 
@@ -74,7 +68,7 @@ SCRIPTDIR = join(TEMP_DIRECTORY, 'scripts')
 class TestPostProcessScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestPostProcessScript, self).setup_method()
+        super().setup_method()
 
         # Create NZBFILE
         _f = open(NZBFILENAME, 'w')
@@ -217,7 +211,7 @@ class TestPostProcessScript(TestBase):
             pass
 
         # common
-        super(TestPostProcessScript, self).teardown_method()
+        super().teardown_method()
 
     def test_main_returns(self):
         # a NZB Logger set to False uses stderr

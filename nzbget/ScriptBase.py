@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A base scripting class for NZBGet
 #
@@ -132,7 +131,6 @@ Additionally all exception handling is wrapped to make debugging easier.
 """
 
 import re
-import six
 from tempfile import gettempdir
 from tempfile import mkstemp
 from platform import system as p_system
@@ -189,51 +187,28 @@ from stat import ST_SIZE
 
 from os import stat
 from base64 import standard_b64encode
+from urllib.parse import unquote
+from urllib.parse import quote
+from urllib.parse import parse_qsl
+from urllib.parse import urlparse
+from xmlrpc.client import ServerProxy
 
-try:
-    # Python v2.7 -> v3.6
-    re_pattern_type = re._pattern_type
-
-except AttributeError:
-    # Python v3.7+
-    re_pattern_type = re.Pattern
+re_pattern_type = re.Pattern
 
 # Initialize the default character set to use
-DEFAULT_CHARSET = u'utf-8'
+DEFAULT_CHARSET = 'utf-8'
 
-# NZB Processing Support if lxml is installed
-LXML_TYPE = None
+# NZB-File parsing uses lxml when it's installed (it's faster), otherwise
+# Python's own xml.etree
 try:
     from lxml import etree
     from lxml.etree import XMLSyntaxError
-    LXML_TYPE = u'lxml.etree'
+    LXML_TYPE = 'lxml.etree'
+
 except ImportError:
-    try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
-        XMLSyntaxError = Exception
-        LXML_TYPE = u'xml.etree.cElementTree'
-    except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.ElementTree as etree
-            XMLSyntaxError = Exception
-            LXML_TYPE = u'xml.etree.ElementTree'
-        except ImportError:
-            try:
-                # normal cElementTree install
-                import cElementTree as etree
-                XMLSyntaxError = Exception
-                LXML_TYPE = u'cElementTree'
-            except ImportError:
-                try:
-                    # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                    XMLSyntaxError = Exception
-                    LXML_TYPE = u'elementtree.ElementTree'
-                except ImportError:
-                    # No panic, we just can't use nzbfile parsing
-                    pass
+    import xml.etree.ElementTree as etree
+    XMLSyntaxError = etree.ParseError
+    LXML_TYPE = 'xml.etree.ElementTree'
 
 # Database Support if sqllite is installed
 try:
@@ -243,31 +218,9 @@ except ImportError:
     # No panic, we just can't use database
     pass
 
-try:
-    # Python 2.7
-    from urllib import unquote
-    from urllib import quote
-    from urlparse import parse_qsl
-    from urlparse import urlparse
-
-except ImportError:
-    # Python 3.x
-    from urllib.parse import unquote
-    from urllib.parse import quote
-    from urllib.parse import parse_qsl
-    from urllib.parse import urlparse
-
-try:
-    # Python 2
-    from xmlrpclib import ServerProxy
-    from xmlrpclib import SafeTransport
-except ImportError:
-    # Python 3
-    from xmlrpc.client import ServerProxy
-
 # Some booleans that are read to and from nzbget
-NZBGET_BOOL_TRUE = u'yes'
-NZBGET_BOOL_FALSE = u'no'
+NZBGET_BOOL_TRUE = 'yes'
+NZBGET_BOOL_FALSE = 'no'
 
 # The following directories will never be recursively looked
 # into when using get_files()
@@ -279,13 +232,13 @@ SKIP_DIRECTORIES = (
 )
 
 
-class SCRIPT_MODE(object):
+class SCRIPT_MODE:
     # After the download of nzb-file is completed NZBGet can call
     # post-processing scripts (pp-scripts). The scripts can perform further
     # processing of downloaded files such es delete unwanted files
     # (*.url, etc.), send an e-mail notification, transfer the files to other
     # application and do any other things.
-    POSTPROCESSING = u'postprocess'
+    POSTPROCESSING = 'postprocess'
 
     # Scan scripts are called when a new file is found in the incoming nzb
     # directory (option `NzbDir`). If a file is being added via web-interface
@@ -297,7 +250,7 @@ class SCRIPT_MODE(object):
 
     # To activate a scan script or multiple scripts put them into `ScriptDir`,
     # then choose them in the option `ScanScript`.
-    SCAN = u'scan'
+    SCAN = 'scan'
 
     # Queue scripts are called after the download queue was changed. In the
     # current version the queue scripts are called only after an nzb-file was
@@ -305,26 +258,26 @@ class SCRIPT_MODE(object):
 
     # To activate a queue script or multiple scripts put them into `ScriptDir`,
     # then choose them in the option `QueueScript`.
-    QUEUE = u'queue'
+    QUEUE = 'queue'
 
     # Scheduler scripts are called by scheduler tasks (setup by the user).
 
     # To activate a scheduler script or multiple scripts put them into
     # `ScriptDir`, then choose them in the option `TaskX.Script`.
-    SCHEDULER = u'scheduler'
+    SCHEDULER = 'scheduler'
 
     # To activate a feed script or multiple scripts put them into
     # `ScriptDir`, then choose them in the option `FeedX.Script`.
-    FEED = u'feed'
+    FEED = 'feed'
 
     # To activate a test call to the script, we look for NZBCP_
     # entries. These are populated through calls made available thorugh the
     # configuration portion of NZBGet. v1.8 introduced the ability to
     # test if your configuration is set up okay.
-    CONFIG_ACTION = u'action'
+    CONFIG_ACTION = 'action'
 
     # SABnzbd Support
-    SABNZBD_POSTPROCESSING = u'sabnzbd_postprocess'
+    SABNZBD_POSTPROCESSING = 'sabnzbd_postprocess'
 
     # None is detected if you aren't using one of the above types
     NONE = 'shell'
@@ -351,7 +304,7 @@ SCRIPT_MODES = (
 )
 
 
-class EXIT_CODE(object):
+class EXIT_CODE:
     """List of exit codes for post processing
     """
     PARCHECK_CURRENT = 91
@@ -368,7 +321,7 @@ class EXIT_CODE(object):
     NONE = 95
 
 
-class SHELL_EXIT_CODE(object):
+class SHELL_EXIT_CODE:
     """List of exit codes for shell execution
     """
     # Action successful
@@ -415,12 +368,12 @@ COMMON_MODES = (
 )
 
 
-class NZBGetDuplicateMode(object):
+class NZBGetDuplicateMode:
     """Defines Duplicate Mode. This is used when Adding NZB-Files directly
     """
     # This is default duplicate mode. Only nzb-files with higher scores
     # (when already downloaded) are considered.
-    SCORE = u'SCORE'
+    SCORE = 'SCORE'
 
     # All NZB-Files regardless of their scores are downloaded
     ALL = 'ALL'
@@ -466,17 +419,17 @@ class Health(tuple):
     """
 
     # Define Main Categories
-    SUCCESS = u'SUCCESS'
-    WARNING = u'WARNING'
-    FAILURE = u'FAILURE'
-    DELETED = u'DELETED'
+    SUCCESS = 'SUCCESS'
+    WARNING = 'WARNING'
+    FAILURE = 'FAILURE'
+    DELETED = 'DELETED'
 
     # This gets set if the category was not correctly defined (or wasn't
     # defined at all)
-    UNDEFINED = u'UNDEFINED'
+    UNDEFINED = 'UNDEFINED'
 
     # Default Sub Category if one isn't matched
-    DEFAULT_SUB = u'DEFAULT'
+    DEFAULT_SUB = 'DEFAULT'
 
     # Define Category Map
     # has_archive: The original archive files are still present such as
@@ -488,95 +441,95 @@ class Health(tuple):
         UNDEFINED: {
             # Assume debug mode because we aren't processing correct
             # values from environment
-            DEFAULT_SUB: {u'has_archive': True, u'is_unpacked': True, },
+            DEFAULT_SUB: {'has_archive': True, 'is_unpacked': True, },
         },
         SUCCESS: {
-            DEFAULT_SUB: {u'has_archive': False, u'is_unpacked': True, },
+            DEFAULT_SUB: {'has_archive': False, 'is_unpacked': True, },
             # Downloaded and par-checked or unpacked successfully. All
             # post-processing scripts were successful. The download is
             # completely OK.
-            u'ALL': {},  # Use all defaults
+            'ALL': {},  # Use all defaults
             # The download was marked as good using mark(Mark.GOOD)
-            u'GOOD': {},  # Use all defaults
+            'GOOD': {},  # Use all defaults
             # Download was successful, download health is 100.0%. No par-check
             # was made (there are no par-files). No unpack was made (there are
             # no archive files or unpack was disabled for that download or
             # globally).
-            u'HEALTH': {},  # Use all defaults
+            'HEALTH': {},  # Use all defaults
             # The hidden history item has status SUCCESS.
-            u'HIDDEN': {},  # Use all defaults
+            'HIDDEN': {},  # Use all defaults
             # Similar to SUCCESS/ALL but no post-processing scripts were
             # executed. Downloaded and par-checked successfully. No unpack was
             # made (there are no archive files or unpack was disabled for that
             # download or globally).
-            u'PAR': {},  # Use all defaults
+            'PAR': {},  # Use all defaults
             # Similar to SUCCESS/ALL but no post-processing scripts were
             # executed. Downloaded and unpacked successfully. Par-check was
             # successful or was not necessary.
-            u'UNPACK': {},  # Use all defaults
+            'UNPACK': {},  # Use all defaults
         },
 
         WARNING: {
-            DEFAULT_SUB: {u'has_archive': True, u'is_unpacked': False, },
+            DEFAULT_SUB: {'has_archive': True, 'is_unpacked': False, },
             # Par-check is required by is disabled in settings
             # (option ParCheck=Manual).
-            u'DAMAGED': {},  # Use all defaults
+            'DAMAGED': {},  # Use all defaults
             # Download health is below 100.0%. No par-check was made (there
             # are no par-files). No unpack was made (there are no archive
             # files or unpack was disabled for that download or globally).
-            u'HEALTH': {},  # Use all defaults
+            'HEALTH': {},  # Use all defaults
             # The hidden history item has status FAILURE.
-            u'HIDDEN': {},  # Use all defaults
+            'HIDDEN': {},  # Use all defaults
             # Unpack has failed because the password was not provided or was
             # wrong. Only for rar5-archives.
-            u'PASSWORD': {},  # Use all defaults
+            'PASSWORD': {},  # Use all defaults
             # Par-check has detected damage and has downloaded additional
             # par-files but the repair is disabled in settings
             # (option ParRepair=no).
-            u'REPAIRABLE': {},  # Use all defaults
+            'REPAIRABLE': {},  # Use all defaults
             # The URL was fetched successfully but an error occurred during
             # scanning of the downloaded file. The downloaded file isn't a
             # proper nzb-file. This status usually means the web-server has
             # returned an error page (HTML page) instead of the nzb-file.
-            u'SCAN': {},  # Use all defaults
+            'SCAN': {},  # Use all defaults
             # Downloaded successfully. Par-check and unpack were either
             # successful or were not performed. At least one of the
             # post-processing scripts has failed.
-            u'SCRIPT': {},  # Use all defaults
+            'SCRIPT': {},  # Use all defaults
             # The URL was fetched successfully but downloaded file was not
             # nzb-file and was skipped by the scanner.
-            u'SKIPPED': {},  # Use all defaults
+            'SKIPPED': {},  # Use all defaults
             # Unpack has failed due to not enough space on the drive.
-            u'SPACE': {},  # Use all defaults
+            'SPACE': {},  # Use all defaults
         },
 
         FAILURE: {
-            DEFAULT_SUB: {u'has_archive': True, u'is_unpacked': False, },
+            DEFAULT_SUB: {'has_archive': True, 'is_unpacked': False, },
             # The download was marked as good using mark(Mark.BAD)
-            u'BAD': {},  # Use all defaults
+            'BAD': {},  # Use all defaults
             # The download was aborted by history check.
             # Usual case is: download health is below critical health. No
             # par-check was made (there are no par-files). No unpack was made
             # (there are no archive files or unpack was disabled for that
             # download or globally).
-            u'HEALTH': {},  # Use all defaults
+            'HEALTH': {},  # Use all defaults
             # An error has occurred when moving files from intermediate
             # directory into the final destination directory.
-            u'MOVE': {},  # Use all defaults
+            'MOVE': {},  # Use all defaults
             # The par-check has failed.
-            u'PAR': {},  # Use all defaults
+            'PAR': {},  # Use all defaults
             # The unpack has failed and there are no par-files.
-            u'UNPACK': {},  # Use all defaults
+            'UNPACK': {},  # Use all defaults
         },
 
         DELETED: {
-            DEFAULT_SUB: {u'has_archive': False, u'is_unpacked': False, },
+            DEFAULT_SUB: {'has_archive': False, 'is_unpacked': False, },
             # The download was deleted by duplicate check.
-            u'DUPE': {},  # Use all defaults
+            'DUPE': {},  # Use all defaults
             # Fetching of the URL has failed.
-            u'FETCH': {},  # Use all defaults
+            'FETCH': {},  # Use all defaults
             # The download was manually deleted by user.
-            u'MANUAL': {},  # Use all defaults
+            'MANUAL': {},  # Use all defaults
         }
     }
 
@@ -591,7 +544,7 @@ class Health(tuple):
         # Default Sub Category
         subcategory = Health.DEFAULT_SUB
 
-        if isinstance(health, six.string_types):
+        if isinstance(health, str):
             health = re.split(r'[\s/\\]+', health + '/')
 
         elif not isinstance(health, (tuple, list)):
@@ -616,11 +569,11 @@ class Health(tuple):
             # no problem, use default
             pass
 
-        return super(Health, self)\
+        return super()\
             .__new__(self, tuple((category, subcategory)))
 
     def __init__(self, health):
-        super(Health, self).__init__()
+        super().__init__()
 
         # cat is a list or tuple at this point, we need to massage it
         # Get defaults
@@ -629,13 +582,13 @@ class Health(tuple):
 
         # Assign Defaults
         self.has_archive = Health\
-            .HEALTH_MAP[self.category][Health.DEFAULT_SUB][u'has_archive']
+            .HEALTH_MAP[self.category][Health.DEFAULT_SUB]['has_archive']
         self.is_unpacked = Health\
-            .HEALTH_MAP[self.category][Health.DEFAULT_SUB][u'is_unpacked']
+            .HEALTH_MAP[self.category][Health.DEFAULT_SUB]['is_unpacked']
 
         try:
             self.has_archive = Health\
-                .HEALTH_MAP[self.category][self.subcategory][u'has_archive']
+                .HEALTH_MAP[self.category][self.subcategory]['has_archive']
 
         except KeyError:
             # No problem, we'll just use the defaults
@@ -643,7 +596,7 @@ class Health(tuple):
 
         try:
             self.is_unpacked = Health\
-                .HEALTH_MAP[self.category][self.subcategory][u'is_unpacked']
+                .HEALTH_MAP[self.category][self.subcategory]['is_unpacked']
 
         except KeyError:
             # No problem, we'll just use the defaults
@@ -659,7 +612,7 @@ class Health(tuple):
         return '/'.join(self)
 
 
-class PRIORITY(object):
+class PRIORITY:
     """Although priority can be any integer value, the web-interface operates
     with six predefined priorities.
     """
@@ -683,17 +636,17 @@ PRIORITIES = (
 )
 
 # Environment variables that identify specific configuration for scripts
-SYS_ENVIRO_ID = u'NZBOP_'
+SYS_ENVIRO_ID = 'NZBOP_'
 
 # Script options
-CFG_ENVIRO_ID = u'NZBPO_'
+CFG_ENVIRO_ID = 'NZBPO_'
 
 # Shared configuration options passed through NZBGet and push(); if these
 # are found in the environment, they are saved to the `config` dictionary
-SHR_ENVIRO_ID = u'NZBR_'
+SHR_ENVIRO_ID = 'NZBR_'
 
 # SABnzbd Support
-SAB_ENVIRO_ID = u'SAB_'
+SAB_ENVIRO_ID = 'SAB_'
 
 # Environment ID used when calling tests commands from NZBGet
 """
@@ -716,25 +669,25 @@ a function map to it. This is a new feature introduced after NZBGet v18
 # ...
 
 """
-TST_ENVIRO_ID = u'NZBCP_'
+TST_ENVIRO_ID = 'NZBCP_'
 
 # The Key Environment Variable that is used to dermine the Test command
 # to call (called from NZBGet's Configuration Screen)
-TEST_COMMAND = u'%sCOMMAND' % TST_ENVIRO_ID
+TEST_COMMAND = '%sCOMMAND' % TST_ENVIRO_ID
 
 # Environment ID used when pushing common variables to the server
-PUSH_ENVIRO_ID = u'NZBPR_'
+PUSH_ENVIRO_ID = 'NZBPR_'
 
 # DNZB is an environment variable sometimes referenced by other scripts
-SHR_ENVIRO_DNZB_ID = u'_DNZB_'
+SHR_ENVIRO_DNZB_ID = '_DNZB_'
 
 # GUESS is an environment variable sometimes referenced by other scripts
 # it provides the guessed information for other scripts to save them
 # from re-guessing all over again.
-SHR_ENVIRO_GUESS_ID = u'_GUESS_'
+SHR_ENVIRO_GUESS_ID = '_GUESS_'
 
 # NZBGet Internal Message Passing Prefix
-NZBGET_MSG_PREFIX = u'[NZB] '
+NZBGET_MSG_PREFIX = '[NZB] '
 
 # Precompile regular expressions for speed
 SYS_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(SYS_ENVIRO_ID))
@@ -754,17 +707,17 @@ SHR_GUESS_OPTS_RE = re.compile(r'^{}([A-Z0-9_]+)$'.format(SHR_ENVIRO_GUESS_ID))
 # at another time we can map them to the same format commonly
 # used.
 GUESS_KEY_MAP = {
-    u'AUDIOCHANNELS': u'audioChannels', u'AUDIOCODEC': u'audioCodec',
-    u'AUDIOPROFILE': u'audioProfile', u'BONUSNUMBER': u'bonusNumber',
-    u'BONUSTITLE': u'bonusTitle', u'CONTAINER': u'container', u'DATE': u'date',
-    u'EDITION': u'edition', u'EPISODENUMBER': u'episodeNumber',
-    u'FILMNUMBER': u'filmNumber', u'FILMSERIES': u'filmSeries',
-    u'FORMAT': u'format', u'LANGUAGE': u'language',
-    u'RELEASEGROUP': u'releaseGroup', u'SCREENSIZE': u'screenSize',
-    u'SEASON': u'season', u'SERIES': u'series', u'SPECIAL': u'special',
-    u'SUBTITLELANGUAGE': u'subtitleLanguage', u'TITLE': u'title',
-    u'TYPE': u'type', u'VIDEOCODEC': u'videoCodec', u'VTYPE': u'vtype',
-    u'WEBSITE': u'website', u'YEAR': u'year',
+    'AUDIOCHANNELS': 'audioChannels', 'AUDIOCODEC': 'audioCodec',
+    'AUDIOPROFILE': 'audioProfile', 'BONUSNUMBER': 'bonusNumber',
+    'BONUSTITLE': 'bonusTitle', 'CONTAINER': 'container', 'DATE': 'date',
+    'EDITION': 'edition', 'EPISODENUMBER': 'episodeNumber',
+    'FILMNUMBER': 'filmNumber', 'FILMSERIES': 'filmSeries',
+    'FORMAT': 'format', 'LANGUAGE': 'language',
+    'RELEASEGROUP': 'releaseGroup', 'SCREENSIZE': 'screenSize',
+    'SEASON': 'season', 'SERIES': 'series', 'SPECIAL': 'special',
+    'SUBTITLELANGUAGE': 'subtitleLanguage', 'TITLE': 'title',
+    'TYPE': 'type', 'VIDEOCODEC': 'videoCodec', 'VTYPE': 'vtype',
+    'WEBSITE': 'website', 'YEAR': 'year',
 }
 
 # keys should not be complicated... make it so they aren't
@@ -791,7 +744,7 @@ VALID_HOST_RE = re.compile(r'^[\s]*([^:/\s]+)')
 VALID_QUERY_RE = re.compile(r'^(.*[/\\])([^/\\]*)$')
 
 
-class ScriptBase(object):
+class ScriptBase:
     """The intent is this is the script you run from within your script
        after overloading the main() function of your class
     """
@@ -945,7 +898,7 @@ class ScriptBase(object):
             SCRIPT_MODE.NONE, SCRIPT_MODE.SABNZBD_POSTPROCESSING,
         )
 
-        if isinstance(self.logger, six.string_types):
+        if isinstance(self.logger, str):
             # Use Log File
             self.logger = init_logger(
                 name=self.logger_id,
@@ -1003,9 +956,6 @@ class ScriptBase(object):
             self.curdir = getcwd()
 
         except Exception:
-            # OSError if Python v2
-            # FileNotFoundError if Python v3
-
             # This happens on some systems that simply don't
             # allow us access to this information
             self.curdir = self.tmpdir
@@ -1212,7 +1162,7 @@ class ScriptBase(object):
                     self.logger.info(
                         'Created PID-File directory: %s' % piddir
                     )
-            except (IOError, OSError):
+            except OSError:
                 if verbose:
                     self.logger.error(
                         'PID-File directory could not be '
@@ -1224,7 +1174,7 @@ class ScriptBase(object):
 
         if isfile(self.pidfile):
             try:
-                with open(self.pidfile, 'r') as pidfile:
+                with open(self.pidfile) as pidfile:
                     pid = int(pidfile.read())
                     if verbose:
                         self.logger.debug(
@@ -1257,7 +1207,7 @@ class ScriptBase(object):
 
                     return False
 
-            except (IOError, OSError):
+            except OSError:
                 # Can't access content
                 if verbose:
                     self.logger.warning(
@@ -1380,7 +1330,7 @@ class ScriptBase(object):
             # convert boolean's to int's for consistency
             value = str(int(value))
 
-        elif not isinstance(value, six.string_types):
+        elif not isinstance(value, str):
             value = str(value)
 
         # Push message on to nzbget (by simply sending it to
@@ -1406,7 +1356,7 @@ class ScriptBase(object):
             # convert boolean's to int's for consistency
             value = str(int(value))
 
-        elif not isinstance(value, six.string_types):
+        elif not isinstance(value, str):
             value = str(value)
 
         if use_env:
@@ -1495,7 +1445,7 @@ class ScriptBase(object):
 
         """
         results = {}
-        if not isinstance(nzbfile, six.string_types):
+        if not isinstance(nzbfile, str):
             # Simple check for nothing found
             self.logger.debug('NZB-File not defined; parse skipped.')
             return results
@@ -1562,8 +1512,8 @@ class ScriptBase(object):
                 )
 
         try:
-            if LXML_TYPE == u'xml.etree.cElementTree':
-                # cElementTree does not support tag= option and is not as
+            if LXML_TYPE != 'lxml.etree':
+                # xml.etree does not support tag= option and is not as
                 # powerful as some of it's other partners since you have to
                 # parse much more to get the results.  It's slower; but it
                 # works:
@@ -1572,7 +1522,7 @@ class ScriptBase(object):
                 for event, element in elements:
                     if element.tag == \
                             "{http://www.newzbin.com/DTD/2003/nzb}meta":
-                        if isinstance(element.text, six.string_types) and \
+                        if isinstance(element.text, str) and \
                                 element.text.strip():
                             # Only store entries with content
                             results[element.attrib['type'].upper()] = \
@@ -1588,7 +1538,7 @@ class ScriptBase(object):
                     for child in element:
                         if child.tag == \
                                 "{http://www.newzbin.com/DTD/2003/nzb}meta":
-                            if isinstance(child.text, six.string_types) and \
+                            if isinstance(child.text, str) and \
                                     child.text.strip():
                                 # Only store entries with content
                                 results[child.attrib['type'].upper()] = \
@@ -1602,12 +1552,12 @@ class ScriptBase(object):
         except NameError:
             self.logger.warning('NZBParse - Skipped; lxml is not installed')
 
-        except IOError:
+        except OSError:
             self.logger.warning(
                 'NZBParse - NZB-File is missing: %s' % basename(nzbfile))
 
         except XMLSyntaxError as e:
-            if e[0] is None:
+            if not e.args or e.args[0] is None:
                 # this is a bug with lxml in earlier versions
                 # https://bugs.launchpad.net/lxml/+bug/1185701
                 # It occurs when the end of the file is reached and lxml
@@ -1702,7 +1652,7 @@ class ScriptBase(object):
          content could not be extracted.
         """
 
-        if not isinstance(url, six.string_types):
+        if not isinstance(url, str):
             # Simple error checking
             return None
 
@@ -1853,9 +1803,9 @@ class ScriptBase(object):
 
         # Re-assemble cleaned up version of the url
         result['url'] = '%s://' % result['schema']
-        if isinstance(result['user'], six.string_types):
+        if isinstance(result['user'], str):
             result['url'] += result['user']
-            if isinstance(result['password'], six.string_types):
+            if isinstance(result['password'], str):
                 result['url'] += ':%s@' % result['password']
             else:
                 result['url'] += '@'
@@ -1927,7 +1877,7 @@ class ScriptBase(object):
                     self.database.set(key=key, value=value)
                     self.logger.debug('set(database) %s="%s"' % (key, value))
 
-            except EnvironmentError:
+            except OSError:
                 # Database Access Problem
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
@@ -2042,7 +1992,7 @@ class ScriptBase(object):
                     self.logger.debug('get(database) %s="%s"' % (key, value))
                     return value
 
-            except EnvironmentError:
+            except OSError:
                 # Database Access Problem
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
@@ -2102,7 +2052,7 @@ class ScriptBase(object):
                 # We return items as a list and not an iter
                 items = self.database.items()
 
-            except EnvironmentError:
+            except OSError:
                 # Database Access Problem
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
@@ -2131,8 +2081,7 @@ class ScriptBase(object):
             # system trumps all values
             items.update(self.system)
 
-        # For Python 3 returns an iterator, for compatibility with
-        # Python 2, we want to convert this iterator back to a list
+        # Return a list (not an iterator) so it can be reused
         return [(k, v) for k, v in items.items()]
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -2190,7 +2139,7 @@ class ScriptBase(object):
                     self.logger.debug(
                         'nzb_set(database) %s="%s"' % (key, value))
 
-            except EnvironmentError:
+            except OSError:
                 # Database Access Problem
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
@@ -2254,7 +2203,7 @@ class ScriptBase(object):
                     # Convert boolean to integer (True to 1 or False to 0)
                     value = str(int(value))
 
-                elif not isinstance(value, six.string_types):
+                elif not isinstance(value, str):
                     value = str(value)
 
                 environ['%s%s%s' % (
@@ -2305,7 +2254,7 @@ class ScriptBase(object):
                         'nzb_get(database) %s="%s"' % (key, value))
                     return value
 
-            except EnvironmentError:
+            except OSError:
                 # Database Access Problem
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
@@ -2351,7 +2300,7 @@ class ScriptBase(object):
                 # Fetch from database first
                 items = self.database.items()
 
-            except EnvironmentError:
+            except OSError:
                 # Database Access Problem
                 # set the dbstore to false so it isn't used anymore
                 self.database = False
@@ -2404,7 +2353,7 @@ class ScriptBase(object):
 
         if keys:
             missing = []
-            if isinstance(keys, six.string_types):
+            if isinstance(keys, str):
                 keys = self.parse_list(keys)
 
             missing = \
@@ -2535,45 +2484,12 @@ class ScriptBase(object):
         context = hasattr(ssl, '_create_unverified_context') \
             and ssl._create_unverified_context() or None
 
-        try:
-            # Python >= 2.7.9
-            self.api = ServerProxy(
-                xmlrpc_url,
-                verbose=False,
-                use_datetime=True,
-                context=context,
-            )
-
-        except TypeError:
-            # Python < 2.7.9
-            try:
-                self.api = ServerProxy(
-                    xmlrpc_url,
-                    verbose=False,
-                    use_datetime=True,
-                    transport=SafeTransport(
-                        use_datetime=True,
-                        context=context,
-                    ),
-                )
-            except TypeError:
-                # One last try for the Python 2.6 users to Python v2.7.4
-                try:
-                    self.api = ServerProxy(xmlrpc_url)
-
-                except Exception as e:
-                    self.logger.debug(
-                        'Legacy API connection failed @ %s' % xmlrpc_url)
-                    self.logger.debug('Failure Reason: %s' % str(e))
-                    return False
-
-            except Exception as e:
-                self.logger.debug(
-                    'Fallback API connection failed @ %s' % xmlrpc_url)
-                self.logger.debug('Failure Reason: %s' % str(e))
-                return False
-
-            self.logger.debug('API connected @ %s' % xmlrpc_url)
+        self.api = ServerProxy(
+            xmlrpc_url,
+            verbose=False,
+            use_datetime=True,
+            context=context,
+        )
 
         # Set xmlrpc_url
         self._xmlrpc_url = xmlrpc_url
@@ -2640,7 +2556,7 @@ class ScriptBase(object):
                 category = unescape_xml(meta.get('CATEGORY', '').strip())
 
             try:
-                f = open(filename, "r")
+                f = open(filename)
 
             except:
                 self.logger.debug('API:NZB-File Could not open: %s' % filename)
@@ -2661,13 +2577,9 @@ class ScriptBase(object):
             category = unescape_xml(meta.get('CATEGORY', '').strip())
 
         # Encode content
-        try:
-            # Python 2.x
-            b64content = standard_b64encode(content)
-        except TypeError:
-            # Python 3.x
-            b64content = standard_b64encode(
-                content.encode('utf-8')).decode('utf-8')
+        if isinstance(content, str):
+            content = content.encode('utf-8')
+        b64content = standard_b64encode(content).decode('utf-8')
 
         try:
             return self.api.append(
@@ -2782,24 +2694,24 @@ class ScriptBase(object):
                 ))
             return files
 
-        elif not isinstance(search_dir, six.string_types):
+        elif not isinstance(search_dir, str):
             # Unsupported
             return {}
 
         # Change all filters strings lists (if they aren't already)
         if regex_filter is None:
             regex_filter = tuple()
-        if isinstance(regex_filter, six.string_types):
+        if isinstance(regex_filter, str):
             regex_filter = (regex_filter,)
         elif isinstance(regex_filter, re_pattern_type):
             regex_filter = (regex_filter,)
         if suffix_filter is None:
             suffix_filter = tuple()
-        if isinstance(suffix_filter, six.string_types):
+        if isinstance(suffix_filter, str):
             suffix_filter = (suffix_filter, )
         if prefix_filter is None:
             prefix_filter = tuple()
-        if isinstance(prefix_filter, six.string_types):
+        if isinstance(prefix_filter, str):
             prefix_filter = (prefix_filter, )
 
         # clean prefix list
@@ -3142,7 +3054,7 @@ class ScriptBase(object):
             exit_code = EXIT_CODE.FAILURE
 
         # Handle tidying of PID-File if it exists
-        if isinstance(self.pidfile, six.string_types):
+        if isinstance(self.pidfile, str):
             if self.is_unique_instance(die_on_fail=False, verbose=False):
                 # It is our PID-File; so do our cleanup
                 try:
@@ -3225,12 +3137,12 @@ class ScriptBase(object):
 
         result = []
         for arg in args:
-            if isinstance(arg, six.string_types):
+            if isinstance(arg, str):
                 result += re.split(STRING_DELIMITERS, arg)
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(arg, six.string_types):
+                    if isinstance(arg, str):
                         result += re.split(STRING_DELIMITERS, arg)
                     # A list inside a list? - use recursion
                     elif isinstance(_arg, (list, tuple)):
@@ -3291,7 +3203,7 @@ class ScriptBase(object):
 
         result = []
         for arg in args:
-            if isinstance(arg, six.string_types):
+            if isinstance(arg, str):
                 cleaned = self._path_delimiter_re.sub('|/', tidy_path(arg))
                 cleaned = self._path_win_re.sub('|\\1', cleaned)
                 cleaned = self._path_winnw_re.sub('|\\1', cleaned)
@@ -3300,7 +3212,7 @@ class ScriptBase(object):
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(_arg, six.string_types):
+                    if isinstance(_arg, str):
                         cleaned = \
                             self._path_delimiter_re.sub('|', tidy_path(_arg))
                         cleaned = self._path_win_re.sub('|\\1', cleaned)
@@ -3353,7 +3265,7 @@ class ScriptBase(object):
 
         result = []
         for arg in args:
-            if isinstance(arg, six.string_types):
+            if isinstance(arg, str):
                 result += delimiter.split(arg)
 
             elif isinstance(arg, re_pattern_type):
@@ -3362,7 +3274,7 @@ class ScriptBase(object):
 
             elif isinstance(arg, (list, tuple)):
                 for _arg in arg:
-                    if isinstance(arg, six.string_types):
+                    if isinstance(arg, str):
                         result += delimiter.split(arg)
                     # A list inside a list? - use recursion
                     elif isinstance(_arg, (list, tuple)):
@@ -3429,7 +3341,7 @@ class ScriptBase(object):
         returned.
         """
 
-        if isinstance(arg, six.string_types):
+        if isinstance(arg, str):
             # no = no - False
             # of = short for off - False
             # 0  = int for False

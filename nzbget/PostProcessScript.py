@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for NZBGet's Post Processing Scripting
 #
@@ -148,7 +147,6 @@ if __name__ == "__main__":
 """
 
 import re
-import six
 from os import chdir
 from os import environ
 from os.path import isdir
@@ -156,8 +154,6 @@ from os.path import join
 from os.path import splitext
 from os.path import basename
 from os.path import abspath
-
-from socket import error as SocketError
 
 # Relative Includes
 from .ScriptBase import ScriptBase
@@ -172,7 +168,7 @@ from .PostProcessCommon import PAR_STATUS
 from .PostProcessCommon import UNPACK_STATUS
 
 
-class TOTAL_STATUS(object):
+class TOTAL_STATUS:
     """Cumulative (Total) Status of NZB Processing
     """
     # everything OK
@@ -212,7 +208,7 @@ class PostProcessScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        super(PostProcessScript, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def postprocess_init(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -395,7 +391,7 @@ class PostProcessScript(ScriptBase):
                     'Process directory is not accessible: %s' % self.directory)
 
         # Total Status
-        if not isinstance(self.totalstatus, six.string_types):
+        if not isinstance(self.totalstatus, str):
             self.totalstatus = TOTAL_STATUS.SUCCESS
 
         # Par Status
@@ -497,7 +493,7 @@ class PostProcessScript(ScriptBase):
     def postprocess_validate(self, keys=None, min_version=11, *args, **kwargs):
         """validate against environment variables
         """
-        is_okay = super(PostProcessScript, self)._validate(
+        is_okay = super()._validate(
             keys=keys,
             min_version=min_version,
             download_okay=True,
@@ -530,7 +526,7 @@ class PostProcessScript(ScriptBase):
         return silently, others may try to correct the health
         """
 
-        is_okay = super(PostProcessScript, self)\
+        is_okay = super()\
             ._health_check(*args, **kwargs)
 
         if self.version < 13:
@@ -564,7 +560,7 @@ class PostProcessScript(ScriptBase):
         if search_dir is None:
             search_dir = self.directory
 
-        return super(PostProcessScript, self)._get_files(
+        return super()._get_files(
             search_dir=search_dir, *args, **kwargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -605,7 +601,7 @@ class PostProcessScript(ScriptBase):
             group = \
                 [x for x in self.api.listgroups(0) if x['NZBID'] == nzbid][0]
 
-        except SocketError as e:
+        except OSError as e:
             self.logger.warning('RCP Connection Failure (%d): %s' % (
                 e[0], e[1]))
             return None

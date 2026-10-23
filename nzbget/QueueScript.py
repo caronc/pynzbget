@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for NZBGet's Queue Scripting
 #
@@ -166,12 +165,12 @@ from .PostProcessScript import POSTPROC_ENVIRO_ID
 # scripts with respect to the NZB-File (used in Queue Scripts)
 QUEUE_ENVIRO_ID = 'NZBNA_'
 
-class Mark(object):
+class Mark:
     # A file can be marked bad
     BAD = 'BAD'
     GOOD = 'GOOD'
 
-class QueueEvent(object):
+class QueueEvent:
     # a list of all event types
     UNKNOWN = 'UNKNOWN'
     # An NZB file added to the queue
@@ -208,7 +207,7 @@ class QueueScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        super(QueueScript, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def queue_init(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -446,7 +445,7 @@ class QueueScript(ScriptBase):
     def queue_validate(self, keys=None, min_version=11, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(QueueScript, self)._validate(
+        is_okay = super()._validate(
             keys=keys,
             min_version=min_version,
         )
@@ -479,7 +478,7 @@ class QueueScript(ScriptBase):
         if search_dir is None:
             search_dir = self.directory
 
-        return super(QueueScript, self)._get_files(
+        return super()._get_files(
             search_dir=search_dir,
             regex_filter=regex_filter,
             prefix_filter=prefix_filter,

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 
 import re
 
@@ -14,7 +13,7 @@ OBFUSCATED_FILE_RE = re.compile(
 )
 
 
-class TOTAL_STATUS(object):
+class TOTAL_STATUS:
     """Cumulative (Total) Status of NZB Processing
     """
     # everything OK
@@ -34,7 +33,7 @@ class TOTAL_STATUS(object):
 TOTALSTATUS_DELIMITER = '/'
 
 
-class SCRIPT_STATUS(object):
+class SCRIPT_STATUS:
     """Summary status of the scripts executed before the current one
     """
     # no other scripts were executed yet or all of them have ended with an exit
@@ -46,7 +45,7 @@ class SCRIPT_STATUS(object):
     FAILURE = 'FAILURE'
 
 
-class PAR_STATUS(object):
+class PAR_STATUS:
     """This is a depricated flag (as of NZBGet v13) but previously
     provides the status of the par-check of the downloaded content.
     """
@@ -61,7 +60,7 @@ class PAR_STATUS(object):
     DISABLED = 3
 
 
-class UNPACK_STATUS(object):
+class UNPACK_STATUS:
     """This is a depricated flag (as of NZBGet v13) but previously
     provides the status of the unpacking of the downloaded content.
     """

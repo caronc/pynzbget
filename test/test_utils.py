@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for an SQLite 3 wrapper Class written for NZBGet
 #

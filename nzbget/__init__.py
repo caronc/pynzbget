@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # simplify importing of comonly used modules
 #

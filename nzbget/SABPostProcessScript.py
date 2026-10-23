@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for SABnzbd's Post Processing Scripting
 #
@@ -110,7 +109,7 @@ from .PostProcessCommon import OBFUSCATED_FILE_RE
 from .Utils import os_path_split as split
 
 
-class TOTAL_STATUS(object):
+class TOTAL_STATUS:
     """Cumulative (Total) Status of NZB Processing
     """
     # everything OK
@@ -127,7 +126,7 @@ class TOTAL_STATUS(object):
     DELETED = 'DELETED'
 
 
-class PP_STATUS(object):
+class PP_STATUS:
     """This provides the Post Process Status of SABNzbd set in the
     SAB_PP_STATUS environment variable
     """
@@ -161,7 +160,7 @@ class SABPostProcessScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        super(SABPostProcessScript, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def sabnzbd_postprocess_init(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -365,7 +364,7 @@ class SABPostProcessScript(ScriptBase):
         """validate against environment variables
         """
 
-        is_okay = super(SABPostProcessScript, self)._validate(
+        is_okay = super()._validate(
             keys=keys,
             min_version=min_version,
         )
@@ -397,7 +396,7 @@ class SABPostProcessScript(ScriptBase):
         return silently, others may try to correct the health
         """
 
-        is_okay = super(SABPostProcessScript, self)\
+        is_okay = super()\
                 ._health_check(*args, **kwargs)
 
         if self.status != PP_STATUS.SUCCESS:
@@ -416,7 +415,7 @@ class SABPostProcessScript(ScriptBase):
         if search_dir is None:
             search_dir = self.directory
 
-        return super(SABPostProcessScript, self)._get_files(
+        return super()._get_files(
             search_dir=search_dir, *args, **kwargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the ScriptBase Class
 #
@@ -19,13 +18,7 @@ import sys
 import re
 from os.path import join
 from os.path import isfile
-try:
-    # Python 2.7
-    from urllib import unquote
-
-except ImportError:
-    # Python 3.x
-    from urllib.parse import unquote
+from urllib.parse import unquote
 
 from TestBase import TestBase
 from TestBase import TEMP_DIRECTORY
@@ -42,12 +35,7 @@ from os import makedirs
 from threading import Thread, Lock
 from time import sleep
 
-try:
-    # Python v2.7
-    from StringIO import StringIO
-except ImportError:
-    # Python v3.x
-    from io import StringIO
+from io import StringIO
 
 SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 
@@ -55,7 +43,7 @@ SEARCH_DIR = join(TEMP_DIRECTORY, 'file_listing')
 class TestScriptBase(TestBase):
     def setup_method(self):
         # common
-        super(TestScriptBase, self).setup_method()
+        super().setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -82,7 +70,7 @@ class TestScriptBase(TestBase):
             pass
 
         # common
-        super(TestScriptBase, self).teardown_method()
+        super().teardown_method()
 
     def test_main_returns(self):
 
@@ -1117,3 +1105,15 @@ class TestScriptBase(TestBase):
         # like ?? and *
         results = script.parse_regex('*.mkv, *.avi')
         assert(len(results) == 2)
+
+    def test_corrupt_nzbfile(self):
+        """A broken NZB-File is logged and skipped instead of crashing."""
+        nzbfile = join(TEMP_DIRECTORY, 'corrupt.nzb')
+        with open(nzbfile, 'w') as f:
+            f.write(
+                '<?xml version="1.0"?>\n'
+                '<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">'
+                '<head><meta type="name">x</meta>\n<broken')
+
+        script = ScriptBase()
+        assert isinstance(script.parse_nzbfile(nzbfile), dict)

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the Config Tests Class
 #
@@ -41,7 +40,7 @@ VERSION = 18
 class TestConfigScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestConfigScript, self).setup_method()
+        super().setup_method()
 
         # Create some environment variables
         os.environ['%sSCRIPTDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -57,7 +56,7 @@ class TestConfigScript(TestBase):
         del os.environ['%sVERSION' % SYS_ENVIRO_ID]
 
         # common
-        super(TestConfigScript, self).teardown_method()
+        super().teardown_method()
 
     def test_action_detection(self):
         """

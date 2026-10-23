@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the SABnzbd SABPostProcessScript Class
 #
@@ -50,7 +49,7 @@ STATUS = str(PP_STATUS.SUCCESS)
 class TestSABPostProcessScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestSABPostProcessScript, self).setup_method()
+        super().setup_method()
 
         # Create NZBFILE
         _f = open(NZBFILENAME, 'w')
@@ -105,7 +104,7 @@ class TestSABPostProcessScript(TestBase):
             pass
 
         # common
-        super(TestSABPostProcessScript, self).teardown_method()
+        super().teardown_method()
 
     def test_main_returns(self):
         # a NZB Logger set to False uses stderr

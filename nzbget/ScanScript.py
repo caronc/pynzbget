@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A scripting wrapper for NZBGet's Scan Scripting
 #
@@ -182,7 +181,7 @@ class ScanScript(ScriptBase):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         # Initialize Parent
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-        super(ScanScript, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def scan_init(self, *args, **kwargs):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -403,7 +402,7 @@ class ScanScript(ScriptBase):
     def scan_validate(self, keys=None, min_version=11, *args, **kargs):
         """validate against environment variables
         """
-        is_okay = super(ScanScript, self)._validate(
+        is_okay = super()._validate(
             keys=keys,
             min_version=min_version,
         )
@@ -422,7 +421,7 @@ class ScanScript(ScriptBase):
         if search_dir is None:
             search_dir = self.directory
 
-        return super(ScanScript, self)._get_files(
+        return super()._get_files(
             search_dir=search_dir, *args, **kargs)
 
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

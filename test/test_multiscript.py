@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the MultiScripts
 #
@@ -34,7 +33,7 @@ from nzbget.Logger import VERY_VERBOSE_DEBUG
 class TestPostProcessScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestPostProcessScript, self).setup_method()
+        super().setup_method()
 
         if '%sDESTDIR' % SYS_ENVIRO_ID in os.environ:
             del os.environ['%sDESTDIR' % SYS_ENVIRO_ID]
@@ -54,7 +53,7 @@ class TestPostProcessScript(TestBase):
             del os.environ['%sDIRECTORY' % POSTPROC_ENVIRO_ID]
 
         # common
-        super(TestPostProcessScript, self).teardown_method()
+        super().teardown_method()
 
     def test_dual_script01(self):
         """

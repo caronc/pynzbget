@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # A Test Suite (for nose) for the FeedScript Class
 #
@@ -35,7 +34,7 @@ FEED_FILENAME = 'MyTest.nzb'
 class TestFeedScript(TestBase):
     def setup_method(self):
         """This method is run once before _each_ test method is executed"""
-        super(TestFeedScript, self).setup_method()
+        super().setup_method()
 
         # Create some environment variables
         os.environ['%sTEMPDIR' % SYS_ENVIRO_ID] = TEMP_DIRECTORY
@@ -49,7 +48,7 @@ class TestFeedScript(TestBase):
         del os.environ['%sFILENAME' % FEED_ENVIRO_ID]
 
         # common
-        super(TestFeedScript, self).teardown_method()
+        super().teardown_method()
 
     def test_environment_varable_init(self):
         """
