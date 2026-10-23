@@ -640,7 +640,7 @@ class TestPostProcessScript(TestBase):
 
         # Test Filters (as strings)
         files = script.get_files(
-            regex_filter='.*\.par2$',
+            regex_filter=r'.*\.par2$',
             search_dir=SEARCH_DIR,
             case_sensitive=True,
         )
@@ -648,7 +648,7 @@ class TestPostProcessScript(TestBase):
 
         # Test Filters (as strings) (default is case-insensitive)
         files = script.get_files(
-            regex_filter='.*\.par2$',
+            regex_filter=r'.*\.par2$',
             search_dir=SEARCH_DIR,
         )
         assert len(files) == 2
@@ -656,7 +656,7 @@ class TestPostProcessScript(TestBase):
         # Assume case sensitivity matters to us, we might
         # want to pre-compile our own list and pass it in
         files = script.get_files(
-            regex_filter=re.compile('.*\.par2$', re.IGNORECASE),
+            regex_filter=re.compile(r'.*\.par2$', re.IGNORECASE),
             search_dir=SEARCH_DIR,
         )
         assert len(files) == 2
@@ -716,7 +716,7 @@ class TestPostProcessScript(TestBase):
         # Test Filters
         files = script.get_files(
             search_dir=[SEARCH_DIR, ],
-            regex_filter=('.*\.par2$',),
+            regex_filter=(r'.*\.par2$',),
             case_sensitive=True
         )
         assert len(files) == 1
@@ -724,7 +724,7 @@ class TestPostProcessScript(TestBase):
         # Default is not case-sensitive
         files = script.get_files(
             search_dir=[SEARCH_DIR, ],
-            regex_filter=('.*\.par2$',),
+            regex_filter=(r'.*\.par2$',),
         )
         assert len(files) == 2
 
@@ -732,7 +732,7 @@ class TestPostProcessScript(TestBase):
         # want to pre-compile our own list and pass it in
         files = script.get_files(
             search_dir=[SEARCH_DIR, ],
-            regex_filter=(re.compile('.*\.par2$', re.IGNORECASE),),
+            regex_filter=(re.compile(r'.*\.par2$', re.IGNORECASE),),
         )
         assert len(files) == 2
 

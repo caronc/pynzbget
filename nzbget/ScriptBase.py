@@ -2452,7 +2452,8 @@ class ScriptBase(object):
     # Health Check
     # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def health_check(self, *args, **kwargs):
-        """A system wrapper to _health_check() allowing a mult-script environment
+        """A system wrapper to _health_check() allowing a mult-script
+        environment
         """
         # Default
         core_function = self._health_check

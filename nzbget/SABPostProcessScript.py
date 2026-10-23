@@ -515,7 +515,7 @@ class SABPostProcessScript(ScriptBase):
                 # We can pick from the nzb headers
                 nzb_name = self.nzb_get('name')
                 new_name = join(ref_dir, '%s%s' % (
-                    re.sub('[\s]+', '.', nzb_name),
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
 
@@ -527,7 +527,7 @@ class SABPostProcessScript(ScriptBase):
                     nzb_name += '(%s)' % self.nzb_get('movieyear')
 
                 new_name = join(ref_dir, '%s%s' % (
-                    re.sub('[\s]+', '.', nzb_name),
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
 
@@ -542,14 +542,14 @@ class SABPostProcessScript(ScriptBase):
                     nzb_name += '-HDTV'
 
                 new_name = join(ref_dir, '%s%s' % (
-                    re.sub('[\s]+', '.', nzb_name),
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(new_name))[1],
                 ))
 
             elif self.nzb_get('propername'):
                 nzb_name = self.nzb_get('propername')
                 new_name = join(ref_dir, '%s%s' % (
-                    re.sub('[\s]+', '.', nzb_name),
+                    re.sub(r'[\s]+', '.', nzb_name),
                     splitext(basename(filename))[1],
                 ))
             else:
@@ -568,7 +568,7 @@ class SABPostProcessScript(ScriptBase):
                 'All file path parts are obfuscated, using NZB-FileName',
             )
             new_name = join(ref_dir, '%s%s' % (
-                re.sub('[\s]+', '.',
+                re.sub(r'[\s]+', '.',
                        splitext(basename(ref_nzbfile))[0]),
                 splitext(basename(filename))[1],
             ))
@@ -598,7 +598,7 @@ class SABPostProcessScript(ScriptBase):
             return nzbfile
 
         # Extract our filename
-        result = re.match('^(?P<filename>.+\.nzb)\.gz$', nzbfile, re.I)
+        result = re.match(r'^(?P<filename>.+\.nzb)\.gz$', nzbfile, re.I)
         if not result:
             # We're done; that was easy
             return nzbfile

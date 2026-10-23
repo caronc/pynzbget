@@ -63,7 +63,7 @@ class TestUtils(TestBase):
         assert tidy_path('C:\\My Directory\\SubDirectory') == \
             'C:\\My Directory\\SubDirectory'
 
-        assert tidy_path('C:\\\\\My Directory\\\\\\SubDirectory  ') == \
+        assert tidy_path('C:\\\\\\My Directory\\\\\\SubDirectory  ') == \
             'C:\\My Directory\\SubDirectory'
 
         assert tidy_path('C:\\') == 'C:\\'

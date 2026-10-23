@@ -111,7 +111,8 @@ class MySchedulerScript(SchedulerScript):
 
         # Your script configuration files (NZBNP_.*) are here in this
         # dictionary (again without the NZBNP_ prefix):
-        # assume you defined `Debug=no` in the first 10K of your SchedulerScript
+        # assume you defined `Debug=no` in the first 10K of your
+        # SchedulerScript
         # NZBGet translates this to `NZBNP_DEBUG` which can be retrieved
         # as follows:
         print('DEBUG %s' self.get('DEBUG'))
@@ -180,8 +181,9 @@ class SchedulerScript(ScriptBase):
         taskid = kwargs.get('taskid')
 
         # Fetch/Load Scan Script Configuration
-        script_config = dict([(SCHEDULER_OPTS_RE.match(k).group(1), v.strip()) \
-               for (k, v) in environ.items() if SCHEDULER_OPTS_RE.match(k)])
+        script_config = dict([
+            (SCHEDULER_OPTS_RE.match(k).group(1), v.strip())
+            for (k, v) in environ.items() if SCHEDULER_OPTS_RE.match(k)])
 
         if self.vvdebug:
             # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

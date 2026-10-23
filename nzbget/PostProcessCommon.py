@@ -9,7 +9,7 @@ OBFUSCATED_PATH_RE = re.compile(
     re.IGNORECASE,
 )
 OBFUSCATED_FILE_RE = re.compile(
-    '^[a-z0-9]+\.[a-z0-9]+$',
+    r'^[a-z0-9]+\.[a-z0-9]+$',
     re.IGNORECASE,
 )
 

@@ -1,0 +1,127 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynzbget"
+description = "Makes writing NZBGet and SABnzbd scripts easy."
+readme = "README.md"
+authors = [
+    { name = "Chris Caron", email = "lead2gold@gmail.com" },
+]
+
+# The version is read from nzbget/__init__.py
+dynamic = ["version"]
+
+license = { text = "GPLv3" }
+
+# NZBGet extensions are expected to run on Python 3.8 and newer
+requires-python = ">=3.8"
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+keywords = [
+    "NZB",
+    "NZBGet",
+    "Post-Processing",
+    "SABnzbd",
+    "Scripts",
+]
+
+dependencies = [
+    # Python 2/3 helpers the library is built on
+    "six",
+
+    # Faster NZB-File parsing; pynzbget falls back to Python's own
+    # xml.etree when it's missing
+    "lxml",
+]
+
+[project.optional-dependencies]
+# Everything needed to test and lint pynzbget
+dev = [
+    "coverage",
+    "mock",
+    "pytest",
+    "pytest-cov",
+    "ruff==0.15.8",
+    "tox",
+]
+
+[project.urls]
+Homepage = "https://github.com/caronc/pynzbget"
+Source = "https://github.com/caronc/pynzbget"
+Tracker = "https://github.com/caronc/pynzbget/issues"
+Documentation = "https://github.com/caronc/pynzbget/wiki"
+
+[tool.setuptools.packages.find]
+include = ["nzbget*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "nzbget.__version__" }
+
+[tool.pytest.ini_options]
+addopts = "--verbose -ra"
+testpaths = ["test"]
+python_files = ["test_*.py"]
+filterwarnings = ["once::Warning"]
+
+[tool.coverage.run]
+branch = true
+source = ["nzbget"]
+disable_warnings = ["no-data-collected"]
+
+[tool.coverage.paths]
+source = [
+    "nzbget",
+    ".tox/*/lib/python*/site-packages/nzbget",
+]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.ruff]
+line-length = 79
+target-version = "py38"
+exclude = [
+    "build",
+    "dist",
+    ".eggs",
+    ".tox",
+    ".venv",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+]
+ignore = [
+    "E722",  # bare except; used on purpose across the older code
+    "E741",  # short variable names such as l
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The package re-exports everything so `from nzbget import ...` works
+"nzbget/__init__.py" = ["F401", "F403"]
+# Sample NZB-Files and paths in the tests are easier to read on one line
+"test/*" = ["E501"]

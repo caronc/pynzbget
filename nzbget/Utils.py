@@ -30,7 +30,7 @@ ESCAPED_WIN_PATH_SEPARATOR = re.escape('\\')
 ESCAPED_NUX_PATH_SEPARATOR = re.escape('/')
 
 TIDY_WIN_PATH_RE = re.compile(
-    '(^[%s]{2}|[^%s\s][%s]|[\s][%s]{2}])([%s]+)' % (
+    r'(^[%s]{2}|[^%s\s][%s]|[\s][%s]{2}])([%s]+)' % (
         ESCAPED_WIN_PATH_SEPARATOR,
         ESCAPED_WIN_PATH_SEPARATOR,
         ESCAPED_WIN_PATH_SEPARATOR,
@@ -38,7 +38,7 @@ TIDY_WIN_PATH_RE = re.compile(
         ESCAPED_WIN_PATH_SEPARATOR,
 ))
 TIDY_WIN_TRIM_RE = re.compile(
-    '^(.+[^:][^%s])[\s%s]*$' %(
+    r'^(.+[^:][^%s])[\s%s]*$' %(
         ESCAPED_WIN_PATH_SEPARATOR,
         ESCAPED_WIN_PATH_SEPARATOR,
 ))
@@ -49,7 +49,7 @@ TIDY_NUX_PATH_RE = re.compile(
         ESCAPED_NUX_PATH_SEPARATOR,
 ))
 TIDY_NUX_TRIM_RE = re.compile(
-    '([^%s])[\s%s]+$' % (
+    r'([^%s])[\s%s]+$' % (
         ESCAPED_NUX_PATH_SEPARATOR,
         ESCAPED_NUX_PATH_SEPARATOR,
 ))

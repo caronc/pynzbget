@@ -1,9 +1,22 @@
-[![Build Status](https://travis-ci.org/caronc/pynzbget.svg?branch=master)](https://travis-ci.org/caronc/pynzbget)
-[![CodeCov Status](https://codecov.io/github/caronc/pynzbget/branch/master/graph/badge.svg)](https://codecov.io/github/caronc/pynzbget)
-[![Paypal](https://img.shields.io/badge/paypal-donate-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MHANV39UZNQ5E)<br/>
+[![Tests](https://github.com/caronc/pynzbget/actions/workflows/tests.yml/badge.svg)](https://github.com/caronc/pynzbget/actions/workflows/tests.yml)
+[![Paypal](https://img.shields.io/badge/paypal-donate-green.svg)](https://www.paypal.com/donate/?hosted_button_id=CR6YF7KLQWQ5E)
 
-Description
-===========
+# pynzbget
+
+pynzbget takes care of the boring parts of writing an
+[NZBGet](https://nzbget.com) script, so you can focus on what your script
+actually does. The same script can also run under
+[SABnzbd](https://sabnzbd.org). It works with every NZBGet version back to
+v11.
+
+Some scripts that use it:
+[Notify](https://github.com/caronc/nzb-notify),
+[TidyIt](https://github.com/caronc/nzbget-tidyit),
+[DirWatch](https://github.com/caronc/nzbget-dirwatch) and
+[Subliminal](https://github.com/caronc/nzb-subliminal).
+
+## Description
+
 This provides a python framework to design NZBGet scripts with. The intent
 was to greatly simplify the development and debugging process. It was
 initially designed to work with NZBGet and is backwards compatible with all previous versions (as far back to v11). However it is also compatible with SABnzbd users too!
@@ -27,20 +40,31 @@ initially designed to work with NZBGet and is backwards compatible with all prev
   to and from NZBGet.
 * It can also be adapted to support SABnzbd scripting! Thus any script you write
   for NZBGet users, you can also tweak to work [with SABnzbd users too](https://github.com/caronc/pynzbget/wiki/SAB_PostProcessScripts)!
+* It runs from a `lib/` folder bundled with your script, so your script
+  works with the NZBGet v23+ Extension Manager (see below).
 
-Documentation
-=============
+## Install
+
+```bash
+pip install pynzbget
+```
+
+You need Python 3.8 or newer.
+
+## Documentation
+
 For the most up to date information and API, visit the wiki at
 * https://github.com/caronc/pynzbget/wiki
 
 The entire framework was based on the information found here:
-* [NZBGet](https://nzbget.net)
-* [NZBGet Scripting Documentation](http://nzbget.net/Extension_scripts)
-* [SABnzbd](http://sabnzbd.org/)
+* [NZBGet](https://nzbget.com)
+* [NZBGet Scripting Documentation](https://nzbget.com/documentation/extension-scripts/)
+* [NZBGet Extension Manager](https://github.com/nzbgetcom/nzbget-extensions)
+* [SABnzbd](https://sabnzbd.org/)
 * [SABnzbd Scripting Documentation](https://sabnzbd.org/wiki/scripts/post-processing-scripts)
 
-Simplified Development
-======================
+## Simplified Development
+
 The following are some of the functionality that is built in for you:
 
  * __validate()__ - Handle environment checking, correct versioning as well
@@ -132,16 +156,117 @@ The following are some of the functionality that is built in for you:
  * __is_unique_instance()__ - Allows you to ensure your instance of your script is
                   unique. This is useful for Scheduled scripts which can be
                   called and then run concurrently with NZBGet.
-How To Use
-==========
+
+## How To Use
+
 * Developers are only required to define a class that inherits the NZBGet class
 that identifies what they are attempting to write (_ScanScript_,
 _PostProcessScript_, etc.).
 
 * Then you write all of your code a the _main()_ you must define.
 
-Post Process Script Example
-===========================
+## Your First Script
+
+Every NZBGet script starts with a header. NZBGet reads it to learn what
+kind of script you wrote and which options to show in its settings page.
+After that, you write a class with a `main()` and pynzbget does the rest.
+
+Save this as `MyExtension.py`:
+
+```python
+#!/usr/bin/env python3
+###########################################################################
+### NZBGET POST-PROCESSING SCRIPT
+
+# Says hello when a download finishes.
+#
+# Author: Your Name.
+# Version: 1.0.0.
+# License: GPLv3.
+# Home: https://github.com/you/MyExtension
+
+###########################################################################
+### OPTIONS
+
+# Who to greet.
+#Name=World
+
+# Enable debug logging (yes, no).
+#Debug=no
+
+### NZBGET POST-PROCESSING SCRIPT
+###########################################################################
+import sys
+from os.path import abspath, dirname, join
+
+# Look in lib/ for packages first (see "NZBGet Extension Manager" below)
+sys.path.insert(0, join(dirname(abspath(__file__)), 'lib'))
+
+from nzbget import PostProcessScript
+
+
+class MyExtension(PostProcessScript):
+    def main(self, *args, **kwargs):
+        # Make sure we're running under NZBGet and our options are set
+        if not self.validate(keys=('Name', )):
+            # validate() already logged why
+            return False
+
+        # Read our option (NZBGet passes it in as NZBPO_NAME)
+        name = self.get('Name', 'World')
+
+        # Read details about the download (NZBPP_NZBNAME, NZBPP_DIRECTORY)
+        nzbname = self.get('NZBNAME')
+        directory = self.get('DIRECTORY')
+
+        # Logging is ready to go
+        self.logger.info(f'Hello {name}! {nzbname} is in {directory}')
+
+        # All done
+        return True
+
+
+if __name__ == '__main__':
+    # run() calls main() and turns its answer into an NZBGet exit code
+    sys.exit(MyExtension().run())
+```
+
+Drop it into NZBGet's scripts folder and it shows up in the settings.
+
+### What to Return
+
+| Return  | Meaning                                              |
+|---------|------------------------------------------------------|
+| `True`  | Everything worked                                    |
+| `False` | Something went wrong                                 |
+| `None`  | Nothing to do, so you skipped it (not a failure)     |
+
+You can still use NZBGet's own exit codes if you'd rather:
+
+```python
+from nzbget import EXIT_CODE
+
+# Same as returning True
+return EXIT_CODE.SUCCESS
+```
+
+## Script Types
+
+Pick the class that matches the line in your header:
+
+| Header line                         | Class                  |
+|-------------------------------------|------------------------|
+| `### NZBGET POST-PROCESSING SCRIPT` | `PostProcessScript`    |
+| `### NZBGET SCHEDULER SCRIPT`       | `SchedulerScript`      |
+| `### NZBGET QUEUE SCRIPT`           | `QueueScript`          |
+| `### NZBGET SCAN SCRIPT`            | `ScanScript`           |
+| `### NZBGET FEED SCRIPT`            | `FeedScript`           |
+| SABnzbd post-processing             | `SABPostProcessScript` |
+
+Each type gets its own set of values from NZBGet. You read them all with
+`get()`, leaving off the prefix NZBGet puts in front of them.
+
+### Post Process Script Example
 ```python
 #############################################################################
 ### NZBGET POST-PROCESSING SCRIPT                                         ###
@@ -156,7 +281,7 @@ Post Process Script Example
 
 #
 # Enable NZBGet debug logging (yes, no)
-# Debug=no
+#Debug=no
 #
 
 ### NZBGET POST-PROCESSING SCRIPT                                         ###
@@ -178,13 +303,13 @@ class MyPostProcessScript(PostProcessScript):
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBPP_.*)
         # following dictionary (without the NZBOP_ or NZBPP_ prefix):
-        print 'DIRECTORY %s' self.get('DIRECTORY')
-        print 'NZBNAME %s' self.get('NZBNAME')
-        print 'NZBFILENAME %s' self.get('NZBFILENAME')
-        print 'CATEGORY %s' self.get('CATEGORY')
-        print 'TOTALSTATUS %s' self.get('TOTALSTATUS')
-        print 'STATUS %s' self.get('STATUS')
-        print 'SCRIPTSTATUS %s' self.get('SCRIPTSTATUS')
+        print('DIRECTORY %s' % self.get('DIRECTORY'))
+        print('NZBNAME %s' % self.get('NZBNAME'))
+        print('NZBFILENAME %s' % self.get('NZBFILENAME'))
+        print('CATEGORY %s' % self.get('CATEGORY'))
+        print('TOTALSTATUS %s' % self.get('TOTALSTATUS'))
+        print('STATUS %s' % self.get('STATUS'))
+        print('SCRIPTSTATUS %s' % self.get('SCRIPTSTATUS'))
 
         # Set any variable you want by any key. Note that if you use
         # keys that were defined by the system (such as CATEGORY, DIRECTORY,
@@ -195,7 +320,7 @@ class MyPostProcessScript(PostProcessScript):
         # You can fetch it back; this will also set an entry in  the
         # sqlite database for each hash references that can be pulled from
         # another script that simply calls self.get('MY_VAR')
-        print self.get('MY_KEY') # prints MY_VALUE
+        print(self.get('MY_KEY'))  # prints MY_VALUE
 
         # You can also use push() which is similar to set()
         # except that it interacts with the NZBGet Server and does not use
@@ -205,22 +330,22 @@ class MyPostProcessScript(PostProcessScript):
 
         # You can still however locally retrieve what you set using push()
         # with the get() function
-        print self.get('ANOTHER_KEY') # prints ANOTHER_VALUE
+        print(self.get('ANOTHER_KEY'))  # prints ANOTHER_VALUE
 
         # Your script configuration files (NZBPP_.*) are here in this
         # dictionary (again without the NZBPP_ prefix):
         # assume you defined `Debug=no` in the first 10K of your PostProcessScript
         # NZBGet translates this to `NZBPP_DEBUG` which can be retrieved
         # as follows:
-        print 'DEBUG %s' self.get('DEBUG')
+        print('DEBUG %s' % self.get('DEBUG'))
 
         # Returns have been made easy. Just return:
         #   * True if everything was successful
         #   * False if there was a problem
         #   * None if you want to report that you've just gracefully
-                  skipped processing (this is better then False)
-                  in some circumstances. This is neither a failure or a
-                  success status.
+        #     skipped processing (this is better then False)
+        #     in some circumstances. This is neither a failure or a
+        #     success status.
 
         # Feel free to use the actual exit codes as well defined by
         # NZBGet on their website. They have also been defined here
@@ -239,8 +364,7 @@ if __name__ == "__main__":
     exit(ppscript.run())
 ```
 
-Scan Script Example
-===================
+### Scan Script Example
 ```python
 ############################################################################
 ### NZBGET SCAN SCRIPT                                                   ###
@@ -255,7 +379,7 @@ Scan Script Example
 
 #
 # Enable NZBGet debug logging (yes, no)
-# Debug=no
+#Debug=no
 #
 
 ### NZBGET SCAN SCRIPT                                                   ###
@@ -277,13 +401,13 @@ class MyScanScript(ScanScript):
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBNP_.*)
         # following dictionary (without the NZBOP_ or NZBNP_ prefix):
-        print 'DIRECTORY %s' self.get('DIRECTORY')
-        print 'FILENAME %s' self.get('FILENAME')
-        print 'NZBNAME %s' self.get('NZBNAME')
-        print 'CATEGORY %s' self.get('CATEGORY')
-        print 'PRIORITY %s' self.get('PRIORITY')
-        print 'TOP %s' self.get('TOP')
-        print 'PAUSED %s' self.get('PAUSED')
+        print('DIRECTORY %s' % self.get('DIRECTORY'))
+        print('FILENAME %s' % self.get('FILENAME'))
+        print('NZBNAME %s' % self.get('NZBNAME'))
+        print('CATEGORY %s' % self.get('CATEGORY'))
+        print('PRIORITY %s' % self.get('PRIORITY'))
+        print('TOP %s' % self.get('TOP'))
+        print('PAUSED %s' % self.get('PAUSED'))
 
         return True
 
@@ -298,8 +422,7 @@ if __name__ == "__main__":
     exit(scanscript.run())
 ```
 
-Scheduler Script Example
-=======================
+### Scheduler Script Example
 ```python
 ############################################################################
 ### NZBGET SCHEDULER SCRIPT                                               ###
@@ -313,7 +436,7 @@ Scheduler Script Example
 
 #
 # Enable NZBGet debug logging (yes, no)
-# Debug=no
+#Debug=no
 #
 
 ### NZBGET SCHEDULER SCRIPT                                              ###
@@ -337,7 +460,7 @@ class MySchedulerScript(SchedulerScript):
         # All system environment variables (NZBOP_.*) as well as Post
         # Process script specific content (NZBSP_.*)
         # following dictionary (without the NZBOP_ or NZBSP_ prefix):
-        print 'DESTDIR %s' self.get('DESTDIR')
+        print('DESTDIR %s' % self.get('DESTDIR'))
 
         return True
 # Call your script as follows:
@@ -351,8 +474,7 @@ if __name__ == "__main__":
     exit(myscript.run())
 ```
 
-MultiScript Example
-=======================
+### MultiScript Example
 ```python
 ############################################################################
 ### NZBGET POST-PROCESSING/SCHEDULER SCRIPT                              ###
@@ -367,7 +489,7 @@ MultiScript Example
 
 #
 # Enable NZBGet debug logging (yes, no)
-# Debug=no
+#Debug=no
 #
 
 ### NZBGET POST-PROCESSING/SCHEDULER SCRIPT                              ###
@@ -412,4 +534,238 @@ if __name__ == "__main__":
 
     # call run() and exit() using it's returned value
     exit(myscript.run())
+```
+
+### Queue Script
+
+Runs when something happens in the download queue. List the events you
+care about under your header line:
+
+```python
+### NZBGET QUEUE SCRIPT
+### QUEUE EVENTS: NZB_ADDED, NZB_DOWNLOADED
+
+from nzbget import QueueEvent
+from nzbget import QueueScript
+
+
+class MyQueueScript(QueueScript):
+    def main(self, *args, **kwargs):
+        if not self.validate():
+            return False
+
+        # Which event woke us up
+        if self.event != QueueEvent.NZB_ADDED:
+            # Not one we care about
+            return None
+
+        # The download that was just added (NZBNA_NZBNAME)
+        self.logger.info(f'Queued: {self.get("NZBNAME")}')
+        return True
+```
+
+## Functions You Can Use
+
+All of these are available as `self.<name>()` inside your script.
+
+### Checking Things
+
+```python
+# Make sure we're running under NZBGet (v11 or newer) and these options
+# were set in the settings page
+if not self.validate(keys=('VideoPaths', 'Mode')):
+    return False
+
+# Post-processing only: did the download, repair and unpack go well?
+if not self.health_check():
+    return None
+
+# Only allow one copy of this script to run at a time
+if not self.is_unique_instance():
+    return None
+```
+
+### Reading and Saving Values
+
+```python
+# Read an option, with a default if it's missing
+mode = self.get('Mode', 'Preview')
+
+# Save a value; scripts that run after yours (for the same download) can
+# get() it too
+self.set('MY_KEY', 'some value')
+
+# Remove it again
+self.unset('MY_KEY')
+
+# Loop over everything get() can see
+for key, value in self.items():
+    self.logger.debug(f'{key} = {value}')
+
+# Send a value to NZBGet itself so other scripts see it there too
+# (NZBGet only; set() works everywhere)
+self.push('ANOTHER_KEY', 'another value')
+```
+
+Post-processing, queue and scan scripts also keep `set()` values in a
+small SQLite database (one per download), so they're still there for the
+next script. Other script types can turn this on by passing
+`database_key='my-key'` when they create the script.
+
+### NZB Details
+
+NZB-Files can carry extra details (meta tags) such as the show name or
+category. These work like `get()` and `set()`, but for those details:
+
+```python
+# Read, change or remove a detail
+category = self.nzb_get('category')
+self.nzb_set('propername', 'My Show')
+self.nzb_unset('episodename')
+
+# Loop over them all
+for key, value in self.nzb_items():
+    self.logger.debug(f'{key} = {value}')
+
+# Send our details to NZBGet (as DNZB_*), or read the ones it has
+self.push_dnzb()
+details = self.pull_dnzb()
+
+# Read the details straight from an NZB-File
+details = self.parse_nzbfile('/path/to/file.nzb')
+```
+
+`push_guess()` and `pull_guess()` do the same for "what is this download"
+details (such as a [guessit](https://github.com/guessit-io/guessit)
+result), so the next script doesn't have to work it out again:
+
+```python
+# One script figures out what the download is (NZBGet only)...
+self.push_guess({'type': 'episode', 'title': 'My Show', 'season': 1})
+
+# ...and a later one reuses it (an empty dict if nothing was pushed)
+guess = self.pull_guess()
+```
+
+### Working With Files
+
+```python
+# Find files; you get back a dict keyed by each file's path
+videos = self.get_files(
+    '/path/to/search',
+    suffix_filter=['.mkv', '.avi'],  # only these endings
+    fullstats=True,                  # include size and dates
+    max_depth=2,                     # don't go too deep
+)
+
+for path, info in videos.items():
+    self.logger.info(f'{path} is {info["filesize"]} bytes')
+
+# Post-processing only: give a scrambled file name a proper one
+filename = self.deobfuscate('/path/to/download/a8b7c6d5e4.mkv')
+```
+
+`get_files()` can also filter with `regex_filter=` and `prefix_filter=`.
+Each filter takes one value or a list.
+
+### Turning Option Text Into Python
+
+```python
+# 'yes', 'on', 'true' and '1' become True; 'no', 'off' and so on are False
+keep = self.parse_bool(self.get('KeepDirectories', 'no'))
+
+# '.mkv, .avi .mp4' becomes a list of '.mkv', '.avi' and '.mp4'
+# (duplicates are removed, so the order isn't kept)
+extensions = self.parse_list(self.get('VideoExtensions'))
+
+# Like parse_list(), but for folders (spaces in names are fine)
+paths = self.parse_path_list(self.get('VideoPaths'))
+
+# '*.iso, *.avi' becomes a list of compiled regular expressions
+patterns = self.parse_regex('*.iso, *.avi', simple=True)
+
+# Break a URL into its parts: schema, host, port, user, password, path...
+url = self.parse_url('http://user:pass@localhost:8080/path')
+```
+
+Two more helpers live in `nzbget.Utils`:
+
+```python
+from nzbget.Utils import os_path_split
+from nzbget.Utils import tidy_path
+
+# Clean up a path: tidy_path('/path//to/dir/') gives '/path/to/dir'
+path = tidy_path('/path//to/dir/')
+
+# Split a path into its parts: ['', 'path', 'to', 'dir']
+parts = os_path_split('/path/to/dir')
+```
+
+### Talking to NZBGet
+
+These use NZBGet's API. pynzbget connects for you using NZBGet's own
+settings.
+
+```python
+# Hand an NZB-File to NZBGet to download
+self.add_nzb('/path/to/file.nzb', category='tv')
+
+# Read the latest log lines
+for line in self.get_logs(max_lines=100):
+    self.logger.debug(line)
+
+# Post-processing only: download, repair and unpack times and speeds
+stats = self.get_statistics()
+self.logger.info(f'Downloaded {stats["download_size_mb"]} MB')
+```
+
+## SABnzbd
+
+Write your class with `SABPostProcessScript` (or alongside
+`PostProcessScript`) and the same `get()` calls keep working. See the
+[SABnzbd wiki page](https://github.com/caronc/pynzbget/wiki/SAB_PostProcessScripts)
+for details.
+
+## NZBGet Extension Manager
+
+NZBGet v23 and newer can install scripts from its **Extension Manager**.
+An extension is just a folder (shipped as a zip) like this:
+
+```text
+MyExtension/
+    MyExtension.py
+    manifest.json   # tells NZBGet about your script and its options
+    lib/            # every package your script needs, pynzbget included
+```
+
+NZBGet won't run `pip` for you, so `lib/` has to come with the script:
+
+```bash
+# Install your packages into lib/, picking versions that work on Python 3.8
+pip install --target MyExtension/lib --python-version 3.8 \
+    --only-binary :all: -r requirements.txt
+
+# pynzbget works without lxml, and lxml only runs where it was built
+rm -rf MyExtension/lib/lxml MyExtension/lib/lxml-*.dist-info
+```
+
+The `sys.path.insert(...)` line in the example above is what lets your
+script find `lib/`. Keep it above your other imports.
+
+Write `manifest.json` once by hand, using your script's header as the guide.
+Keep the header too; older NZBGet versions still read it. The
+[manifest format](https://github.com/nzbgetcom/nzbget-extensions) is
+documented by the NZBGet team.
+
+## Development
+
+```bash
+# Run the tests
+tox -e qa
+
+# Run the tests without lxml (how extensions run it)
+tox -e minimal
+
+# Check for lint problems
+tox -e lint
 ```
