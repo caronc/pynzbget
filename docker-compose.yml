@@ -1,0 +1,38 @@
+# Containers used to build pynzbget's RPMs (see tox.ini and bin/build-rpm.sh)
+#
+# Normally you run these through tox:
+#   tox -e rpm          # every distribution below
+#   tox -e build-el9-rpm
+#
+# Or jump into one to poke around:
+#   docker compose run --rm rpmbuild.el9 bash
+#
+# The ':z' on each volume lets the container read this folder on systems
+# with SELinux turned on (Fedora, RHEL, Rocky)
+services:
+  rpmbuild.el9:
+    build:
+      context: .
+      dockerfile: test/docker/Dockerfile.el9
+    volumes:
+      - ./:/pynzbget:z
+    working_dir: /pynzbget
+    user: "1000:1000"
+
+  rpmbuild.el10:
+    build:
+      context: .
+      dockerfile: test/docker/Dockerfile.el10
+    volumes:
+      - ./:/pynzbget:z
+    working_dir: /pynzbget
+    user: "1000:1000"
+
+  rpmbuild.f44:
+    build:
+      context: .
+      dockerfile: test/docker/Dockerfile.f44
+    volumes:
+      - ./:/pynzbget:z
+    working_dir: /pynzbget
+    user: "1000:1000"

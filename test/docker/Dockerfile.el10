@@ -1,0 +1,25 @@
+# Builds pynzbget's RPMs for el10; see bin/build-rpm.sh and docker-compose.yml
+FROM rockylinux/rockylinux:10
+ENV container=docker LANG=C.UTF-8
+
+# RPM build tools
+RUN echo "assumeyes=1" >> /etc/yum.conf && \
+    dnf install -y dnf-plugins-core && \
+    dnf install -y epel-release && \
+    dnf config-manager --set-enabled crb && \
+    dnf install -y rpm-build rpmlint rpmdevtools python3-pip \
+        pyproject-rpm-macros glibc-langpack-en && \
+    dnf clean all
+
+# Install everything the spec file needs to build
+COPY packaging/redhat/python-nzbget.spec /
+RUN rpmspec -q --buildrequires /python-nzbget.spec | cut -f1 -d' ' | \
+    xargs dnf install -y && dnf clean all
+
+# RPMs should never be built as root
+RUN useradd builder -u 1000 -m -G users
+ENV DIST=el10
+
+VOLUME ["/pynzbget"]
+WORKDIR /pynzbget
+USER builder

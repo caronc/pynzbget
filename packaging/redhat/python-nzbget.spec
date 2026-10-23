@@ -26,7 +26,14 @@
 %else
 # When bootstrapping Python, we cannot test this yet
 %bcond_without tests
-%endif # module_build
+%endif
+
+# RHEL 9 and older ship a setuptools that is too old to build straight from
+# pyproject.toml, so they build from the small setup.py stub instead
+%global legacy_python_build 0
+%if 0%{?rhel} && 0%{?rhel} <= 9
+%global legacy_python_build 1
+%endif
 
 %global pypi_name pynzbget
 %global pkg_name nzbget
@@ -49,34 +56,57 @@ BuildArch:      noarch
 Summary: Simplify the development and deployment of NZBGet and SABnzbd scripts
 
 BuildRequires: python%{python3_pkgversion}-devel
-Requires: sqlite
+BuildRequires: python3dist(setuptools)
+BuildRequires: python3dist(wheel)
+BuildRequires: python3dist(lxml)
+
+Requires: python3dist(lxml)
 
 %if %{with tests}
-BuildRequires: python%{python3_pkgversion}-mock
-BuildRequires: python%{python3_pkgversion}-pytest
-%endif # with_tests
+BuildRequires: python3dist(pytest)
+%endif
+
+%if 0%{?legacy_python_build} == 0
+%generate_buildrequires
+%pyproject_buildrequires
+%endif
 
 %description -n python%{python3_pkgversion}-%{pkg_name} %{common_description}
 
 %prep
 %autosetup -n %{pypi_name}-%{version}
 
-%generate_buildrequires
-%pyproject_buildrequires
-
 %build
+%if %{legacy_python_build}
+%py3_build
+%else
 %pyproject_wheel
+%endif
 
 %install
+%if %{legacy_python_build}
+%py3_install
+%else
 %pyproject_install
 %pyproject_save_files %{pkg_name}
+%endif
 
 %check
 %if %{with tests}
+%if %{legacy_python_build}
+PYTHONPATH=%{buildroot}%{python3_sitelib} py.test-%{python3_version}
+%else
 %pytest
-%endif # with_tests
+%endif
+%endif
 
+%if %{legacy_python_build}
+%files -n python%{python3_pkgversion}-%{pkg_name}
+%{python3_sitelib}/%{pkg_name}
+%{python3_sitelib}/%{pypi_name}-*.egg-info
+%else
 %files -n python%{python3_pkgversion}-%{pkg_name} -f %{pyproject_files}
+%endif
 %license LICENSE
 %doc README.md
 

@@ -766,6 +766,24 @@ tox -e qa
 # Run the tests without lxml (how extensions run it)
 tox -e minimal
 
-# Check for lint problems
+# Check for lint problems (tox -e format fixes what it can)
 tox -e lint
+```
+
+Packaging:
+
+```bash
+# Remove old builds and caches
+tox -e clean
+
+# Build the source package and wheel into dist/
+tox -e build
+
+# Build the RPMs for RHEL/Rocky 9 and 10 and Fedora 44 (needs docker);
+# they land in dist/rpm/
+tox -e rpm
+
+# Do everything a release needs: clean, lint, test, build, check the
+# packages and build the source RPM
+tox -e release
 ```

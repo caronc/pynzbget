@@ -55,7 +55,6 @@ dependencies = [
 # Everything needed to test and lint pynzbget
 dev = [
     "coverage",
-    "mock",
     "pytest",
     "pytest-cov",
     "ruff==0.15.8",
